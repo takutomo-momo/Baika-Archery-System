@@ -4,27 +4,221 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>梅花女子大学洋弓部 スコア管理システム</title>
-
+    <!-- グラフ描画ライブラリ Chart.js の読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/style.css">
 </head>
-
 <body>
 
-    <div class="container">
+    <!-- クラウド処理中インジケータ -->
+    <div class="cloud-loader" id="cloudLoadingIndicator"><div class="spinner"></div><span>データ処理中...</span></div>
 
-        <h1>🏹</h1>
+    <!-- オープニング・ログイン画面 -->
+    <div id="openingOverlay">
+        <svg class="bg-target-graphic" viewBox="0 0 200 200">
+            <circle cx="100" cy="100" r="90" fill="none" stroke="#fff" stroke-width="2"/>
+            <circle cx="100" cy="100" r="30" fill="none" stroke="#ffd700" stroke-width="3"/>
+        </svg>
+        <div class="opening-content">
+            <div class="opening-title">梅花女子大学洋弓部</div>
+            <div class="opening-subtitle">SCORE MANAGEMENT SYSTEM</div>
+            
+            <div class="opening-card">
+                <div class="opening-card-title">👤 ログイン</div>
+                <div class="opening-form-group">
+                    <select id="openingMemberDropdown" class="opening-dropdown" style="margin-bottom: 10px;" onchange="syncSelectedToManagementInput()"></select>
+                    <label>パスワード (初期値: baika)</label>
+                    <input type="password" id="loginPasswordInput" class="opening-input" placeholder="パスワードを入力" style="text-align: center;">
+                    <button class="enter-btn" onclick="enterSystem()">AIM & ENTER</button>
+                </div>
+            </div>
 
-        <h2>梅花女子大学洋弓部</h2>
-
-        <h3>スコア管理システム Ver2.0</h3>
-
-        <button id="startButton">
-            システムを開始
-        </button>
-
+            <div class="opening-card">
+                <div class="opening-card-title">⚙️ 名簿・システム管理</div>
+                <div class="opening-form-group">
+                    <label>対象の部員名</label>
+                    <input type="text" id="memberManagementInput" class="opening-input" placeholder="名前を入力" style="margin-bottom: 10px;">
+                    <div class="input-row-group" style="margin-bottom: 12px;">
+                        <button class="sub-action-btn" onclick="addNewMemberFromOpening()" style="background: var(--accent-green);">🆕 新規登録</button>
+                        <button class="sub-action-btn" onclick="renameSelectedMemberFromOpening()" style="background: var(--accent-blue);">✏️ 変更</button>
+                    </div>
+                    <label>パスワード変更</label>
+                    <input type="password" id="newPasswordInput" class="opening-input" placeholder="新しいパスワード" style="margin-bottom: 10px; text-align: center;">
+                    <button class="sub-action-btn" style="background: var(--accent-orange); width: 100%;" onclick="changeMemberPasswordFromOpening()">🔒 変更保存</button>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <!-- メインアプリケーションヘッダー -->
+    <header>
+        <h1>🎯 スコア管理システム</h1>
+        <div class="header-controls">
+            <button class="mode-btn" style="background-color: #3a3a3c; color: #fff;" onclick="returnToOpening()">◀ ユーザー切替</button>
+            <div class="member-select-wrapper">
+                <span>👤 閲覧対象:</span>
+                <select id="currentMemberDropdown" class="member-dropdown" onchange="handleMemberChange()">
+                    <option value="全部員">📊 部員全員分を表示</option>
+                </select>
+            </div>
+            <div class="mode-selector">
+                <button id="btnModePractice" class="mode-btn active-practice" onclick="setMode('practice')">練習モード</button>
+                <button id="btnModeMatch" class="mode-btn" onclick="setMode('match')">大会モード</button>
+            </div>
+        </div>
+    </header>
 
+    <!-- レイアウトメイングリッド -->
+    <div class="layout-grid">
+        <!-- 左側：サイドバーエリア -->
+        <div class="sidebar-area">
+            <!-- カレンダーカード -->
+            <div class="card">
+                <div class="cal-header">
+                    <button class="mode-btn" style="padding:4px 10px;" onclick="changeMonth(-1)">◀</button>
+                    <span id="calMonthTitle" style="font-weight:bold;">2026年01月</span>
+                    <button class="mode-btn" style="padding:4px 10px;" onclick="changeMonth(1)">▶</button>
+                </div>
+                <div class="cal-grid" id="calendarGrid"></div>
+            </div>
+
+            <!-- 環境・メタ情報カード -->
+            <div class="card">
+                <div class="card-title"> 📋 コンディション / 大会詳細</div>
+                <div class="form-group" id="matchNameContainer">
+                    <label style="color: var(--accent-orange); font-weight: bold;">🏆 大会・記録会名称</label>
+                    <input type="text" class="form-control" id="envMatchName" value="春季記録会" placeholder="大会名を入力" oninput="updateTableTitleWithMatchName()">
+                </div>
+                <div class="form-group" id="distanceContainer">
+                    <label id="distanceLabel">練習距離</label>
+                    <div id="distanceInputWrapper"></div>
+                </div>
+                <div class="form-group">
+                    <label>時間帯 / 天候 / 風</label>
+                    <select class="form-control" id="envTimeSlot" style="margin-bottom:4px;"><option value="午前枠">🌅 午前枠</option><option value="午後枠">☀️ 午後枠</option><option value="夜間枠">🌙 夜間枠</option></select>
+                    <select class="form-control" id="envWeather" style="margin-bottom:4px;"><option value="晴れ">☀️ 晴れ</option><option value="曇り">☁️ 曇り</option><option value="雨">☔ 雨</option></select>
+                    <select class="form-control" id="envWind"><option value="無風">🍃 無風・微風</option><option value="弱風">🌾 弱風</option><option value="強風">🌪️ 強風</option></select>
+                </div>
+                <div class="form-group">
+                    <label>本日のメモ・反省</label>
+                    <textarea class="form-control" id="envMemo" rows="2"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：メインコンテンツエリア -->
+        <div class="main-content-area">
+            <!-- 閲覧ロック時警告バナー -->
+            <div id="readOnlyAlertBanner" class="readonly-banner">⚠️ 閲覧対象が「全部員」または「他の部員」に設定されているため、データの入力・編集はロックされています。</div>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <div id="filteredDateBadge" class="badge-date" style="margin-bottom: 12px;">選択日: ----(--)--</div>
+            </div>
+
+            <!-- 本日のリアルタイム統計パネル -->
+            <div class="card" id="dailyTotalStatsPanel" style="background: #fafafa; border-left: 5px solid var(--accent-green);">
+                <div class="card-title" style="color: var(--accent-green); font-weight: bold; font-size: 13px; margin-bottom: 8px;">📊 本日のリアルタイム練習統計 (閲覧対象メンバー)</div>
+                <div class="stats-summary-grid" style="margin-bottom: 0;">
+                    <div class="stat-box highlight-box"><div style="font-size:11px; color:#666;">🎯 総射本数</div><div class="stat-val" id="lblDailyTotalArrows" style="color:var(--text-color);">0 本</div></div>
+                    <div class="stat-box highlight-box"><div style="font-size:11px; color:#666;">📈 6E合計スコア</div><div class="stat-val" id="lblDailyTotalScore" style="color:var(--accent-blue);">0 点</div></div>
+                    <div class="stat-box highlight-box"><div style="font-size:11px; color:#666;">💎 本日の平均点</div><div class="stat-val" id="lblDailyTotalAvg" style="color:var(--accent-green);">0.0</div></div>
+                </div>
+            </div>
+
+            <!-- 入力コントロールエリア (練習モード時のみ表示) -->
+            <div class="upper-layout-grid" id="upperLayout">
+                <!-- 的タップ入力 -->
+                <div class="card">
+                    <div class="card-title">🎯 的タップ入力 (2段階ズーム)</div>
+                    <div class="target-container">
+                        <svg id="targetSvg" viewBox="0 0 300 300" onclick="handleTargetClick(event)"></svg>
+                    </div>
+                    <button id="btnTargetZoomReset" class="btn" style="padding:4px; font-size:11px; background:#8e8e93; color:#fff;" onclick="resetTargetZoom()">ズームリセット</button>
+                </div>
+
+                <!-- スコアキーパッド・エンド確認 -->
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <div class="card-title">⌨️ スコア確認・補正（現在エンド）</div>
+                        <div class="arrows-preview-row" id="arrowsRow"></div>
+                        <div class="stats-summary-grid">
+                            <div class="stat-box"><div style="font-size:10px; color:#8e8e93;">本数</div><div class="stat-val" id="valCount">0/6</div></div>
+                            <div class="stat-box"><div style="font-size:10px; color:#8e8e93;">計</div><div class="stat-val" id="valTotal" style="color:var(--accent-blue);">0</div></div>
+                            <div class="stat-box"><div style="font-size:10px; color:#8e8e93;">平均</div><div class="stat-val" id="valAvg">0.0</div></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="keypad" style="margin-bottom: 10px;">
+                            <button class="key-btn input-lockable" style="background:#ffd700;" onclick="handleKeypadInput('X', 10)">X</button>
+                            <button class="key-btn input-lockable" style="background:#ffd700;" onclick="handleKeypadInput('10', 10)">10</button>
+                            <button class="key-btn input-lockable" style="background:#ffd700;" onclick="handleKeypadInput('9', 9)">9</button>
+                            <button class="key-btn input-lockable" style="background:#ff3b30; color:#fff;" onclick="handleKeypadInput('8', 8)">8</button>
+                            <button class="key-btn input-lockable" style="background:#ff3b30; color:#fff;" onclick="handleKeypadInput('7', 7)">7</button>
+                            <button class="key-btn input-lockable" style="background:#007aff; color:#fff;" onclick="handleKeypadInput('6', 6)">6</button>
+                            <button class="key-btn input-lockable" style="background:#007aff; color:#fff;" onclick="handleKeypadInput('5', 5)">5</button>
+                            <button class="key-btn input-lockable" style="background:#333; color:#fff;" onclick="handleKeypadInput('4', 4)">4</button>
+                            <button class="key-btn input-lockable" style="background:#333; color:#fff;" onclick="handleKeypadInput('3', 3)">3</button>
+                            <button class="key-btn input-lockable" style="background:#fff; border:1px solid #ccc;" onclick="handleKeypadInput('2', 2)">2</button>
+                            <button class="key-btn input-lockable" style="background:#fff; border:1px solid #ccc;" onclick="handleKeypadInput('1', 1)">1</button>
+                            <button class="key-btn input-lockable" style="background:#bbb;" onclick="handleKeypadInput('M', 0)">M</button>
+                        </div>
+                        <div style="display:grid; grid-template-columns: 1fr 2fr; gap:8px;">
+                            <button id="btnClearCurrent" class="btn btn-danger input-lockable" style="background:#8e8e93;" onclick="currentArrows=[]; updateDisplay(); resetTargetZoom();">クリア</button>
+                            <button id="btnRegisterEnd" class="btn btn-success input-lockable" onclick="savePracticeEnd()">登録</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 分析グラフエリア -->
+            <div id="practiceAnalyticsArea">
+                <div class="charts-container">
+                    <!-- 着弾分布（グルーピング散布図） -->
+                    <div class="card" style="display: flex; flex-direction: column; align-items: center;">
+                        <div class="card-title" style="width:100%;">📊 着弾分布（グルーピング）</div>
+                        <div class="scatter-container">
+                            <svg id="analyticsScatterSvg" viewBox="0 0 300 300"></svg>
+                        </div>
+                    </div>
+                    <!-- トレンド推移グラフ -->
+                    <div class="card">
+                        <div class="chart-wrapper"><canvas id="trendChart"></canvas></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- スコアシート（データテーブル） -->
+            <div class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <div class="card-title" id="scoreTableTitle" style="margin:0; font-size:15px; font-weight:700;">📋 スコアシート</div>
+                    <div id="matchActionButtons" style="display:none; gap:8px;">
+                        <button id="btnAddMatch10" class="btn btn-primary input-lockable" style="width:auto; padding:6px 14px; font-size:12px; background-color:var(--accent-purple);" onclick="addBlankMatchRow(10)">＋ インドア行(10E)追加</button>
+                        <button id="btnAddMatch12" class="btn btn-primary input-lockable" style="width:auto; padding:6px 14px; font-size:12px; background-color:var(--accent-orange);" onclick="addBlankMatchRow(12)">＋ 大会行(12E)追加</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table id="mainTable">
+                        <thead id="mainTableHeader"></thead>
+                        <tbody id="mainTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 【追加】画面最下部：全データ一括削除エリア -->
+            <div class="danger-zone-area">
+                <div class="card" style="border: 1px dashed var(--danger-color); background-color: #fff8f8;">
+                    <div class="card-title" id="lblDeleteZoneTitle" style="color: var(--danger-color); font-weight: bold;">⚠️ データの全一括削除（危険ゾーン）</div>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 12px;" id="lblDeleteZoneDesc">現在ログインしている部員の、これまでの全練習データを一括で完全に削除します。この操作は取り消せません。</p>
+                    <button id="btnDeleteAllMyData" class="btn btn-danger input-lockable" style="background-color: var(--danger-color);" onclick="deleteAllMyModeData()">
+                        💥 自分の全練習データを一括削除する
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- アプリケーション・ロジックスクリプト -->
+    <script src="js/app.js"></script>
 </body>
 </html>
