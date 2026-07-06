@@ -23,3 +23,8 @@
 ## 注意
 
 Google Apps ScriptのURLは `js/app.js` 内の `GAS_API_URL` に入っています。必要に応じて差し替えてください。
+
+
+## Phase 3
+
+JavaScriptを機能別ファイルへ分割しました。
