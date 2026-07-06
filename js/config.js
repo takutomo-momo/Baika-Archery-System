@@ -1,5 +1,5 @@
 // ⚠️ GASデプロイWebアプリURL設定枠
-const GAS_API_URL = "https://script.google.com/macros/s/AKfycbyjU5ncJllBeJu4ncSeTl5G61AGg-b5118aoxPcGyx7fr4tXKFBZPEyC2uLggwbkwC9aA/exec";
+const GAS_API_URL = "https://script.google.com/macros/s/AKfycbwGlg88mq5G4fR0_H9BlQ8VmdloL8oBPOBeIBQKWrK_XunDTPalvpo1tLu4I0qA2f16/exec";
 
 let practiceData = []; let matchData = [];
 let masterMembers = ["部員A", "部員B", "部員C"]; let currentArrows = [];
