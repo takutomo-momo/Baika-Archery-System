@@ -21,8 +21,7 @@ function updateDisplay() {
     document.getElementById("valAvg").textContent = currentArrows.length ? (total / currentArrows.length).toFixed(1) : "0.0";
     
     calculateDailyTotalStats();
-    updateDashboard();
-}
+    }
 
 function savePracticeEnd() {
     const targetMem = document.getElementById("currentMemberDropdown").value;

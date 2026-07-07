@@ -1,6 +1,6 @@
 window.onload = async () => {
     const today = new Date(); currentCalYear = today.getFullYear(); currentCalMonth = today.getMonth() + 1;
-    selectedDateStr = today.toISOString().split('T')[0];
+    selectedDateStr = formatDateJST(today);
     
     rebuildMemberDropdowns(); 
     initCharts(); 
