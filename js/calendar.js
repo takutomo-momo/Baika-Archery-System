@@ -9,10 +9,10 @@ function renderCalendar() {
         const normalizedDStr = `${currentCalYear}-${String(currentCalMonth).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
         let hasData = currentMode==='practice'? practiceData.some(p=>p.date===normalizedDStr) : matchData.some(m=>m.matchDate===normalizedDStr);
         if(hasData) c.classList.add("has-data"); if(normalizedDStr===selectedDateStr) c.classList.add("selected");
-        c.onclick = () => { selectedDateStr = normalizedDStr; document.querySelectorAll(".cal-cell").forEach(el=>el.classList.remove("selected")); c.classList.add("selected"); headResetAndRender(); loadEnvironmentInputs(); updateAnalytics(); };
+        c.onclick = () => { selectedDateStr = normalizedDStr; document.querySelectorAll(".cal-cell").forEach(el=>el.classList.remove("selected")); c.classList.add("selected"); headResetAndRender(); loadEnvironmentInputs(); updateAnalytics(); updateDashboard(); };
         grid.appendChild(c);
     }
     document.getElementById("filteredDateBadge").textContent = `選択日: ${selectedDateStr}`;
 }
 
-function changeMonth(dir) { currentCalMonth+=dir; if(currentCalMonth>12){currentCalMonth=1;currentCalYear++;} if(currentCalMonth<1){currentCalMonth=12;currentCalYear--;} renderCalendar(); }
+function changeMonth(dir) { currentCalMonth+=dir; if(currentCalMonth>12){currentCalMonth=1;currentCalYear++;} if(currentCalMonth<1){currentCalMonth=12;currentCalYear--;} renderCalendar(); updateDashboard(); }

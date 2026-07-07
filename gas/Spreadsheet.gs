@@ -17,9 +17,7 @@ function readSheetData(sheetName) {
   const sheet = getOrCreateSheet(sheetName);
   const values = sheet.getDataRange().getValues();
 
-  if (values.length <= 1) {
-    return [];
-  }
+  if (values.length <= 1) return [];
 
   const headers = values[0];
 
@@ -36,6 +34,7 @@ function readSheetData(sheetName) {
 
       obj[header] = value;
     });
+
     return obj;
   });
 }
@@ -44,9 +43,7 @@ function overwriteSheet(sheetName, data) {
   const sheet = getOrCreateSheet(sheetName);
   sheet.clearContents();
 
-  if (!data || data.length === 0) {
-    return;
-  }
+  if (!data || data.length === 0) return;
 
   const headers = Object.keys(data[0]);
   sheet.appendRow(headers);

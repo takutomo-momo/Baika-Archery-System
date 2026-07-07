@@ -13,22 +13,11 @@ function handlePost(e) {
   const mode = payload.mode;
   const data = payload.data || [];
 
-  if (mode === "practice") {
-    overwriteSheet(SHEET_NAMES.PRACTICE, data);
-  }
+  if (mode === "practice") overwriteSheet(SHEET_NAMES.PRACTICE, data);
+  if (mode === "match") overwriteSheet(SHEET_NAMES.MATCH, data);
+  if (mode === "metadata") overwriteSheet(SHEET_NAMES.METADATA, data);
 
-  if (mode === "match") {
-    overwriteSheet(SHEET_NAMES.MATCH, data);
-  }
-
-  if (mode === "metadata") {
-    overwriteSheet(SHEET_NAMES.METADATA, data);
-  }
-
-  return createJsonResponse({
-    success: true,
-    mode: mode
-  });
+  return createJsonResponse({ success: true, mode });
 }
 
 function createJsonResponse(obj) {

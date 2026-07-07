@@ -21,6 +21,7 @@ function updateDisplay() {
     document.getElementById("valAvg").textContent = currentArrows.length ? (total / currentArrows.length).toFixed(1) : "0.0";
     
     calculateDailyTotalStats();
+    updateDashboard();
 }
 
 function savePracticeEnd() {
@@ -33,7 +34,7 @@ function savePracticeEnd() {
         a1:sorted[0].val, a2:sorted[1].val, a3:sorted[2].val, a4:sorted[3].val, a5:sorted[4].val, a6:sorted[5].val,
         total: sorted.reduce((a,b)=>a+b.score,0), pins: JSON.parse(JSON.stringify(currentArrows))
     });
-    saveToCloud('practice'); currentArrows = []; updateDisplay(); renderTable(); renderCalendar(); updateAnalytics();
+    saveToCloud('practice'); currentArrows = []; updateDisplay(); renderTable(); renderCalendar(); updateAnalytics(); updateDashboard();
 }
 
 function calculateDailyTotalStats() {
@@ -84,7 +85,7 @@ function deleteRow(type, idx) {
     if(type==='match' && matchData[idx].name !== loggedInMember) return;
     if(!confirm("削除しますか？")) return; 
     if(type==='practice') practiceData.splice(idx,1); else matchData.splice(idx,1); 
-    saveToCloud(type); headResetAndRender(); renderCalendar(); updateAnalytics(); 
+    saveToCloud(type); headResetAndRender(); renderCalendar(); updateAnalytics(); updateDashboard(); 
 }
 
 async function deleteAllMyModeData() {
@@ -126,5 +127,6 @@ async function deleteAllMyModeData() {
     headResetAndRender();
     renderCalendar();
     updateAnalytics();
+    updateDashboard();
     showLoading(false);
 }

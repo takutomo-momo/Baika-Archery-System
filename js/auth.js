@@ -8,4 +8,5 @@ function enterSystem() {
     document.getElementById("currentMemberDropdown").value = loggedInMember;
     document.getElementById("openingOverlay").classList.add("dismissed");
     handleMemberChange();
+    updateDashboard();
 }

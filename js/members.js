@@ -10,7 +10,7 @@ function rebuildMemberDropdowns() {
 
 function syncSelectedToManagementInput() { document.getElementById("memberManagementInput").value = document.getElementById("openingMemberDropdown").value || ""; }
 
-function handleMemberChange() { headResetAndRender(); updateAnalytics(); loadEnvironmentInputs(); }
+function handleMemberChange() { headResetAndRender(); updateAnalytics(); loadEnvironmentInputs(); updateDashboard(); }
 
 async function addNewMemberFromOpening() { 
     const n = document.getElementById("memberManagementInput").value.trim(); 

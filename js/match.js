@@ -10,7 +10,7 @@ function addBlankMatchRow(ends) {
         x1: 0, ten1: 0, x2: 0, ten2: 0, total: 0 
     };
     for(let e=1;e<=12;e++) o[`e${e}`] = 0;
-    matchData.push(o); saveToCloud('match'); headResetAndRender();
+    matchData.push(o); saveToCloud('match'); headResetAndRender(); updateDashboard();
 }
 
 function updateMatch(idx, f, v) {
@@ -28,5 +28,5 @@ function updateMatch(idx, f, v) {
     for(let e=1; e<=12; e++) { if(e <= maxEnd) sum += (matchData[idx][`e${e}`] || 0); }
     matchData[idx].total = sum; 
     
-    saveToCloud('match'); headResetAndRender();
+    saveToCloud('match'); headResetAndRender(); updateDashboard();
 }

@@ -13,5 +13,6 @@ window.onload = async () => {
         if(el) el.onchange = saveEnvironmentInputs;
     });
     const mName = document.getElementById('envMatchName');
-    if(mName) mName.onchange = () => { saveEnvironmentInputs(); updateTableTitleWithMatchName(); };
+    if(mName) mName.onchange = () => { saveEnvironmentInputs(); updateTableTitleWithMatchName(); updateDashboard(); };
+    updateDashboard();
 };

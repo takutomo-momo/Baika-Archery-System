@@ -96,4 +96,5 @@ function setMode(mode) {
     
     currentArrows = []; updateDisplay(); renderCalendar(); headResetAndRender(); updateAnalytics(); loadEnvironmentInputs();
     updateTableTitleWithMatchName();
+    updateDashboard();
 }

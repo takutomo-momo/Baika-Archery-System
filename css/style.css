@@ -125,3 +125,67 @@
         
         /* 全データ一括削除エリアのスタイル追加 */
         .danger-zone-area { margin-top: 24px; border-top: 1px dashed var(--border-color); padding-top: 16px; }
+
+
+/* Ver3.0 dashboard */
+.dashboard-card {
+    border-left: 5px solid var(--accent-purple);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfbff 100%);
+}
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.dashboard-subtitle {
+    font-size: 12px;
+    color: #8e8e93;
+    font-weight: 600;
+}
+.dashboard-pill {
+    flex-shrink: 0;
+    background: #f2f2f7;
+    color: #48484a;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    padding: 5px 10px;
+    font-size: 12px;
+    font-weight: 800;
+}
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+.dashboard-metric {
+    background: #f8f8fa;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 10px;
+    min-height: 78px;
+}
+.metric-label {
+    font-size: 11px;
+    color: #6c6c70;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+.metric-value {
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text-color);
+    line-height: 1.2;
+}
+.metric-note {
+    font-size: 11px;
+    color: #8e8e93;
+    margin-top: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+@media (min-width: 768px) {
+    .dashboard-grid { grid-template-columns: repeat(4, 1fr); }
+}
