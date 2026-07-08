@@ -3,25 +3,35 @@ function showLoading(show) { document.getElementById("cloudLoadingIndicator").st
 function returnToOpening() { document.getElementById("openingOverlay").classList.remove("dismissed"); }
 
 function applyInterfaceLockout(isEditable) {
+    const editable = typeof canEditCurrentTarget === "function" ? canEditCurrentTarget() : isEditable;
     const banner = document.getElementById("readOnlyAlertBanner");
     const targetSvg = document.getElementById("targetSvg");
     
-    if (isEditable) {
+    if (editable) {
         if(banner) banner.style.display = "none";
         if(targetSvg) targetSvg.classList.remove("readonly-target");
     } else {
-        if(banner) banner.style.display = "block";
+        if(banner) {
+            banner.style.display = "block";
+            if (document.getElementById("currentMemberDropdown")?.value === "全部員") {
+                banner.textContent = "⚠️ 閲覧対象が「全部員」のため、入力・編集はロックされています。個人名を選択してください。";
+            } else {
+                banner.textContent = "⚠️ この閲覧対象は編集権限がないため、入力・編集はロックされています。";
+            }
+        }
         if(targetSvg) targetSvg.classList.add("readonly-target");
     }
 
     document.querySelectorAll(".input-lockable").forEach(el => {
-        el.disabled = !isEditable;
+        el.disabled = !editable;
     });
     
     ['envDistance', 'envTimeSlot', 'envWeather', 'envWind', 'envMemo', 'envMatchName'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.disabled = !isEditable;
+        if(el) el.disabled = !editable;
     });
+
+    updateRoleBadge();
 }
 
 function headResetAndRender() {

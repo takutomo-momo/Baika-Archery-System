@@ -61,6 +61,7 @@
                     <option value="全部員">📊 部員全員分を表示</option>
                 </select>
             </div>
+            <span id="roleBadge" class="role-badge" data-role="member">権限: 未ログイン</span>
             <div class="mode-selector">
                 <button id="btnModePractice" class="mode-btn active-practice" onclick="setMode('practice')">練習モード</button>
                 <button id="btnModeMatch" class="mode-btn" onclick="setMode('match')">大会モード</button>
@@ -254,6 +255,7 @@
 
     <!-- アプリケーション・ロジックスクリプト -->
    <script src="js/config.js"></script>
+<script src="js/permissions.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/cloud.js"></script>
 

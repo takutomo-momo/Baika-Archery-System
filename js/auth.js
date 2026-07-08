@@ -12,6 +12,7 @@ function enterSystem() {
     }
 
     loggedInMember = mem;
+    currentUserRole = getRole(loggedInMember);
 
     const currentMemberDropdown = document.getElementById("currentMemberDropdown");
     if (currentMemberDropdown) {
@@ -20,6 +21,7 @@ function enterSystem() {
 
     document.getElementById("openingOverlay").classList.add("dismissed");
 
+    updateRoleBadge();
     setMode(currentMode);
 
     if (currentMemberDropdown) {
@@ -30,6 +32,5 @@ function enterSystem() {
     renderTable();
     updateDisplay();
     calculateDailyTotalStats();
-
-    applyInterfaceLockout(true);
+    updateDashboard();
 }

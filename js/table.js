@@ -2,20 +2,20 @@ function renderTable() {
     const head = document.getElementById("mainTableHeader"); const body = document.getElementById("mainTableBody");
     head.innerHTML = ""; body.innerHTML = ""; const targetMem = document.getElementById("currentMemberDropdown").value;
     
-    const isEditable = (targetMem === loggedInMember);
+    const isEditable = canEditCurrentTarget();
 
     if(currentMode === 'practice') {
         head.innerHTML = `<tr><th style="width:100px;">部員名</th><th style="width:80px;">距離</th><th style="width:45px;">①</th><th style="width:45px;">②</th><th style="width:45px;">③</th><th style="width:45px;">④</th><th style="width:45px;">⑤</th><th style="width:45px;">⑥</th><th style="width:55px;">計</th><th style="width:70px;">操作</th></tr>`;
         practiceData.filter(p => p.date === selectedDateStr && (targetMem==='全部員' || p.memberName===targetMem)).forEach(p => {
             let tr = document.createElement("tr");
-            const canDelete = (p.memberName === loggedInMember);
+            const canDelete = canEditMember(p.memberName);
             tr.innerHTML = `<td><b>${p.memberName}</b></td><td>${p.distance}</td><td>${p.a1}</td><td>${p.a2}</td><td>${p.a3}</td><td>${p.a4}</td><td>${p.a5}</td><td>${p.a6}</td><td style="color:var(--accent-blue);font-weight:bold;">${p.total}</td><td><button class="btn-delete-row" ${canDelete ? '' : 'disabled'} onclick="deleteRow('practice',${practiceData.indexOf(p)})">削除</button></td>`;
             body.appendChild(tr);
         });
     } else if(currentMode === 'match') {
         matchData.filter(m => m.matchDate === selectedDateStr && (targetMem==='全部員' || m.name===targetMem)).forEach(m => {
             const idx = matchData.indexOf(m); 
-            const dis = (m.name === loggedInMember && isEditable) ? "" : "disabled";
+            const dis = canEditMember(m.name) ? "" : "disabled";
             const maxEnd = m.maxEnd || 12;
             const boundaryEnd = (maxEnd === 10) ? 5 : 6;
 
@@ -73,7 +73,7 @@ function renderTable() {
             h += `<td class="row-grandtotal" style="color:#48484a;">${totalX}</td>`;
             h += `<td class="row-grandtotal" style="color:#48484a;">${total10}</td>`;
             
-            const canDeleteMatch = (m.name === loggedInMember && isEditable);
+            const canDeleteMatch = canEditMember(m.name);
             h += `<td><button class="btn-delete-row" ${canDeleteMatch ? '' : 'disabled'} onclick="deleteRow('match',${idx})">削除</button></td>`;
             tr.innerHTML = h; body.appendChild(tr);
         });

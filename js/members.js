@@ -16,7 +16,9 @@ async function addNewMemberFromOpening() {
     const n = document.getElementById("memberManagementInput").value.trim(); 
     if(!n) { alert("登録する名前を入力してください"); return; }
     if(masterMembers.includes(n)) { alert("その名前は既に登録されています"); return; }
-    masterMembers.push(n); dailyEnvMetadata.memberMaster = masterMembers; 
+    masterMembers.push(n); dailyEnvMetadata.memberMaster = masterMembers;
+    if(!dailyEnvMetadata.memberRoles) dailyEnvMetadata.memberRoles = {};
+    dailyEnvMetadata.memberRoles[n] = "member"; 
     rebuildMemberDropdowns(); document.getElementById("openingMemberDropdown").value = n; syncSelectedToManagementInput();
     await saveToCloud('metadata'); alert(`「${n}」さんを新規名簿に仮登録・同期しました`);
 }
@@ -26,7 +28,8 @@ async function renameSelectedMemberFromOpening() {
     const n = document.getElementById("memberManagementInput").value.trim(); 
     if(!o||!n||o===n) return; 
     const i = masterMembers.indexOf(o); 
-    if(i!==-1) masterMembers[i]=n; dailyEnvMetadata.memberMaster = masterMembers; 
+    if(i!==-1) masterMembers[i]=n; dailyEnvMetadata.memberMaster = masterMembers;
+    if(dailyEnvMetadata.memberRoles && dailyEnvMetadata.memberRoles[o]) { dailyEnvMetadata.memberRoles[n] = dailyEnvMetadata.memberRoles[o]; delete dailyEnvMetadata.memberRoles[o]; } 
     rebuildMemberDropdowns(); document.getElementById("openingMemberDropdown").value = n; syncSelectedToManagementInput();
     await saveToCloud('metadata'); alert("名前を変更しました");
 }

@@ -1,12 +1,12 @@
 function addBlankMatchRow(ends) {
     const targetMem = document.getElementById("currentMemberDropdown").value;
-    if(targetMem !== loggedInMember) { alert("他人の画面、または全部員画面では新しくスコア行を追加できません。"); return; }
+    if(!canEditCurrentTarget()) { alert("この閲覧対象では新しくスコア行を追加できません。"); return; }
     
     let currentMatchName = document.getElementById("envMatchName").value.trim() || "無名の大会";
     let categoryName = ends === 10 ? "インドア18m" : "RC女子";
     
     let o = { 
-        matchName: currentMatchName, matchDate: selectedDateStr, name: loggedInMember, category: categoryName, maxEnd: ends, 
+        matchName: currentMatchName, matchDate: selectedDateStr, name: getActiveInputMember(), category: categoryName, maxEnd: ends, 
         x1: 0, ten1: 0, x2: 0, ten2: 0, total: 0 
     };
     for(let e=1;e<=12;e++) o[`e${e}`] = 0;
@@ -15,7 +15,7 @@ function addBlankMatchRow(ends) {
 
 function updateMatch(idx, f, v) {
     if(!matchData[idx]) return; 
-    if(matchData[idx].name !== loggedInMember) return; 
+    if(!canEditMember(matchData[idx].name)) return; 
     
     if(['name','category','matchName'].includes(f)) {
         matchData[idx][f] = v;

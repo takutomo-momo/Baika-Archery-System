@@ -7,3 +7,4 @@ let currentMode = 'practice'; let loggedInMember = ""; let selectedDateStr = "";
 let currentCalYear = 0; let currentCalMonth = 0;
 let isZoomed = false; let zoomCenter = { x: 150, y: 150 }; let trendChart;
 let dailyEnvMetadata = {}; const DEFAULT_PASSWORD = "baika";
+let currentUserRole = "member";

@@ -189,3 +189,29 @@
 @media (min-width: 768px) {
     .dashboard-grid { grid-template-columns: repeat(4, 1fr); }
 }
+
+
+.role-badge {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #e5e5ea;
+    color: #3a3a3c;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.role-badge[data-role="admin"] {
+    background: #ff3b30;
+    color: #fff;
+}
+
+.role-badge[data-role="leader"] {
+    background: #5856d6;
+    color: #fff;
+}
+
+.role-badge[data-role="member"] {
+    background: #e5e5ea;
+    color: #3a3a3c;
+}

@@ -1,5 +1,5 @@
 function handleKeypadInput(val, score) { 
-    if(document.getElementById("currentMemberDropdown").value !== loggedInMember) return;
+    if(!canEditCurrentTarget()) return;
     if(currentArrows.length >= 6) return; 
     currentArrows.push({val:val, score:score, x:150, y:150}); 
     updateDisplay(); 
@@ -25,11 +25,11 @@ function updateDisplay() {
 
 function savePracticeEnd() {
     const targetMem = document.getElementById("currentMemberDropdown").value;
-    if(targetMem !== loggedInMember) { alert("他人の画面、または全部員画面ではデータを登録できません。"); return; }
+    if(!canEditCurrentTarget()) { alert("この閲覧対象ではデータを登録できません。"); return; }
     if(currentArrows.length < 6) { alert("6本入力してください"); return; }
     const sorted = [...currentArrows].sort((a,b)=>b.score - a.score);
     practiceData.push({
-        date: selectedDateStr, memberName: loggedInMember, distance: document.getElementById("envDistance").value,
+        date: selectedDateStr, memberName: getActiveInputMember(), distance: document.getElementById("envDistance").value,
         a1:sorted[0].val, a2:sorted[1].val, a3:sorted[2].val, a4:sorted[3].val, a5:sorted[4].val, a6:sorted[5].val,
         total: sorted.reduce((a,b)=>a+b.score,0), pins: JSON.parse(JSON.stringify(currentArrows))
     });
@@ -80,8 +80,8 @@ function calculateDailyTotalStats() {
 }
 
 function deleteRow(type, idx) { 
-    if(type==='practice' && practiceData[idx].memberName !== loggedInMember) return;
-    if(type==='match' && matchData[idx].name !== loggedInMember) return;
+    if(type==='practice' && !canEditMember(practiceData[idx].memberName)) return;
+    if(type==='match' && !canEditMember(matchData[idx].name)) return;
     if(!confirm("削除しますか？")) return; 
     if(type==='practice') practiceData.splice(idx,1); else matchData.splice(idx,1); 
     saveToCloud(type); headResetAndRender(); renderCalendar(); updateAnalytics(); updateDashboard(); 

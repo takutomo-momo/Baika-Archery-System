@@ -16,7 +16,7 @@ function drawTargetSvg() {
 }
 
 function handleTargetClick(event) {
-    if(document.getElementById("currentMemberDropdown").value !== loggedInMember) return;
+    if(!canEditCurrentTarget()) return;
 
     const svg = document.getElementById("targetSvg"); const rect = svg.getBoundingClientRect();
     let cx = ((event.clientX - rect.left)/rect.width)*300; let cy = ((event.clientY - rect.top)/rect.height)*300;
