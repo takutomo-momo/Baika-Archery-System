@@ -56,15 +56,21 @@ function renderTable() {
             h += `<td class="section-total" style="background:#fffdec;"><input type="number" class="cell-input" value="${x1}" ${dis} onchange="updateMatch(${idx},'x1',this.value)"></td>`;
             h += `<td class="section-total" style="background:#fffdec;"><input type="number" class="cell-input" value="${ten1}" ${dis} onchange="updateMatch(${idx},'ten1',this.value)"></td>`;
 
-            for(let e=(boundaryEnd+1); e<=12; e++) {
-                if(e <= maxEnd) {
-                    h += `<td><input type="number" class="cell-input" value="${m[`e${e}`]||0}" ${dis} onchange="updateMatch(${idx},'e${e}',this.value)"></td>`;
-                } else if(maxEnd === 12) {
-                    h += `<td><input type="number" class="cell-input" value="${m[`e${e}`]||0}" ${dis} onchange="updateMatch(${idx},'e${e}',this.value)"></td>`;
-                } else {
-                    h += `<td style="background:#f2f2f7; color:#ccc;">-</td>`;
-                }
-            }
+        for(let e=(boundaryEnd+1); e<=12; e++) {
+
+    // インドア10エンドの場合は11・12エンドを表示しない
+    if(maxEnd === 10 && e > 10){
+        continue;
+    }
+
+    if(e <= maxEnd) {
+        h += `<td><input type="number" class="cell-input" value="${m[`e${e}`]||0}" ${dis} onchange="updateMatch(${idx},'e${e}',this.value)"></td>`;
+    } else if(maxEnd === 12) {
+        h += `<td><input type="number" class="cell-input" value="${m[`e${e}`]||0}" ${dis} onchange="updateMatch(${idx},'e${e}',this.value)"></td>`;
+    } else {
+        h += `<td style="background:#f2f2f7; color:#ccc;">-</td>`;
+    }
+}
             h += `<td class="section-total" style="background:#eef7ff;"><input type="number" class="cell-input" value="${subTotal2}" disabled></td>`;
             h += `<td class="section-total" style="background:#fffdec;"><input type="number" class="cell-input" value="${x2}" ${dis} onchange="updateMatch(${idx},'x2',this.value)"></td>`;
             h += `<td class="section-total" style="background:#fffdec;"><input type="number" class="cell-input" value="${ten2}" ${dis} onchange="updateMatch(${idx},'ten2',this.value)"></td>`;
