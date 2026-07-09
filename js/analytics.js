@@ -117,3 +117,38 @@ function filterPracticeByAnalysisPeriod(records) {
 
     return records;
 }
+function getAverageScoreTrend(period = analysisPeriod) {
+
+    const targetMem = document.getElementById("currentMemberDropdown").value;
+
+    let records = practiceData.filter(p =>
+        targetMem === "全部員" || p.memberName === targetMem
+    );
+
+    records = filterPracticeByAnalysisPeriod(records);
+
+    const grouped = {};
+
+    records.forEach(r => {
+        const key = r.date;
+
+        if (!grouped[key]) {
+            grouped[key] = {
+                total: 0,
+                ends: 0
+            };
+        }
+
+        grouped[key].total += Number(r.total || 0);
+        grouped[key].ends += 1;
+    });
+
+    return Object.keys(grouped)
+        .sort()
+        .map(date => ({
+            date,
+            average: Number(
+                (grouped[date].total / grouped[date].ends).toFixed(1)
+            )
+        }));
+}
