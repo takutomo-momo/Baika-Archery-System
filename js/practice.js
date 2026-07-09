@@ -33,7 +33,9 @@ function savePracticeEnd() {
         a1:sorted[0].val, a2:sorted[1].val, a3:sorted[2].val, a4:sorted[3].val, a5:sorted[4].val, a6:sorted[5].val,
         total: sorted.reduce((a,b)=>a+b.score,0), pins: JSON.parse(JSON.stringify(currentArrows))
     });
-    saveToCloud('practice'); currentArrows = []; updateDisplay(); renderTable(); renderCalendar(); updateAnalytics(); updateDashboard();
+    saveToCloud('practice'); currentArrows = []; updateDisplay(); renderTable(); renderCalendar(); updateAnalytics(); updateDashboard();if (typeof updateRankingPanel === "function") {
+    updateRankingPanel();
+}
 }
 
 function calculateDailyTotalStats() {

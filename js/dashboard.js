@@ -58,3 +58,6 @@ function setDashboardText(id, text) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
 }
+if (typeof updateRankingPanel === "function") {
+    updateRankingPanel();
+}

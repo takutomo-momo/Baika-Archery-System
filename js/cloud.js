@@ -51,7 +51,11 @@ async function loadDataFromCloud() {
         updateAnalytics();
         calculateDailyTotalStats();
 
-        showLoading(false);
+        if (typeof updateRankingPanel === "function") {
+    updateRankingPanel();
+}
+
+showLoading(false);
     }
 }
 

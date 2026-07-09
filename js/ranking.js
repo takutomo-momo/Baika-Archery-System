@@ -59,3 +59,51 @@ function get70mAverageRanking() {
         }))
         .sort((a, b) => Number(b.average) - Number(a.average));
 }
+function formatRankingTop3(ranking, valueKey, suffix) {
+    if (!ranking || ranking.length === 0) {
+        return "記録なし";
+    }
+
+    const medals = ["🥇", "🥈", "🥉"];
+
+    return ranking.slice(0, 3).map((item, index) => {
+        return `<div style="font-size:13px; line-height:1.6;">
+            ${medals[index]} ${item.memberName}　${item[valueKey]}${suffix}
+        </div>`;
+    }).join("");
+}
+
+function updateRankingPanel() {
+    const today = getTodayPracticeRanking();
+    const month = getMonthlyTotalRanking();
+    const avg70 = get70mAverageRanking();
+
+    const todayLabel = document.getElementById("rankTodayTop");
+    const monthLabel = document.getElementById("rankMonthTop");
+    const avg70Label = document.getElementById("rank70mTop");
+
+    if (todayLabel) {
+        todayLabel.innerHTML = formatRankingTop3(today, "total", "点");
+    }
+
+    if (monthLabel) {
+        monthLabel.innerHTML = formatRankingTop3(month, "total", "点");
+    }
+
+    if (avg70Label) {
+        avg70Label.innerHTML = formatRankingTop3(avg70, "average", "点");
+    }
+}function formatRankingTop3(ranking, valueKey, suffix) {
+    if (!ranking || ranking.length === 0) {
+        return "記録なし";
+    }
+
+    const medals = ["🥇", "🥈", "🥉"];
+
+    return ranking.slice(0, 3).map((item, index) => {
+        return `<div style="font-size:13px; line-height:1.6;">
+            ${medals[index]} ${item.memberName}　${item[valueKey]}${suffix}
+        </div>`;
+    }).join("");
+}
+
