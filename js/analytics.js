@@ -44,3 +44,35 @@ function updateAnalytics() {
         }
     }
 }
+function getArrowRateStats() {
+    const targetMem = document.getElementById("currentMemberDropdown").value;
+
+    const records = practiceData.filter(p => {
+        return targetMem === "全部員" || p.memberName === targetMem;
+    });
+
+    let totalArrows = 0;
+    let xCount = 0;
+    let tenCount = 0;
+    let missCount = 0;
+
+    records.forEach(record => {
+        ["a1", "a2", "a3", "a4", "a5", "a6"].forEach(key => {
+            const val = record[key];
+            if (!val) return;
+
+            totalArrows++;
+
+            if (val === "X") xCount++;
+            if (val === "10") tenCount++;
+            if (val === "M") missCount++;
+        });
+    });
+
+    return {
+        totalArrows,
+        xRate: totalArrows ? ((xCount / totalArrows) * 100).toFixed(1) : "0.0",
+        tenRate: totalArrows ? (((xCount + tenCount) / totalArrows) * 100).toFixed(1) : "0.0",
+        missRate: totalArrows ? ((missCount / totalArrows) * 100).toFixed(1) : "0.0"
+    };
+}

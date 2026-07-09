@@ -52,12 +52,38 @@ function updateDashboard() {
     setDashboardText("dashMonthEnds", `${monthEnds} E`);
     setDashboardText("dashLatestMatchScore", latestMatch ? `${latestMatch.total || 0} 点` : "--");
     setDashboardText("dashLatestMatchName", latestMatch ? `${latestMatch.matchName || "大会記録"} / ${latestMatch.matchDate || "日付未設定"}` : "記録なし");
+
+if (typeof updateRankingPanel === "function") {
+        updateRankingPanel();
+    }
+
+if (typeof updateAnalysisSummary === "function") {
+        updateAnalysisSummary();
+    }
 }
 
 function setDashboardText(id, text) {
     const el = document.getElementById(id);
     if (el) el.textContent = text;
 }
-if (typeof updateRankingPanel === "function") {
-    updateRankingPanel();
+
+function updateAnalysisSummary() {
+
+    const stats = getArrowRateStats();
+
+    const xRate = document.getElementById("dashXRate");
+    const tenRate = document.getElementById("dashTenRate");
+    const missRate = document.getElementById("dashMissRate");
+
+    if (xRate) {
+        xRate.textContent = `${stats.xRate}%`;
+    }
+
+    if (tenRate) {
+        tenRate.textContent = `${stats.tenRate}%`;
+    }
+
+    if (missRate) {
+        missRate.textContent = `${stats.missRate}%`;
+    }
 }
