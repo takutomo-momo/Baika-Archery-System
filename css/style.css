@@ -215,3 +215,13 @@
     background: #e5e5ea;
     color: #3a3a3c;
 }
+.analysis-period-btn{
+    width:auto;
+    padding:6px 12px;
+    font-size:12px;
+}
+
+.analysis-period-btn.active-analysis-period{
+    background:var(--accent-blue);
+    color:#fff;
+}

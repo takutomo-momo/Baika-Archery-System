@@ -44,12 +44,15 @@ function updateAnalytics() {
         }
     }
 }
+let analysisPeriod = "all";
 function getArrowRateStats() {
     const targetMem = document.getElementById("currentMemberDropdown").value;
 
-    const records = practiceData.filter(p => {
-        return targetMem === "全部員" || p.memberName === targetMem;
-    });
+    let records = practiceData.filter(p => {
+    return targetMem === "全部員" || p.memberName === targetMem;
+});
+
+records = filterPracticeByAnalysisPeriod(records);
 
     let totalArrows = 0;
     let xCount = 0;
@@ -75,4 +78,42 @@ function getArrowRateStats() {
         tenRate: totalArrows ? (((xCount + tenCount) / totalArrows) * 100).toFixed(1) : "0.0",
         missRate: totalArrows ? ((missCount / totalArrows) * 100).toFixed(1) : "0.0"
     };
+}
+function setAnalysisPeriod(period) {
+    analysisPeriod = period;
+
+    document.querySelectorAll(".analysis-period-btn").forEach(btn => {
+        btn.classList.remove("active-analysis-period");
+    });
+
+    const activeBtn = document.querySelector(`[data-analysis-period="${period}"]`);
+    if (activeBtn) {
+        activeBtn.classList.add("active-analysis-period");
+    }
+
+    if (typeof updateAnalysisSummary === "function") {
+        updateAnalysisSummary();
+    }
+}
+
+function filterPracticeByAnalysisPeriod(records) {
+    if (!selectedDateStr) return records;
+
+    const today = selectedDateStr;
+    const month = selectedDateStr.slice(0, 7);
+    const year = selectedDateStr.slice(0, 4);
+
+    if (analysisPeriod === "today") {
+        return records.filter(r => r.date === today);
+    }
+
+    if (analysisPeriod === "month") {
+        return records.filter(r => r.date && r.date.startsWith(month));
+    }
+
+    if (analysisPeriod === "year") {
+        return records.filter(r => r.date && r.date.startsWith(year));
+    }
+
+    return records;
 }
