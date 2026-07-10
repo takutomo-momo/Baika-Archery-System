@@ -225,3 +225,42 @@
     background:var(--accent-blue);
     color:#fff;
 }
+.v4-header{
+    max-width:960px;
+    margin:20px auto 0;
+    padding:14px 18px;
+    border-radius:18px;
+    background:#fff;
+    box-shadow:0 8px 24px rgba(0,0,0,0.08);
+    display:flex;
+    justify-content:space-between;
+    gap:12px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+.v4-brand{
+    font-weight:800;
+    color:var(--accent-purple);
+}
+
+.v4-nav{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+}
+
+.v4-nav a{
+    text-decoration:none;
+    padding:8px 12px;
+    border-radius:999px;
+    background:#f2f2f7;
+    color:var(--text-color);
+    font-size:13px;
+    font-weight:700;
+}
+
+.v4-nav a:hover{
+    background:var(--accent-purple);
+    color:#fff;
+}
