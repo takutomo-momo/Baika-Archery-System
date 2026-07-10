@@ -60,6 +60,9 @@ if (typeof updateRankingPanel === "function") {
 if (typeof updateAnalysisSummary === "function") {
         updateAnalysisSummary();
     }
+if (typeof updateAverageTrendChart === "function") {
+    updateAverageTrendChart();
+}
 }
 
 function setDashboardText(id, text) {
@@ -68,22 +71,58 @@ function setDashboardText(id, text) {
 }
 
 function updateAnalysisSummary() {
-
     const stats = getArrowRateStats();
 
     const xRate = document.getElementById("dashXRate");
     const tenRate = document.getElementById("dashTenRate");
     const missRate = document.getElementById("dashMissRate");
 
-    if (xRate) {
-        xRate.textContent = `${stats.xRate}%`;
+    if (xRate) xRate.textContent = `${stats.xRate}%`;
+    if (tenRate) tenRate.textContent = `${stats.tenRate}%`;
+    if (missRate) missRate.textContent = `${stats.missRate}%`;
+}
+
+let averageTrendChart = null;
+
+function updateAverageTrendChart() {
+    const canvas = document.getElementById("averageTrendChart");
+    if (!canvas) return;
+
+    if (typeof Chart === "undefined") {
+        console.warn("Chart.js が読み込まれていません");
+        return;
     }
 
-    if (tenRate) {
-        tenRate.textContent = `${stats.tenRate}%`;
+    const trend = getAverageScoreTrend();
+
+    const labels = trend.map(t => String(t.date).substring(5));
+    const values = trend.map(t => Number(t.average || 0));
+
+    if (averageTrendChart) {
+        averageTrendChart.destroy();
     }
 
-    if (missRate) {
-        missRate.textContent = `${stats.missRate}%`;
-    }
+    averageTrendChart = new Chart(canvas, {
+        type: "line",
+        data: {
+            labels,
+            datasets: [{
+                label: "平均点",
+                data: values,
+                borderWidth: 3,
+                tension: 0.3,
+                fill: false
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: false }
+            }
+        }
+    });
 }

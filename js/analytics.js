@@ -94,6 +94,9 @@ function setAnalysisPeriod(period) {
     if (typeof updateAnalysisSummary === "function") {
         updateAnalysisSummary();
     }
+    if (typeof updateAverageTrendChart === "function") {
+    updateAverageTrendChart();
+}
 }
 
 function filterPracticeByAnalysisPeriod(records) {
@@ -118,11 +121,12 @@ function filterPracticeByAnalysisPeriod(records) {
     return records;
 }
 function getAverageScoreTrend(period = analysisPeriod) {
-
     const targetMem = document.getElementById("currentMemberDropdown").value;
 
     let records = practiceData.filter(p =>
-        targetMem === "全部員" || p.memberName === targetMem
+        p &&
+        p.date &&
+        (targetMem === "全部員" || p.memberName === targetMem)
     );
 
     records = filterPracticeByAnalysisPeriod(records);
@@ -130,25 +134,24 @@ function getAverageScoreTrend(period = analysisPeriod) {
     const grouped = {};
 
     records.forEach(r => {
-        const key = r.date;
+        const key = String(r.date).split("T")[0];
 
         if (!grouped[key]) {
             grouped[key] = {
                 total: 0,
-                ends: 0
+                arrows: 0
             };
         }
 
         grouped[key].total += Number(r.total || 0);
-        grouped[key].ends += 1;
+        grouped[key].arrows += 6;
     });
 
     return Object.keys(grouped)
         .sort()
+        .filter(date => grouped[date].arrows > 0)
         .map(date => ({
             date,
-            average: Number(
-                (grouped[date].total / grouped[date].ends).toFixed(1)
-            )
+            average: Number((grouped[date].total / grouped[date].arrows).toFixed(1))
         }));
 }
