@@ -1,34 +1,36 @@
-# Baika Archery System
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Baika Archery System Ver4</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="opening-content" style="max-width:720px; margin:60px auto;">
+        <h1>🏹 Baika Archery System Ver4</h1>
+        <p style="color:#666;">梅花女子大学洋弓部 スコア管理システム</p>
 
-梅花女子大学洋弓部 スコア管理システム。
+        <div class="stats-summary-grid" style="margin-top:24px;">
+            <a class="stat-box" href="pages/input.html" style="text-decoration:none;">
+                <div class="stat-val">📝</div>
+                <div>記録入力</div>
+            </a>
 
-## 構成
+            <a class="stat-box" href="pages/analysis.html" style="text-decoration:none;">
+                <div class="stat-val">📊</div>
+                <div>分析</div>
+            </a>
 
-- `index.html`：画面構造
-- `css/style.css`：元システムのデザインを分離
-- `js/app.js`：元システムのJavaScriptを分離
-- `gas/`：今後Google Apps Scriptを整理して配置
-- `docs/`：設定手順・運用マニュアル
+            <a class="stat-box" href="pages/ranking.html" style="text-decoration:none;">
+                <div class="stat-val">🏆</div>
+                <div>ランキング</div>
+            </a>
 
-## 現在の状態
-
-元の `baika_archery2.txt` から、見た目と機能を変えずにHTML/CSS/JavaScriptを分離した第1版です。
-
-## 使い方
-
-1. GitHubリポジトリにこの中身を配置
-2. `index.html` をブラウザで開いて動作確認
-3. GitHub Pagesを有効化
-
-## 注意
-
-Google Apps ScriptのURLは `js/app.js` 内の `GAS_API_URL` に入っています。必要に応じて差し替えてください。
-
-
-## Phase 3
-
-JavaScriptを機能別ファイルへ分割しました。
-
-
-## Phase5-1 ダッシュボード
-ログイン後のメイン画面に、今日の練習、平均点、今月射数、最新大会を表示するダッシュボードを追加しました。
+            <a class="stat-box" href="pages/match.html" style="text-decoration:none;">
+                <div class="stat-val">🏹</div>
+                <div>大会</div>
+            </a>
+        </div>
+    </div>
+</body>
+</html>
