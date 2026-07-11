@@ -43,20 +43,74 @@
 
         <div class="v4-grid">
 
-            <section class="v4-card v4-card-small">
-                <div class="v4-card-title">
-                    👤 選手・練習設定
-                </div>
+<section class="v4-card v4-card-full">
+    <div class="v4-card-title">
+        👤 選手・練習設定
+    </div>
 
-                <p class="v4-card-subtitle">
-                    部員・練習日・距離を選択するエリアを配置します。
-                </p>
+    <p class="v4-card-subtitle">
+        ログイン中の部員・練習日・距離を確認してください。
+    </p>
 
-                <div class="v4-placeholder">
-                    <span class="v4-placeholder-icon">⚙️</span>
-                    練習設定を移植予定
-                </div>
-            </section>
+    <div id="v4PracticeSettings" class="v4-setting-form">
+
+        <div class="v4-form-group v4-member-group">
+            <label for="v4LoggedInMember">
+                ログイン中の部員
+            </label>
+
+            <div
+                id="v4LoggedInMember"
+                class="v4-member-display"
+                role="status"
+                aria-live="polite"
+            >
+                <span class="v4-member-status-icon">👤</span>
+
+                <span id="v4LoggedInMemberName">
+                    ログイン情報を確認中
+                </span>
+            </div>
+
+            <p class="v4-form-note">
+                記録はログイン中の本人名で登録されます。
+            </p>
+        </div>
+
+        <div class="v4-form-group">
+            <label for="v4PracticeDate">
+                練習日
+            </label>
+
+            <input
+                type="date"
+                id="v4PracticeDate"
+                name="practiceDate"
+            >
+        </div>
+
+        <div class="v4-form-group">
+            <label for="v4DistanceSelect">
+                距離
+            </label>
+
+            <select
+                id="v4DistanceSelect"
+                name="distance"
+            >
+                <option value="">
+                    距離を選択してください
+                </option>
+                <option value="18m">18m</option>
+                <option value="30m">30m</option>
+                <option value="50m">50m</option>
+                <option value="60m">60m</option>
+                <option value="70m">70m</option>
+            </select>
+        </div>
+
+    </div>
+</section>
 
             <section class="v4-card v4-card-wide">
                 <div class="v4-card-title">
@@ -111,6 +165,132 @@
 
         </div>
     </main>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        setDefaultPracticeDate();
+        displayLoggedInMember();
+    });
+
+    function setDefaultPracticeDate() {
+        const practiceDateInput =
+            document.getElementById("v4PracticeDate");
+
+        if (!practiceDateInput || practiceDateInput.value) {
+            return;
+        }
+
+        const today = new Date();
+
+        const localDate = new Date(
+            today.getTime() -
+            today.getTimezoneOffset() * 60000
+        );
+
+        practiceDateInput.value =
+            localDate.toISOString().split("T")[0];
+    }
+
+    function displayLoggedInMember() {
+        const memberDisplay =
+            document.getElementById("v4LoggedInMember");
+
+        const memberNameElement =
+            document.getElementById("v4LoggedInMemberName");
+
+        if (!memberDisplay || !memberNameElement) {
+            return;
+        }
+
+        const memberName =
+            getStoredLoggedInMember();
+
+        if (memberName) {
+            memberNameElement.textContent = memberName;
+            memberDisplay.classList.remove(
+                "is-not-logged-in"
+            );
+
+            return;
+        }
+
+        memberNameElement.textContent =
+            "未ログイン";
+
+        memberDisplay.classList.add(
+            "is-not-logged-in"
+        );
+    }
+
+    function getStoredLoggedInMember() {
+        if (
+            typeof window.loggedInMember === "string" &&
+            window.loggedInMember.trim()
+        ) {
+            return window.loggedInMember.trim();
+        }
+
+        const storageKeys = [
+            "loggedInMember",
+            "currentMember",
+            "loginMember"
+        ];
+
+        for (const key of storageKeys) {
+            const sessionValue =
+                sessionStorage.getItem(key);
+
+            const parsedSessionValue =
+                parseMemberValue(sessionValue);
+
+            if (parsedSessionValue) {
+                return parsedSessionValue;
+            }
+
+            const localValue =
+                localStorage.getItem(key);
+
+            const parsedLocalValue =
+                parseMemberValue(localValue);
+
+            if (parsedLocalValue) {
+                return parsedLocalValue;
+            }
+        }
+
+        return "";
+    }
+
+    function parseMemberValue(value) {
+        if (!value) {
+            return "";
+        }
+
+        try {
+            const parsedValue = JSON.parse(value);
+
+            if (typeof parsedValue === "string") {
+                return parsedValue.trim();
+            }
+
+            if (
+                parsedValue &&
+                typeof parsedValue === "object"
+            ) {
+                return (
+                    parsedValue.memberName ||
+                    parsedValue.name ||
+                    parsedValue.member ||
+                    ""
+                ).trim();
+            }
+        } catch (error) {
+            return value.trim();
+        }
+
+        return "";
+    }
+</script>
 
 </body>
 </html>

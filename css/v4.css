@@ -321,6 +321,10 @@ body.v4-body {
     .v4-card-small {
         grid-column: span 4;
     }
+
+    .v4-card-full {
+    grid-column: span 12;
+}
 }
 
 /* スマホ */
@@ -380,7 +384,8 @@ body.v4-body {
 
     .v4-nav {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        width: 100%;
         gap: 6px;
     }
 
@@ -389,6 +394,7 @@ body.v4-body {
         padding: 9px 5px;
         font-size: 11px;
         white-space: nowrap;
+        text-align: center;
     }
 
     .v4-hero {
@@ -418,5 +424,168 @@ body.v4-body {
 
     .v4-placeholder {
         padding: 22px 12px;
+    }
+}
+/* ========================================
+   Ver4 記録入力：選手・練習設定
+======================================== */
+
+.v4-setting-form {
+    display: grid;
+    grid-template-columns:
+        minmax(240px, 1.4fr)
+        minmax(210px, 1.15fr)
+        minmax(140px, 0.75fr);
+    gap: 16px;
+    margin-top: 20px;
+    align-items: start;
+}
+
+@media (max-width: 700px) {
+    .v4-setting-form {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+}
+    .v4-member-display {
+        min-height: 52px;
+    }
+
+.v4-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+.v4-form-group label {
+    color: #38275c;
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.v4-form-group select,
+.v4-form-group input {
+    width: 100%;
+    min-height: 48px;
+    box-sizing: border-box;
+    padding: 11px 12px;
+    border: 1px solid rgba(110, 72, 170, 0.25);
+    border-radius: 12px;
+    background-color: #ffffff;
+    color: #2f2340;
+    font: inherit;
+    font-size: 16px;
+    outline: none;
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.v4-form-group select:hover,
+.v4-form-group input:hover {
+    border-color: rgba(110, 72, 170, 0.55);
+}
+
+.v4-form-group select:focus,
+.v4-form-group input:focus {
+    border-color: #7c4dbe;
+    background-color: #ffffff;
+    box-shadow: 0 0 0 4px rgba(124, 77, 190, 0.13);
+}
+
+@media (max-width: 700px) {
+    .v4-setting-form {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .v4-form-group select,
+    .v4-form-group input {
+        min-height: 52px;
+    }
+}
+/* ========================================
+   Ver4 ログイン部員表示
+======================================== */
+
+.v4-member-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 48px;
+    box-sizing: border-box;
+    padding: 11px 14px;
+    border: 1px solid rgba(110, 72, 170, 0.25);
+    border-radius: 12px;
+    background:
+        linear-gradient(
+            135deg,
+            rgba(124, 77, 190, 0.09),
+            rgba(255, 255, 255, 0.96)
+        );
+    color: #38275c;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.v4-member-status-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: rgba(124, 77, 190, 0.13);
+}
+
+.v4-form-note {
+    margin: 0;
+    color: #736684;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.v4-member-display.is-not-logged-in {
+    border-color: rgba(190, 65, 65, 0.35);
+    background-color: rgba(190, 65, 65, 0.07);
+    color: #a13737;
+}
+
+
+/* ========================================
+   記録入力設定のレスポンシブ配置
+======================================== */
+
+@media (min-width: 701px) {
+    #v4PracticeSettings {
+        display: grid;
+        grid-template-columns:
+            minmax(260px, 1.4fr)
+            minmax(230px, 1.1fr)
+            minmax(160px, 0.7fr);
+        gap: 16px;
+        width: 100%;
+        align-items: start;
+    }
+
+    #v4PracticeSettings > .v4-form-group {
+        width: auto;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 700px) {
+    #v4PracticeSettings {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    #v4PracticeSettings > .v4-form-group {
+        width: 100%;
     }
 }
