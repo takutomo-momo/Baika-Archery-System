@@ -2,33 +2,115 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>記録入力 - Baika Archery System Ver4</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>記録入力 | Baika Archery System Ver4</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/v4.css">
 </head>
-<body>
-    <div class="app-shell">
-        <div class="card">
+
+<body class="v4-body">
+
+    <header class="v4-header">
+        <div class="v4-brand">
+            <div class="v4-brand-icon">🏹</div>
+            <span>Baika Archery System</span>
+        </div>
+
+        <nav class="v4-nav">
+            <a href="index.html">🏠 ホーム</a>
+            <a href="input.html" class="active">📝 記録入力</a>
+            <a href="analysis.html">📊 分析</a>
+        </nav>
+    </header>
+
+    <main class="v4-main">
+
+        <section class="v4-hero">
+            <div class="v4-eyebrow">RECORDING WORKSPACE</div>
+
             <h1>📝 記録入力</h1>
-            <p>練習記録の入力専用画面です。</p>
 
-            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;">
-                <a class="btn" href="../index.html">🏠 ホーム</a>
-                <a class="btn" href="analysis.html">📊 分析</a>
-            </div>
-        </div>
+            <p>
+                練習中の操作に集中できる入力専用画面です。
+                日付・距離・スコア・着弾位置を、分かりやすく記録できます。
+            </p>
+        </section>
 
-        <div class="card">
-            <div class="card-title">🎯 練習入力エリア</div>
-            <p>ここに Ver3.2 の的入力・スコア入力機能を移植します。</p>
+        <div class="v4-grid">
+
+            <section class="v4-card v4-card-small">
+                <div class="v4-card-title">
+                    👤 選手・練習設定
+                </div>
+
+                <p class="v4-card-subtitle">
+                    部員・練習日・距離を選択するエリアを配置します。
+                </p>
+
+                <div class="v4-placeholder">
+                    <span class="v4-placeholder-icon">⚙️</span>
+                    練習設定を移植予定
+                </div>
+            </section>
+
+            <section class="v4-card v4-card-wide">
+                <div class="v4-card-title">
+                    🎯 的タップ入力
+                </div>
+
+                <p class="v4-card-subtitle">
+                    Ver3.2で使用している的入力機能を、ここへ移植します。
+                </p>
+
+                <div class="v4-placeholder">
+                    <span class="v4-placeholder-icon">🎯</span>
+                    的表示・着弾入力エリア
+                </div>
+            </section>
+
+            <section class="v4-card v4-card-half">
+                <div class="v4-card-title">
+                    🔢 スコア入力
+                </div>
+
+                <p class="v4-card-subtitle">
+                    6射分のスコアと合計点を入力・確認します。
+                </p>
+
+                <div class="v4-placeholder">
+                    <span class="v4-placeholder-icon">🔢</span>
+                    スコアボタンを移植予定
+                </div>
+            </section>
+
+            <section class="v4-card v4-card-half">
+                <div class="v4-card-title">
+                    📊 本日のリアルタイム統計
+                </div>
+
+                <p class="v4-card-subtitle">
+                    総射数・6E合計・1射平均を表示します。
+                </p>
+
+                <div class="v4-placeholder">
+                    <span class="v4-placeholder-icon">📈</span>
+                    統計表示を移植予定
+                </div>
+            </section>
+
+            <section class="v4-card">
+                <a href="index.html" class="v4-action">
+                    ← ホームへ戻る
+                </a>
+            </section>
+
         </div>
-    </div>
+    </main>
+
 </body>
-<header class="v4-header">
-    <div class="v4-brand">🏹 Baika Archery System Ver4</div>
-    <nav class="v4-nav">
-        <a href="../index.html">🏠 ホーム</a>
-        <a href="input.html">📝 記録入力</a>
-        <a href="analysis.html">📊 分析</a>
-    </nav>
-</header>
 </html>
