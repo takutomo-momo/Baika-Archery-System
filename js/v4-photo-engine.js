@@ -66,7 +66,6 @@
             };
 
             this.lastTapTime = 0;
-            this.tapTimer = null;
             this.resizeObserver = null;
 
             this.handlePointerDown =
@@ -190,10 +189,6 @@
             }
 
             this.pointers.clear();
-            if (this.tapTimer) {
-                clearTimeout(this.tapTimer);
-                this.tapTimer = null;
-            }
         }
 
         setLoaded(loaded) {
@@ -460,7 +455,6 @@
                 this.gesture.moved ||
                 this.gesture.wasMultiTouch
             ) {
-                this.cancelPendingTap();
                 this.lastTapTime = 0;
                 return;
             }
@@ -471,72 +465,11 @@
                 now - this.lastTapTime <=
                 this.options.doubleTapDelay
             ) {
-                this.cancelPendingTap();
                 this.reset();
                 this.lastTapTime = 0;
-                return;
+            } else {
+                this.lastTapTime = now;
             }
-
-            this.lastTapTime = now;
-
-            const clientPoint = {
-                x: endedPointer.clientX,
-                y: endedPointer.clientY
-            };
-            const imagePoint = this.screenToImagePoint(
-                clientPoint.x,
-                clientPoint.y
-            );
-
-            this.cancelPendingTap();
-
-            this.tapTimer = setTimeout(() => {
-                this.tapTimer = null;
-                this.lastTapTime = 0;
-
-                if (!this.isImagePointInside(imagePoint)) {
-                    return;
-                }
-
-                this.viewer.dispatchEvent(
-                    new CustomEvent(
-                        "baika-photo-tap",
-                        {
-                            detail: {
-                                clientX: clientPoint.x,
-                                clientY: clientPoint.y,
-                                imageX: imagePoint.x,
-                                imageY: imagePoint.y,
-                                normalizedX:
-                                    imagePoint.x /
-                                    this.image.naturalWidth,
-                                normalizedY:
-                                    imagePoint.y /
-                                    this.image.naturalHeight
-                            }
-                        }
-                    )
-                );
-            }, this.options.doubleTapDelay);
-        }
-
-        cancelPendingTap() {
-            if (!this.tapTimer) {
-                return;
-            }
-
-            clearTimeout(this.tapTimer);
-            this.tapTimer = null;
-        }
-
-        isImagePointInside(point) {
-            return (
-                point &&
-                point.x >= 0 &&
-                point.y >= 0 &&
-                point.x <= this.image.naturalWidth &&
-                point.y <= this.image.naturalHeight
-            );
         }
 
         handleWheel(event) {
