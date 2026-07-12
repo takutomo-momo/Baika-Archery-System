@@ -12,6 +12,8 @@
 
     const pins = [];
     let pinLayer = null;
+    let scorePanel = null;
+    let scoreEditingPin = null;
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -46,6 +48,7 @@
         );
 
         createPinLayer(elements);
+        createScorePanel(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
@@ -114,6 +117,7 @@
                     }
 
                     pins.pop();
+                    closeScorePanel();
                     renderPins(elements);
                     updateUndoButton(elements);
                 }
@@ -184,7 +188,8 @@
 
                 pins.push({
                     x: Math.round(point.imageX),
-                    y: Math.round(point.imageY)
+                    y: Math.round(point.imageY),
+                    score: null
                 });
 
                 console.table(pins);
@@ -218,12 +223,17 @@
             const dot =
                 document.createElement("div");
 
-            dot.textContent = String(index + 1);
+            dot.textContent =
+                pin.score === null
+                    ? String(index + 1)
+                    : `${index + 1}:${pin.score}`;
 
             dot.style.position = "absolute";
             dot.style.display = "grid";
             dot.style.placeItems = "center";
-            dot.style.width = "28px";
+            dot.style.minWidth = "28px";
+            dot.style.width = "auto";
+            dot.style.padding = "0 6px";
             dot.style.height = "28px";
             dot.style.borderRadius = "50%";
             dot.style.background = "red";
@@ -244,16 +254,17 @@
             dot.style.left =
                 (
                     screenPoint.x -
-                    viewerRect.left -
-                    14
+                    viewerRect.left
                 ) + "px";
 
             dot.style.top =
                 (
                     screenPoint.y -
-                    viewerRect.top -
-                    14
+                    viewerRect.top
                 ) + "px";
+
+            dot.style.transform =
+                "translate(-50%, -50%)";
 
             dot.dataset.pinIndex = String(index);
 
@@ -267,6 +278,161 @@
         });
     }
 
+    function createScorePanel(elements) {
+        scorePanel = document.createElement("div");
+
+        scorePanel.style.position = "absolute";
+        scorePanel.style.left = "50%";
+        scorePanel.style.bottom = "12px";
+        scorePanel.style.transform = "translateX(-50%)";
+        scorePanel.style.display = "none";
+        scorePanel.style.gridTemplateColumns =
+            "repeat(4, minmax(48px, 1fr))";
+        scorePanel.style.gap = "6px";
+        scorePanel.style.width = "calc(100% - 24px)";
+        scorePanel.style.maxWidth = "320px";
+        scorePanel.style.padding = "10px";
+        scorePanel.style.borderRadius = "14px";
+        scorePanel.style.background =
+            "rgba(17, 24, 39, 0.94)";
+        scorePanel.style.boxShadow =
+            "0 8px 24px rgba(0, 0, 0, 0.35)";
+        scorePanel.style.zIndex = "20";
+        scorePanel.style.pointerEvents = "auto";
+
+        const scores = [
+            "X", "10", "9", "8",
+            "7", "6", "5", "4",
+            "3", "2", "1", "M"
+        ];
+
+        scores.forEach(function (score) {
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+            button.textContent = score;
+            button.style.minHeight = "44px";
+            button.style.border = "0";
+            button.style.borderRadius = "10px";
+            button.style.fontSize = "18px";
+            button.style.fontWeight = "900";
+            button.style.cursor = "pointer";
+            button.style.touchAction = "manipulation";
+
+            if (
+                score === "X" ||
+                score === "10" ||
+                score === "9"
+            ) {
+                button.style.background = "#ffd700";
+                button.style.color = "#241c00";
+            } else if (
+                score === "8" ||
+                score === "7"
+            ) {
+                button.style.background = "#ff3b30";
+                button.style.color = "#ffffff";
+            } else if (
+                score === "6" ||
+                score === "5"
+            ) {
+                button.style.background = "#007aff";
+                button.style.color = "#ffffff";
+            } else if (
+                score === "4" ||
+                score === "3"
+            ) {
+                button.style.background = "#333333";
+                button.style.color = "#ffffff";
+            } else if (
+                score === "2" ||
+                score === "1"
+            ) {
+                button.style.background = "#ffffff";
+                button.style.color = "#1f2937";
+            } else {
+                button.style.background = "#b8bcc4";
+                button.style.color = "#252932";
+            }
+
+            button.addEventListener(
+                "pointerdown",
+                function (event) {
+                    event.stopPropagation();
+                }
+            );
+
+            button.addEventListener(
+                "click",
+                function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (!scoreEditingPin) {
+                        return;
+                    }
+
+                    scoreEditingPin.score = score;
+                    closeScorePanel();
+                    renderPins(elements);
+                    console.table(pins);
+                }
+            );
+
+            scorePanel.appendChild(button);
+        });
+
+        const cancelButton =
+            document.createElement("button");
+
+        cancelButton.type = "button";
+        cancelButton.textContent = "キャンセル";
+        cancelButton.style.gridColumn = "1 / -1";
+        cancelButton.style.minHeight = "40px";
+        cancelButton.style.border = "0";
+        cancelButton.style.borderRadius = "10px";
+        cancelButton.style.background = "#6b7280";
+        cancelButton.style.color = "#ffffff";
+        cancelButton.style.fontWeight = "800";
+        cancelButton.style.cursor = "pointer";
+
+        cancelButton.addEventListener(
+            "pointerdown",
+            function (event) {
+                event.stopPropagation();
+            }
+        );
+
+        cancelButton.addEventListener(
+            "click",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                closeScorePanel();
+            }
+        );
+
+        scorePanel.appendChild(cancelButton);
+        elements.viewer.appendChild(scorePanel);
+    }
+
+    function editPinScore(
+        pin,
+        elements
+    ) {
+        scoreEditingPin = pin;
+        scorePanel.style.display = "grid";
+    }
+
+    function closeScorePanel() {
+        scoreEditingPin = null;
+
+        if (scorePanel) {
+            scorePanel.style.display = "none";
+        }
+    }
+
     function bindPinDrag(
         dot,
         pin,
@@ -276,6 +442,9 @@
         let pointerId = null;
         let grabOffsetX = 0;
         let grabOffsetY = 0;
+        let dragStartX = 0;
+        let dragStartY = 0;
+        let moved = false;
 
         dot.addEventListener(
             "pointerdown",
@@ -285,6 +454,9 @@
 
                 dragging = true;
                 pointerId = event.pointerId;
+                dragStartX = event.clientX;
+                dragStartY = event.clientY;
+                moved = false;
 
                 const dotRect =
                     dot.getBoundingClientRect();
@@ -304,7 +476,8 @@
                     );
 
                 dot.style.cursor = "grabbing";
-                dot.style.transform = "scale(1.25)";
+                dot.style.transform =
+                    "translate(-50%, -50%) scale(1.25)";
                 dot.style.zIndex = "10";
                 dot.style.opacity = "0.9";
 
@@ -330,6 +503,15 @@
 
                 event.preventDefault();
                 event.stopPropagation();
+
+                if (
+                    Math.hypot(
+                        event.clientX - dragStartX,
+                        event.clientY - dragStartY
+                    ) > 6
+                ) {
+                    moved = true;
+                }
 
                 const targetClientX =
                     event.clientX - grabOffsetX;
@@ -374,15 +556,13 @@
                 dot.style.left =
                     (
                         screenPoint.x -
-                        viewerRect.left -
-                        14
+                        viewerRect.left
                     ) + "px";
 
                 dot.style.top =
                     (
                         screenPoint.y -
-                        viewerRect.top -
-                        14
+                        viewerRect.top
                     ) + "px";
             }
         );
@@ -402,9 +582,18 @@
             pointerId = null;
 
             dot.style.cursor = "grab";
-            dot.style.transform = "scale(1)";
+            dot.style.transform =
+                "translate(-50%, -50%) scale(1)";
             dot.style.zIndex = "";
             dot.style.opacity = "1";
+
+            if (!moved) {
+                editPinScore(
+                    pin,
+                    elements
+                );
+                return;
+            }
 
             renderPins(elements);
             console.table(pins);
@@ -451,6 +640,7 @@
 
         releasePhotoUrl();
         clearPins();
+        closeScorePanel();
         updateUndoButton(elements);
 
         currentPhotoUrl =
@@ -467,6 +657,7 @@
 
         releasePhotoUrl();
         clearPins();
+        closeScorePanel();
         updateUndoButton(elements);
 
         if (elements.input) {
