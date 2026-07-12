@@ -1328,3 +1328,39 @@ body.v4-body {
         grid-column: span 1;
     }
 }
+/*
+ * Ver4 的写真ビューアー
+ */
+#v4TargetPhotoViewer {
+    position: relative;
+    overflow: hidden;
+
+    width: 100%;
+    min-height: 280px;
+
+    touch-action: none;
+    overscroll-behavior: contain;
+
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#v4TargetPhotoPreview {
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: contain;
+    object-position: center;
+
+    pointer-events: none;
+
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-user-drag: none;
+
+    transform-origin: center center;
+    will-change: transform;
+}
