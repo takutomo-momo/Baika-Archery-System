@@ -144,6 +144,39 @@ function initializeTargetPhotoViewer() {
     }
 
 if (viewer) {
+    viewer.style.touchAction = "none";
+
+    viewer.addEventListener(
+    "touchstart",
+    handleTargetPhotoTouchStart,
+    {
+        passive: false
+    }
+);
+
+viewer.addEventListener(
+    "touchmove",
+    handleTargetPhotoTouchMove,
+    {
+        passive: false
+    }
+);
+
+viewer.addEventListener(
+    "touchend",
+    handleTargetPhotoTouchEnd,
+    {
+        passive: false
+    }
+);
+
+viewer.addEventListener(
+    "touchcancel",
+    handleTargetPhotoTouchEnd,
+    {
+        passive: false
+    }
+);
     viewer.addEventListener(
         "pointerdown",
         handleTargetPhotoPointerDown
@@ -419,6 +452,9 @@ function updateTargetPhotoZoomLabel() {
  * 写真操作のポインター開始
  */
 function handleTargetPhotoPointerDown(event) {
+    if (event.pointerType === "touch") {
+    return;
+}
     if (!currentTargetPhotoUrl) {
         return;
     }
@@ -442,9 +478,9 @@ function handleTargetPhotoPointerDown(event) {
         }
     );
 
-    viewer.setPointerCapture(
-        event.pointerId
-    );
+    //viewer.setPointerCapture(
+    //   event.pointerId
+    //);
 
     if (activePhotoPointers.size === 1) {
         startSinglePointerPhotoDrag(event);
@@ -460,6 +496,9 @@ function handleTargetPhotoPointerDown(event) {
  * 写真操作中のポインター移動
  */
 function handleTargetPhotoPointerMove(event) {
+    if (event.pointerType === "touch") {
+    return;
+}
     if (
         !currentTargetPhotoUrl ||
         !activePhotoPointers.has(
@@ -499,6 +538,9 @@ function handleTargetPhotoPointerMove(event) {
  * 写真操作のポインター終了
  */
 function handleTargetPhotoPointerEnd(event) {
+   if (event.pointerType === "touch") {
+    return;
+} 
     const viewer =
         document.getElementById(
             "v4TargetPhotoViewer"
@@ -508,16 +550,16 @@ function handleTargetPhotoPointerEnd(event) {
         event.pointerId
     );
 
-    if (
-        viewer &&
-        typeof viewer.hasPointerCapture ===
-            "function" &&
-        viewer.hasPointerCapture(event.pointerId)
-    ) {
-        viewer.releasePointerCapture(
-            event.pointerId
-        );
-    }
+    //if (
+    //    viewer &&
+    //    typeof viewer.hasPointerCapture ===
+    //        "function" &&
+    //    viewer.hasPointerCapture(event.pointerId)
+    //) {
+    //    viewer.releasePointerCapture(
+    //        event.pointerId
+    //   );
+    //}
 
     if (activePhotoPointers.size === 0) {
         isTargetPhotoDragging = false;
@@ -742,6 +784,260 @@ function getPhotoPointerCenter(
             (
                 firstPointer.y +
                 secondPointer.y
+            ) / 2
+    };
+}
+
+/**
+ * iPhoneなどでタッチ操作を開始する
+ */
+function handleTargetPhotoTouchStart(event) {
+    if (!currentTargetPhotoUrl) {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (event.touches.length >= 2) {
+        const firstTouch =
+            event.touches[0];
+
+        const secondTouch =
+            event.touches[1];
+
+        isTargetPhotoDragging = false;
+        isTargetPhotoPinching = true;
+
+        targetPhotoPinchStartDistance =
+            getTargetPhotoTouchDistance(
+                firstTouch,
+                secondTouch
+            );
+
+        targetPhotoPinchStartScale =
+            targetPhotoScale;
+
+        const center =
+            getTargetPhotoTouchCenter(
+                firstTouch,
+                secondTouch
+            );
+
+        targetPhotoPinchStartCenterX =
+            center.x;
+
+        targetPhotoPinchStartCenterY =
+            center.y;
+
+        targetPhotoPinchOriginX =
+            targetPhotoTranslateX;
+
+        targetPhotoPinchOriginY =
+            targetPhotoTranslateY;
+
+        return;
+    }
+
+    if (event.touches.length === 1) {
+        const touch =
+            event.touches[0];
+
+        isTargetPhotoPinching = false;
+        isTargetPhotoDragging = true;
+
+        targetPhotoDragStartX =
+            touch.clientX;
+
+        targetPhotoDragStartY =
+            touch.clientY;
+
+        targetPhotoDragOriginX =
+            targetPhotoTranslateX;
+
+        targetPhotoDragOriginY =
+            targetPhotoTranslateY;
+
+        const viewer =
+            document.getElementById(
+                "v4TargetPhotoViewer"
+            );
+
+        if (viewer) {
+            viewer.classList.add(
+                "is-dragging"
+            );
+        }
+    }
+}
+
+/**
+ * iPhoneなどでタッチ操作中の写真を動かす
+ */
+function handleTargetPhotoTouchMove(event) {
+    if (!currentTargetPhotoUrl) {
+        return;
+    }
+
+    event.preventDefault();
+
+    if (event.touches.length >= 2) {
+        const firstTouch =
+            event.touches[0];
+
+        const secondTouch =
+            event.touches[1];
+
+        if (!isTargetPhotoPinching) {
+            handleTargetPhotoTouchStart(event);
+            return;
+        }
+
+        const currentDistance =
+            getTargetPhotoTouchDistance(
+                firstTouch,
+                secondTouch
+            );
+
+        if (
+            targetPhotoPinchStartDistance <= 0
+        ) {
+            return;
+        }
+
+        const scaleRatio =
+            currentDistance /
+            targetPhotoPinchStartDistance;
+
+        targetPhotoScale = Math.min(
+            4,
+            Math.max(
+                0.25,
+                targetPhotoPinchStartScale *
+                    scaleRatio
+            )
+        );
+
+        const currentCenter =
+            getTargetPhotoTouchCenter(
+                firstTouch,
+                secondTouch
+            );
+
+        targetPhotoTranslateX =
+            targetPhotoPinchOriginX +
+            currentCenter.x -
+            targetPhotoPinchStartCenterX;
+
+        targetPhotoTranslateY =
+            targetPhotoPinchOriginY +
+            currentCenter.y -
+            targetPhotoPinchStartCenterY;
+
+        applyTargetPhotoTransform();
+        return;
+    }
+
+    if (
+        event.touches.length === 1 &&
+        isTargetPhotoDragging
+    ) {
+        const touch =
+            event.touches[0];
+
+        targetPhotoTranslateX =
+            targetPhotoDragOriginX +
+            touch.clientX -
+            targetPhotoDragStartX;
+
+        targetPhotoTranslateY =
+            targetPhotoDragOriginY +
+            touch.clientY -
+            targetPhotoDragStartY;
+
+        applyTargetPhotoTransform();
+    }
+}
+
+/**
+ * iPhoneなどでタッチ操作を終了する
+ */
+function handleTargetPhotoTouchEnd(event) {
+    if (event.cancelable) {
+        event.preventDefault();
+    }
+
+    const viewer =
+        document.getElementById(
+            "v4TargetPhotoViewer"
+        );
+
+    if (event.touches.length === 0) {
+        isTargetPhotoDragging = false;
+        isTargetPhotoPinching = false;
+
+        if (viewer) {
+            viewer.classList.remove(
+                "is-dragging"
+            );
+        }
+
+        return;
+    }
+
+    if (event.touches.length === 1) {
+        const touch =
+            event.touches[0];
+
+        isTargetPhotoPinching = false;
+        isTargetPhotoDragging = true;
+
+        targetPhotoDragStartX =
+            touch.clientX;
+
+        targetPhotoDragStartY =
+            touch.clientY;
+
+        targetPhotoDragOriginX =
+            targetPhotoTranslateX;
+
+        targetPhotoDragOriginY =
+            targetPhotoTranslateY;
+    }
+}
+
+/**
+ * 2本の指の間隔を取得する
+ */
+function getTargetPhotoTouchDistance(
+    firstTouch,
+    secondTouch
+) {
+    return Math.hypot(
+        secondTouch.clientX -
+            firstTouch.clientX,
+        secondTouch.clientY -
+            firstTouch.clientY
+    );
+}
+
+/**
+ * 2本の指の中央位置を取得する
+ */
+function getTargetPhotoTouchCenter(
+    firstTouch,
+    secondTouch
+) {
+    return {
+        x:
+            (
+                firstTouch.clientX +
+                secondTouch.clientX
+            ) / 2,
+
+        y:
+            (
+                firstTouch.clientY +
+                secondTouch.clientY
             ) / 2
     };
 }
