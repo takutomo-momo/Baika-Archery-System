@@ -11,6 +11,7 @@
     let photoEngine = null;
     let currentPhotoUrl = "";
     const pins = [];
+    let pinElement = null;
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -43,7 +44,16 @@
                 zoomStep: 0.2
             }
         );
+pinElement = document.createElement("div");
 
+pinElement.style.position = "absolute";
+pinElement.style.width = "10px";
+pinElement.style.height = "10px";
+pinElement.style.borderRadius = "50%";
+pinElement.style.background = "red";
+pinElement.style.pointerEvents = "none";
+pinElement.style.display = "none";
+elements.viewer.appendChild(pinElement);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
 
@@ -131,6 +141,17 @@
         });
 
         console.table(pins);
+
+        pinElement.style.display = "block";
+
+const viewerRect =
+    elements.viewer.getBoundingClientRect();
+
+pinElement.style.left =
+    (event.detail.clientX - viewerRect.left - 5) + "px";
+
+pinElement.style.top =
+    (event.detail.clientY - viewerRect.top - 5) + "px";
 
     }
 );
