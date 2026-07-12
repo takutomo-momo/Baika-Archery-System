@@ -10,6 +10,7 @@
 (function () {
     let photoEngine = null;
     let currentPhotoUrl = "";
+    const pins = [];
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -118,6 +119,21 @@
                 );
             }
         );
+        elements.viewer.addEventListener(
+    "baika-photo-singletap",
+    function (event) {
+
+        const point = event.detail;
+
+        pins.push({
+            x: Math.round(point.imageX),
+            y: Math.round(point.imageY)
+        });
+
+        console.table(pins);
+
+    }
+);
 
 
         elements.viewer.addEventListener(
