@@ -112,7 +112,7 @@
     </div>
 </section>
 
-<section class="v4-card v4-card-wide">
+<section class="v4-card v4-card-full">
     <div class="v4-card-title">
         🎯 的タップ入力
     </div>
@@ -122,13 +122,20 @@
         1回目で拡大し、2回目で着弾位置を確定します。
     </p>
 
-    <div class="v4-target-area">
+<div class="v4-target-layout">
+
+    <!-- 入力用の的 -->
+    <div class="v4-target-panel">
+        <div class="v4-target-panel-title">
+            入力用
+        </div>
+
         <div class="v4-target-container">
             <svg
                 id="targetSvg"
                 viewBox="0 0 300 300"
                 role="img"
-                aria-label="アーチェリーの的"
+                aria-label="着弾位置入力用の的"
                 onclick="handleTargetClick(event)"
             ></svg>
         </div>
@@ -142,6 +149,29 @@
             ↺ ズームリセット
         </button>
     </div>
+
+    <!-- グルーピング確認用の的 -->
+    <div class="v4-target-panel">
+        <div class="v4-target-panel-title">
+            グルーピング確認
+        </div>
+
+        <div class="v4-target-container v4-grouping-container">
+            <svg
+                id="groupingTargetSvg"
+                viewBox="0 0 300 300"
+                role="img"
+                aria-label="グルーピング確認用の的"
+            ></svg>
+        </div>
+
+        <p class="v4-grouping-note">
+            入力済みの着弾位置を全体表示します。
+        </p>
+    </div>
+
+</div>
+
 </section>
 
             <section class="v4-card v4-card-half">
