@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
     drawTargetSvg();
     drawGroupingTargetSvg();
     updateCurrentEndDisplay();
+    updateScoreInputState();
 });
 
 /**
@@ -193,6 +194,7 @@ currentArrows.push(arrow);
 
 updateCurrentEndDisplay();
 resetTargetZoom();
+updateScoreInputState();
 }
 
 /**
@@ -288,9 +290,13 @@ function renderTargetPins() {
     pinsGroup.innerHTML = "";
 
     currentArrows.forEach(function (arrow, index) {
-        if (arrow.val === "M") {
-            return;
-        }
+if (
+    arrow.val === "M" ||
+    arrow.x == null ||
+    arrow.y == null
+) {
+    return;
+}
 
         const pin = document.createElementNS(
             "http://www.w3.org/2000/svg",
@@ -335,9 +341,13 @@ function renderGroupingPins() {
     pinsGroup.innerHTML = "";
 
     currentArrows.forEach(function (arrow, index) {
-        if (arrow.val === "M") {
-            return;
-        }
+if (
+    arrow.val === "M" ||
+    arrow.x == null ||
+    arrow.y == null
+) {
+    return;
+}
 
         const pin = document.createElementNS(
             "http://www.w3.org/2000/svg",
@@ -467,5 +477,87 @@ function updateCurrentEndDisplay() {
     if (averageElement) {
         averageElement.textContent =
             average;
+    }
+}
+/**
+ * キーパッドから得点を入力する
+ */
+function handleScoreKeypadInput(value, score) {
+    if (currentArrows.length >= 6) {
+        return;
+    }
+
+currentArrows.push({
+    val: value,
+    score: score,
+    x: null,
+    y: null,
+    inputType: "keypad"
+});
+
+    updateCurrentEndDisplay();
+    renderTargetPins();
+    renderGroupingPins();
+    updateScoreInputState();
+}
+
+/**
+ * 現在エンドをすべてクリアする
+ */
+function clearCurrentEnd() {
+    if (currentArrows.length === 0) {
+        return;
+    }
+
+    const shouldClear = window.confirm(
+        "現在入力中の6本をすべてクリアしますか？"
+    );
+
+    if (!shouldClear) {
+        return;
+    }
+
+    currentArrows = [];
+
+    resetTargetZoom();
+    updateCurrentEndDisplay();
+    updateScoreInputState();
+}
+
+/**
+ * 6本入力済みかどうかに応じて、
+ * キーパッドと登録ボタンの状態を更新する
+ */
+function updateScoreInputState() {
+    const isFull =
+        currentArrows.length >= 6;
+
+    const scoreButtons =
+        document.querySelectorAll(
+            ".v4-score-key"
+        );
+
+    scoreButtons.forEach(function (button) {
+        button.disabled = isFull;
+    });
+
+    const registerButton =
+        document.getElementById(
+            "v4RegisterCurrentEnd"
+        );
+
+    if (registerButton) {
+        registerButton.disabled =
+            currentArrows.length !== 6;
+    }
+
+    const clearButton =
+        document.getElementById(
+            "v4ClearCurrentEnd"
+        );
+
+    if (clearButton) {
+        clearButton.disabled =
+            currentArrows.length === 0;
     }
 }
