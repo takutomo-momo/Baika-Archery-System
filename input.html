@@ -112,20 +112,37 @@
     </div>
 </section>
 
-            <section class="v4-card v4-card-wide">
-                <div class="v4-card-title">
-                    🎯 的タップ入力
-                </div>
+<section class="v4-card v4-card-wide">
+    <div class="v4-card-title">
+        🎯 的タップ入力
+    </div>
 
-                <p class="v4-card-subtitle">
-                    Ver3.2で使用している的入力機能を、ここへ移植します。
-                </p>
+    <p class="v4-card-subtitle">
+        的をタップして着弾位置を入力します。
+        1回目で拡大し、2回目で着弾位置を確定します。
+    </p>
 
-                <div class="v4-placeholder">
-                    <span class="v4-placeholder-icon">🎯</span>
-                    的表示・着弾入力エリア
-                </div>
-            </section>
+    <div class="v4-target-area">
+        <div class="v4-target-container">
+            <svg
+                id="targetSvg"
+                viewBox="0 0 300 300"
+                role="img"
+                aria-label="アーチェリーの的"
+                onclick="handleTargetClick(event)"
+            ></svg>
+        </div>
+
+        <button
+            type="button"
+            id="btnTargetZoomReset"
+            class="v4-target-reset"
+            onclick="resetTargetZoom()"
+        >
+            ↺ ズームリセット
+        </button>
+    </div>
+</section>
 
             <section class="v4-card v4-card-half">
                 <div class="v4-card-title">
@@ -291,6 +308,8 @@
         return "";
     }
 </script>
+
+<script src="js/v4-input.js"></script>
 
 </body>
 </html>
