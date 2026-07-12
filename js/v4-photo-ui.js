@@ -3,15 +3,15 @@
 /*
  * Baika Archery System Ver4
  * Photo UI Adapter
- *
- * 既存の記録入力画面とBaikaPhotoEngineを接続する。
+ * Step18: 複数ピン描画用レイヤー
  */
 
 (function () {
     let photoEngine = null;
     let currentPhotoUrl = "";
+
     const pins = [];
-    let pinElement = null;
+    let pinLayer = null;
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -44,20 +44,25 @@
                 zoomStep: 0.2
             }
         );
-pinElement = document.createElement("div");
 
-pinElement.style.position = "absolute";
-pinElement.style.width = "10px";
-pinElement.style.height = "10px";
-pinElement.style.borderRadius = "50%";
-pinElement.style.background = "red";
-pinElement.style.pointerEvents = "none";
-pinElement.style.display = "none";
-elements.viewer.appendChild(pinElement);
+        createPinLayer(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
 
         window.baikaPhotoEngine = photoEngine;
+        window.baikaPhotoPins = pins;
+    }
+
+    function createPinLayer(elements) {
+        pinLayer = document.createElement("div");
+
+        pinLayer.style.position = "absolute";
+        pinLayer.style.inset = "0";
+        pinLayer.style.overflow = "hidden";
+        pinLayer.style.pointerEvents = "none";
+        pinLayer.style.zIndex = "5";
+
+        elements.viewer.appendChild(pinLayer);
     }
 
     function bindUIEvents(elements) {
@@ -127,68 +132,74 @@ elements.viewer.appendChild(pinElement);
                     elements,
                     event.detail.scale
                 );
-                renderPin(elements);
+
+                renderPins(elements);
             }
         );
-        elements.viewer.addEventListener(
-    "baika-photo-singletap",
-    function (event) {
-
-        const point = event.detail;
-
-        pins.push({
-            x: Math.round(point.imageX),
-            y: Math.round(point.imageY)
-        });
-
-        console.table(pins);
-
-        pinElement.style.display = "block";
-
-        renderPin(elements);
-
-
-const screenPoint =
-    photoEngine.imageToScreenPoint(
-        point.imageX,
-        point.imageY
-    );
-
-const viewerRect =
-    elements.viewer.getBoundingClientRect();
-
-pinElement.style.left =
-    (screenPoint.x - viewerRect.left - 5) + "px";
-
-pinElement.style.top =
-    (screenPoint.y - viewerRect.top - 5) + "px";
-
-    }
-);
-
 
         elements.viewer.addEventListener(
             "baika-photo-singletap",
             function (event) {
                 const point = event.detail;
 
-                console.log(
-                    "Photo image coordinate:",
-                    {
-                        x: Math.round(point.imageX),
-                        y: Math.round(point.imageY),
-                        normalizedX:
-                            Number(
-                                point.normalizedX.toFixed(6)
-                            ),
-                        normalizedY:
-                            Number(
-                                point.normalizedY.toFixed(6)
-                            )
-                    }
-                );
+                pins.push({
+                    x: Math.round(point.imageX),
+                    y: Math.round(point.imageY)
+                });
+
+                console.table(pins);
+                renderPins(elements);
             }
         );
+    }
+
+    function renderPins(elements) {
+        if (!pinLayer || !photoEngine) {
+            return;
+        }
+
+        pinLayer.replaceChildren();
+
+        if (pins.length === 0) {
+            return;
+        }
+
+        const viewerRect =
+            elements.viewer.getBoundingClientRect();
+
+        pins.forEach(function (pin) {
+            const screenPoint =
+                photoEngine.imageToScreenPoint(
+                    pin.x,
+                    pin.y
+                );
+
+            const dot =
+                document.createElement("div");
+
+            dot.style.position = "absolute";
+            dot.style.width = "10px";
+            dot.style.height = "10px";
+            dot.style.borderRadius = "50%";
+            dot.style.background = "red";
+            dot.style.pointerEvents = "none";
+
+            dot.style.left =
+                (
+                    screenPoint.x -
+                    viewerRect.left -
+                    5
+                ) + "px";
+
+            dot.style.top =
+                (
+                    screenPoint.y -
+                    viewerRect.top -
+                    5
+                ) + "px";
+
+            pinLayer.appendChild(dot);
+        });
     }
 
     function handlePhotoSelection(event) {
@@ -211,6 +222,7 @@ pinElement.style.top =
         const elements = getPhotoElements();
 
         releasePhotoUrl();
+        clearPins();
 
         currentPhotoUrl =
             URL.createObjectURL(file);
@@ -225,6 +237,7 @@ pinElement.style.top =
         const elements = getPhotoElements();
 
         releasePhotoUrl();
+        clearPins();
 
         if (elements.input) {
             elements.input.value = "";
@@ -241,6 +254,14 @@ pinElement.style.top =
         }
 
         updatePhotoUI(elements, false);
+    }
+
+    function clearPins() {
+        pins.length = 0;
+
+        if (pinLayer) {
+            pinLayer.replaceChildren();
+        }
     }
 
     function updatePhotoUI(elements, hasPhoto) {
@@ -283,28 +304,6 @@ pinElement.style.top =
 
         updateZoomLabel(elements, 1);
     }
-function renderPin(elements) {
-
-    if (!pinElement) return;
-    if (pins.length === 0) return;
-
-    const point = pins[pins.length - 1];
-
-    const screenPoint =
-        photoEngine.imageToScreenPoint(
-            point.x,
-            point.y
-        );
-
-    const viewerRect =
-        elements.viewer.getBoundingClientRect();
-
-    pinElement.style.left =
-        (screenPoint.x - viewerRect.left - 5) + "px";
-
-    pinElement.style.top =
-        (screenPoint.y - viewerRect.top - 5) + "px";
-}
 
     function updateZoomLabel(elements, scale) {
         if (!elements.resetButton) {
