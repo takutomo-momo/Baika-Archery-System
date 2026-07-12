@@ -167,7 +167,7 @@
         const viewerRect =
             elements.viewer.getBoundingClientRect();
 
-        pins.forEach(function (pin) {
+        pins.forEach(function (pin, index) {
             const screenPoint =
                 photoEngine.imageToScreenPoint(
                     pin.x,
@@ -177,25 +177,38 @@
             const dot =
                 document.createElement("div");
 
+            dot.textContent = String(index + 1);
+
             dot.style.position = "absolute";
-            dot.style.width = "10px";
-            dot.style.height = "10px";
+            dot.style.display = "grid";
+            dot.style.placeItems = "center";
+            dot.style.width = "24px";
+            dot.style.height = "24px";
             dot.style.borderRadius = "50%";
             dot.style.background = "red";
+            dot.style.color = "white";
+            dot.style.fontSize = "12px";
+            dot.style.fontWeight = "800";
+            dot.style.lineHeight = "1";
+            dot.style.border = "2px solid white";
+            dot.style.boxSizing = "border-box";
+            dot.style.boxShadow =
+                "0 2px 6px rgba(0, 0, 0, 0.35)";
             dot.style.pointerEvents = "none";
+            dot.style.userSelect = "none";
 
             dot.style.left =
                 (
                     screenPoint.x -
                     viewerRect.left -
-                    5
+                    12
                 ) + "px";
 
             dot.style.top =
                 (
                     screenPoint.y -
                     viewerRect.top -
-                    5
+                    12
                 ) + "px";
 
             pinLayer.appendChild(dot);
