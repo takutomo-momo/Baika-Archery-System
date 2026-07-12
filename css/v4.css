@@ -1346,21 +1346,27 @@ body.v4-body {
 }
 
 #v4TargetPhotoPreview {
-    position: absolute;
-    inset: 0;
 
-    width: 100%;
-    height: 100%;
+    position:absolute;
 
-    object-fit: contain;
-    object-position: center;
+    left:50%;
+    top:50%;
 
-    pointer-events: none;
+    width:auto;
+    height:auto;
 
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-user-drag: none;
+    max-width:100%;
+    max-height:100%;
 
-    transform-origin: center center;
-    will-change: transform;
+    object-fit:contain;
+
+    pointer-events:none;
+
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-user-drag:none;
+
+    transform-origin:center center;
+
+    will-change:transform;
 }

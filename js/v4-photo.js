@@ -146,69 +146,111 @@ function initializeTargetPhotoViewer() {
 if (viewer) {
     viewer.style.touchAction = "none";
 
-    viewer.addEventListener(
-    "touchstart",
-    handleTargetPhotoTouchStart,
-    {
-        passive: false
+    const isTouchDevice =
+        navigator.maxTouchPoints > 0 ||
+        "ontouchstart" in window;
+
+    if (isTouchDevice) {
+        /*
+         * iPhone・iPad・スマホ
+         * Touch Eventsだけを使用する
+         */
+        viewer.addEventListener(
+            "touchstart",
+            handleTargetPhotoTouchStart,
+            {
+                passive: false
+            }
+        );
+
+        viewer.addEventListener(
+            "touchmove",
+            handleTargetPhotoTouchMove,
+            {
+                passive: false
+            }
+        );
+
+        viewer.addEventListener(
+            "touchend",
+            handleTargetPhotoTouchEnd,
+            {
+                passive: false
+            }
+        );
+
+        viewer.addEventListener(
+            "touchcancel",
+            handleTargetPhotoTouchEnd,
+            {
+                passive: false
+            }
+        );
+
+        /*
+         * Safari標準のページ拡大を防止する
+         */
+        viewer.addEventListener(
+            "gesturestart",
+            preventTargetPhotoGesture,
+            {
+                passive: false
+            }
+        );
+
+        viewer.addEventListener(
+            "gesturechange",
+            preventTargetPhotoGesture,
+            {
+                passive: false
+            }
+        );
+
+        viewer.addEventListener(
+            "gestureend",
+            preventTargetPhotoGesture,
+            {
+                passive: false
+            }
+        );
+    } else {
+        /*
+         * PC
+         * Pointer Eventsを使用する
+         */
+        viewer.addEventListener(
+            "pointerdown",
+            handleTargetPhotoPointerDown
+        );
+
+        viewer.addEventListener(
+            "pointermove",
+            handleTargetPhotoPointerMove
+        );
+
+        viewer.addEventListener(
+            "pointerup",
+            handleTargetPhotoPointerEnd
+        );
+
+        viewer.addEventListener(
+            "pointercancel",
+            handleTargetPhotoPointerEnd
+        );
+
+        viewer.addEventListener(
+            "lostpointercapture",
+            handleTargetPhotoPointerEnd
+        );
+
+        viewer.addEventListener(
+            "wheel",
+            handleTargetPhotoWheel,
+            {
+                passive: false
+            }
+        );
     }
-);
-
-viewer.addEventListener(
-    "touchmove",
-    handleTargetPhotoTouchMove,
-    {
-        passive: false
-    }
-);
-
-viewer.addEventListener(
-    "touchend",
-    handleTargetPhotoTouchEnd,
-    {
-        passive: false
-    }
-);
-
-viewer.addEventListener(
-    "touchcancel",
-    handleTargetPhotoTouchEnd,
-    {
-        passive: false
-    }
-);
-    viewer.addEventListener(
-        "pointerdown",
-        handleTargetPhotoPointerDown
-    );
-
-    viewer.addEventListener(
-        "pointermove",
-        handleTargetPhotoPointerMove
-    );
-
-    viewer.addEventListener(
-        "pointerup",
-        handleTargetPhotoPointerEnd
-    );
-
-    viewer.addEventListener(
-        "pointercancel",
-        handleTargetPhotoPointerEnd
-    );
-
-    viewer.addEventListener(
-        "lostpointercapture",
-        handleTargetPhotoPointerEnd
-    );
-
-    viewer.addEventListener(
-        "wheel",
-        handleTargetPhotoWheel,
-        {
-            passive: false
-        }
-    );
 }
 
     updateTargetPhotoControlState();
@@ -422,6 +464,7 @@ function applyTargetPhotoTransform() {
     }
 
     preview.style.transform = [
+        translate(-50%, -50%)
         `translate(${targetPhotoTranslateX}px,`,
         `${targetPhotoTranslateY}px)`,
         `rotate(${targetPhotoRotation}deg)`,
@@ -796,9 +839,11 @@ function handleTargetPhotoTouchStart(event) {
         return;
     }
 
-    event.preventDefault();
+    if (event.cancelable) {
+        event.preventDefault();
+    }
 
-    if (event.touches.length >= 2) {
+    if (event.touches.length === 2) {
         const firstTouch =
             event.touches[0];
 
@@ -878,9 +923,11 @@ function handleTargetPhotoTouchMove(event) {
         return;
     }
 
+    if (event.cancelable) {
     event.preventDefault();
+}
 
-    if (event.touches.length >= 2) {
+    if (event.touches.length === 2) {
         const firstTouch =
             event.touches[0];
 
@@ -1003,6 +1050,14 @@ function handleTargetPhotoTouchEnd(event) {
         targetPhotoDragOriginY =
             targetPhotoTranslateY;
     }
+    /**
+ * Safari標準のページ拡大操作を防止する
+ */
+function preventTargetPhotoGesture(event) {
+    if (event.cancelable) {
+        event.preventDefault();
+    }
+}
 }
 
 /**
