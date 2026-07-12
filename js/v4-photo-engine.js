@@ -66,6 +66,7 @@
             };
 
             this.lastTapTime = 0;
+            this.singleTapTimer = null;
             this.resizeObserver = null;
 
             this.handlePointerDown =
@@ -189,6 +190,11 @@
             }
 
             this.pointers.clear();
+
+            if (this.singleTapTimer) {
+                clearTimeout(this.singleTapTimer);
+                this.singleTapTimer = null;
+            }
         }
 
         setLoaded(loaded) {
@@ -455,6 +461,7 @@
                 this.gesture.moved ||
                 this.gesture.wasMultiTouch
             ) {
+                this.cancelSingleTap();
                 this.lastTapTime = 0;
                 return;
             }
@@ -465,11 +472,69 @@
                 now - this.lastTapTime <=
                 this.options.doubleTapDelay
             ) {
+                this.cancelSingleTap();
                 this.reset();
                 this.lastTapTime = 0;
-            } else {
-                this.lastTapTime = now;
+                return;
             }
+
+            this.lastTapTime = now;
+
+            const clientX = endedPointer.clientX;
+            const clientY = endedPointer.clientY;
+
+            this.cancelSingleTap();
+
+            this.singleTapTimer = setTimeout(() => {
+                this.singleTapTimer = null;
+                this.lastTapTime = 0;
+
+                const imagePoint =
+                    this.screenToImagePoint(
+                        clientX,
+                        clientY
+                    );
+
+                if (
+                    imagePoint.x < 0 ||
+                    imagePoint.y < 0 ||
+                    imagePoint.x >
+                        this.image.naturalWidth ||
+                    imagePoint.y >
+                        this.image.naturalHeight
+                ) {
+                    return;
+                }
+
+                this.viewer.dispatchEvent(
+                    new CustomEvent(
+                        "baika-photo-singletap",
+                        {
+                            detail: {
+                                clientX,
+                                clientY,
+                                imageX: imagePoint.x,
+                                imageY: imagePoint.y,
+                                normalizedX:
+                                    imagePoint.x /
+                                    this.image.naturalWidth,
+                                normalizedY:
+                                    imagePoint.y /
+                                    this.image.naturalHeight
+                            }
+                        }
+                    )
+                );
+            }, this.options.doubleTapDelay);
+        }
+
+        cancelSingleTap() {
+            if (!this.singleTapTimer) {
+                return;
+            }
+
+            clearTimeout(this.singleTapTimer);
+            this.singleTapTimer = null;
         }
 
         handleWheel(event) {

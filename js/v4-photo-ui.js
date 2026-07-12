@@ -118,6 +118,30 @@
                 );
             }
         );
+
+
+        elements.viewer.addEventListener(
+            "baika-photo-singletap",
+            function (event) {
+                const point = event.detail;
+
+                console.log(
+                    "Photo image coordinate:",
+                    {
+                        x: Math.round(point.imageX),
+                        y: Math.round(point.imageY),
+                        normalizedX:
+                            Number(
+                                point.normalizedX.toFixed(6)
+                            ),
+                        normalizedY:
+                            Number(
+                                point.normalizedY.toFixed(6)
+                            )
+                    }
+                );
+            }
+        );
     }
 
     function handlePhotoSelection(event) {
