@@ -127,6 +127,7 @@ elements.viewer.appendChild(pinElement);
                     elements,
                     event.detail.scale
                 );
+                renderPin(elements);
             }
         );
         elements.viewer.addEventListener(
@@ -144,14 +145,23 @@ elements.viewer.appendChild(pinElement);
 
         pinElement.style.display = "block";
 
+        renderPin(elements);
+
+
+const screenPoint =
+    photoEngine.imageToScreenPoint(
+        point.imageX,
+        point.imageY
+    );
+
 const viewerRect =
     elements.viewer.getBoundingClientRect();
 
 pinElement.style.left =
-    (event.detail.clientX - viewerRect.left - 5) + "px";
+    (screenPoint.x - viewerRect.left - 5) + "px";
 
 pinElement.style.top =
-    (event.detail.clientY - viewerRect.top - 5) + "px";
+    (screenPoint.y - viewerRect.top - 5) + "px";
 
     }
 );
@@ -273,6 +283,28 @@ pinElement.style.top =
 
         updateZoomLabel(elements, 1);
     }
+function renderPin(elements) {
+
+    if (!pinElement) return;
+    if (pins.length === 0) return;
+
+    const point = pins[pins.length - 1];
+
+    const screenPoint =
+        photoEngine.imageToScreenPoint(
+            point.x,
+            point.y
+        );
+
+    const viewerRect =
+        elements.viewer.getBoundingClientRect();
+
+    pinElement.style.left =
+        (screenPoint.x - viewerRect.left - 5) + "px";
+
+    pinElement.style.top =
+        (screenPoint.y - viewerRect.top - 5) + "px";
+}
 
     function updateZoomLabel(elements, scale) {
         if (!elements.resetButton) {
