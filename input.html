@@ -124,6 +124,107 @@
 
 <div class="v4-target-layout">
 
+    <!-- 撮影した的の写真 -->
+<div class="v4-target-panel v4-photo-panel">
+    <div class="v4-target-panel-title">
+        📷 撮影した的
+    </div>
+
+    <p class="v4-photo-description">
+        射ち終えた的の写真を選択し、
+        写真を確認しながら着弾位置を入力できます。
+    </p>
+
+    <label
+        for="v4TargetPhotoInput"
+        class="v4-photo-select-button"
+    >
+        📁 写真を選択
+    </label>
+
+    <input
+        type="file"
+        id="v4TargetPhotoInput"
+        accept="image/*"
+        class="v4-photo-file-input"
+    >
+<div class="v4-photo-controls">
+    <button
+        type="button"
+        id="v4PhotoZoomOut"
+        class="v4-photo-control-button"
+        disabled
+    >
+        −
+    </button>
+
+    <button
+        type="button"
+        id="v4PhotoZoomReset"
+        class="v4-photo-control-button v4-photo-control-wide"
+        disabled
+    >
+        100%
+    </button>
+
+    <button
+        type="button"
+        id="v4PhotoZoomIn"
+        class="v4-photo-control-button"
+        disabled
+    >
+        ＋
+    </button>
+
+    <button
+        type="button"
+        id="v4PhotoRotateLeft"
+        class="v4-photo-control-button"
+        disabled
+    >
+        ↺ 90°
+    </button>
+
+    <button
+        type="button"
+        id="v4PhotoRotateRight"
+        class="v4-photo-control-button"
+        disabled
+    >
+        ↻ 90°
+    </button>
+</div>
+    <div
+        id="v4TargetPhotoViewer"
+        class="v4-photo-viewer"
+    >
+        <div
+            id="v4TargetPhotoEmpty"
+            class="v4-photo-empty"
+        >
+            <span class="v4-photo-empty-icon">📷</span>
+            <span>写真が選択されていません</span>
+        </div>
+
+        <img
+            id="v4TargetPhotoPreview"
+            class="v4-photo-preview"
+            alt="撮影したアーチェリーの的"
+            draggable="false"
+            hidden
+        >
+    </div>
+
+    <button
+        type="button"
+        id="v4TargetPhotoClear"
+        class="v4-photo-clear-button"
+        disabled
+    >
+        写真を閉じる
+    </button>
+</div>
+
     <!-- 入力用の的 -->
     <div class="v4-target-panel">
         <div class="v4-target-panel-title">
@@ -291,6 +392,123 @@
                 </strong>
             </div>
         </div>
+        <div class="v4-score-keypad">
+    <button
+        type="button"
+        class="v4-score-key v4-score-yellow"
+        onclick="handleScoreKeypadInput('X', 10)"
+    >
+        X
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-yellow"
+        onclick="handleScoreKeypadInput('10', 10)"
+    >
+        10
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-yellow"
+        onclick="handleScoreKeypadInput('9', 9)"
+    >
+        9
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-red"
+        onclick="handleScoreKeypadInput('8', 8)"
+    >
+        8
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-red"
+        onclick="handleScoreKeypadInput('7', 7)"
+    >
+        7
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-blue"
+        onclick="handleScoreKeypadInput('6', 6)"
+    >
+        6
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-blue"
+        onclick="handleScoreKeypadInput('5', 5)"
+    >
+        5
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-black"
+        onclick="handleScoreKeypadInput('4', 4)"
+    >
+        4
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-black"
+        onclick="handleScoreKeypadInput('3', 3)"
+    >
+        3
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-white"
+        onclick="handleScoreKeypadInput('2', 2)"
+    >
+        2
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-white"
+        onclick="handleScoreKeypadInput('1', 1)"
+    >
+        1
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-miss"
+        onclick="handleScoreKeypadInput('M', 0)"
+    >
+        M
+    </button>
+</div>
+
+<div class="v4-end-actions">
+    <button
+        type="button"
+        id="v4ClearCurrentEnd"
+        class="v4-end-action v4-end-action-clear"
+        onclick="clearCurrentEnd()"
+    >
+        🗑 クリア
+    </button>
+
+    <button
+        type="button"
+        id="v4RegisterCurrentEnd"
+        class="v4-end-action v4-end-action-register"
+        disabled
+    >
+        💾 登録
+    </button>
+</div>
 
     </div>
 </section>

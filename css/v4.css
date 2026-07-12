@@ -1150,11 +1150,20 @@ body.v4-body {
 
 .v4-photo-preview {
     display: block;
-    width: 100%;
-    height: 100%;
-    max-height: 620px;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
     object-fit: contain;
     background: #111827;
+
+    transform-origin: center center;
+    will-change: transform;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    pointer-events: none;
 }
 
 .v4-photo-preview[hidden] {
@@ -1216,5 +1225,106 @@ body.v4-body {
     .v4-photo-select-button,
     .v4-photo-clear-button {
         min-height: 50px;
+    }
+}
+/* ========================================
+   Ver4 写真の拡大・移動・回転
+======================================== */
+
+.v4-photo-controls {
+    display: grid;
+    grid-template-columns:
+        minmax(44px, 0.7fr)
+        minmax(70px, 1fr)
+        minmax(44px, 0.7fr)
+        minmax(80px, 1fr)
+        minmax(80px, 1fr);
+    gap: 7px;
+    width: 100%;
+}
+
+.v4-photo-control-button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 6px;
+
+    border: 1px solid rgba(109, 40, 217, 0.18);
+    border-radius: 12px;
+
+    background: #ffffff;
+    color: var(--v4-purple-dark);
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 900;
+
+    cursor: pointer;
+    touch-action: manipulation;
+
+    box-shadow:
+        0 6px 14px rgba(76, 29, 149, 0.08);
+
+    transition:
+        transform 0.12s ease,
+        opacity 0.12s ease,
+        background-color 0.12s ease;
+}
+
+.v4-photo-control-button:hover:not(:disabled) {
+    background: #f3e8ff;
+    transform: translateY(-1px);
+}
+
+.v4-photo-control-button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.v4-photo-control-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.38;
+    box-shadow: none;
+}
+
+.v4-photo-viewer {
+    cursor: default;
+    touch-action: none;
+}
+
+.v4-photo-viewer.has-photo {
+    cursor: grab;
+}
+
+.v4-photo-viewer.is-dragging {
+    cursor: grabbing;
+}
+
+.v4-photo-preview {
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+
+    transform-origin: center center;
+    will-change: transform;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    pointer-events: none;
+}
+
+@media (max-width: 700px) {
+    .v4-photo-controls {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+    .v4-photo-control-button {
+        min-height: 48px;
+    }
+
+    #v4PhotoRotateLeft,
+    #v4PhotoRotateRight {
+        grid-column: span 1;
     }
 }
