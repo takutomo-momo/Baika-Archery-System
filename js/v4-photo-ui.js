@@ -46,6 +46,7 @@
         );
 
         createPinLayer(elements);
+        createUndoButton(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
 
@@ -65,6 +66,30 @@
         elements.viewer.appendChild(pinLayer);
     }
 
+    function createUndoButton(elements) {
+        const undoButton =
+            document.createElement("button");
+
+        undoButton.type = "button";
+        undoButton.id = "v4PhotoUndoLastPin";
+        undoButton.className =
+            elements.clearButton
+                ? elements.clearButton.className
+                : "";
+
+        undoButton.textContent = "↩ 最後のピンを戻す";
+        undoButton.disabled = true;
+
+        if (elements.clearButton) {
+            elements.clearButton.insertAdjacentElement(
+                "beforebegin",
+                undoButton
+            );
+        }
+
+        elements.undoButton = undoButton;
+    }
+
     function bindUIEvents(elements) {
         if (elements.input) {
             elements.input.addEventListener(
@@ -77,6 +102,21 @@
             elements.clearButton.addEventListener(
                 "click",
                 clearPhoto
+            );
+        }
+
+        if (elements.undoButton) {
+            elements.undoButton.addEventListener(
+                "click",
+                function () {
+                    if (pins.length === 0) {
+                        return;
+                    }
+
+                    pins.pop();
+                    renderPins(elements);
+                    updateUndoButton(elements);
+                }
             );
         }
 
@@ -149,6 +189,7 @@
 
                 console.table(pins);
                 renderPins(elements);
+                updateUndoButton(elements);
             }
         );
     }
@@ -236,6 +277,7 @@
 
         releasePhotoUrl();
         clearPins();
+        updateUndoButton(elements);
 
         currentPhotoUrl =
             URL.createObjectURL(file);
@@ -251,6 +293,7 @@
 
         releasePhotoUrl();
         clearPins();
+        updateUndoButton(elements);
 
         if (elements.input) {
             elements.input.value = "";
@@ -275,6 +318,15 @@
         if (pinLayer) {
             pinLayer.replaceChildren();
         }
+    }
+
+    function updateUndoButton(elements) {
+        if (!elements.undoButton) {
+            return;
+        }
+
+        elements.undoButton.disabled =
+            pins.length === 0;
     }
 
     function updatePhotoUI(elements, hasPhoto) {
@@ -345,6 +397,10 @@
             clearButton:
                 document.getElementById(
                     "v4TargetPhotoClear"
+                ),
+            undoButton:
+                document.getElementById(
+                    "v4PhotoUndoLastPin"
                 ),
             zoomInButton:
                 document.getElementById(
