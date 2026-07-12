@@ -174,20 +174,126 @@
 
 </section>
 
-            <section class="v4-card v4-card-half">
-                <div class="v4-card-title">
-                    🔢 スコア入力
-                </div>
+<section class="v4-card v4-card-half">
+    <div class="v4-card-title">
+        🔢 現在エンド
+    </div>
 
-                <p class="v4-card-subtitle">
-                    6射分のスコアと合計点を入力・確認します。
-                </p>
+    <p class="v4-card-subtitle">
+        的から入力した6本の得点を、入力順に表示します。
+    </p>
 
-                <div class="v4-placeholder">
-                    <span class="v4-placeholder-icon">🔢</span>
-                    スコアボタンを移植予定
-                </div>
-            </section>
+    <div class="v4-current-end">
+
+        <div
+            id="v4ArrowsPreview"
+            class="v4-arrows-preview"
+            aria-label="現在エンドの入力状況"
+        >
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="0"
+                disabled
+            >
+                <span class="v4-arrow-number">①</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="1"
+                disabled
+            >
+                <span class="v4-arrow-number">②</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="2"
+                disabled
+            >
+                <span class="v4-arrow-number">③</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="3"
+                disabled
+            >
+                <span class="v4-arrow-number">④</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="4"
+                disabled
+            >
+                <span class="v4-arrow-number">⑤</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="5"
+                disabled
+            >
+                <span class="v4-arrow-number">⑥</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+        </div>
+
+        <div class="v4-end-summary">
+            <div class="v4-end-stat">
+                <span class="v4-end-stat-label">
+                    本数
+                </span>
+
+                <strong
+                    id="v4CurrentArrowCount"
+                    class="v4-end-stat-value"
+                >
+                    0 / 6
+                </strong>
+            </div>
+
+            <div class="v4-end-stat">
+                <span class="v4-end-stat-label">
+                    合計
+                </span>
+
+                <strong
+                    id="v4CurrentArrowTotal"
+                    class="v4-end-stat-value v4-end-total"
+                >
+                    0
+                </strong>
+            </div>
+
+            <div class="v4-end-stat">
+                <span class="v4-end-stat-label">
+                    平均
+                </span>
+
+                <strong
+                    id="v4CurrentArrowAverage"
+                    class="v4-end-stat-value"
+                >
+                    0.0
+                </strong>
+            </div>
+        </div>
+
+    </div>
+</section>
 
             <section class="v4-card v4-card-half">
                 <div class="v4-card-title">

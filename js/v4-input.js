@@ -20,6 +20,8 @@ let zoomCenter = {
 
 document.addEventListener("DOMContentLoaded", function () {
     drawTargetSvg();
+    drawGroupingTargetSvg();
+    updateCurrentEndDisplay();
 });
 
 /**
@@ -81,6 +83,68 @@ function drawTargetSvg() {
 }
 
 /**
+ * グルーピング確認用の的を描画する
+ */
+function drawGroupingTargetSvg() {
+    const svg =
+        document.getElementById("groupingTargetSvg");
+
+    if (!svg) {
+        return;
+    }
+
+    svg.innerHTML = "";
+
+    const rings = [
+        { radius: 150, fill: "#ffffff" },
+        { radius: 135, fill: "#ffffff" },
+        { radius: 120, fill: "#333333" },
+        { radius: 105, fill: "#333333" },
+        { radius: 90, fill: "#007aff" },
+        { radius: 75, fill: "#007aff" },
+        { radius: 60, fill: "#ff3b30" },
+        { radius: 45, fill: "#ff3b30" },
+        { radius: 30, fill: "#ffd700" },
+        { radius: 15, fill: "#ffd700" },
+        { radius: 7.5, fill: "#ffd700" }
+    ];
+
+    rings.forEach(function (ring) {
+        const circle = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle"
+        );
+
+        circle.setAttribute("cx", "150");
+        circle.setAttribute("cy", "150");
+        circle.setAttribute("r", String(ring.radius));
+        circle.setAttribute("fill", ring.fill);
+
+        circle.setAttribute(
+            "stroke",
+            ring.fill === "#333333"
+                ? "#ffffff"
+                : "#000000"
+        );
+
+        circle.setAttribute("stroke-width", "0.5");
+
+        svg.appendChild(circle);
+    });
+
+    const groupingPinsGroup =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "g"
+        );
+
+    groupingPinsGroup.id = "groupingPinsGroup";
+    svg.appendChild(groupingPinsGroup);
+
+    renderGroupingPins();
+}
+
+/**
  * 的をタップしたときの処理
  *
  * 1回目：タップ位置を中心に拡大
@@ -125,9 +189,10 @@ function handleTargetClick(event) {
 
     const arrow = calculateArrowScore(realX, realY);
 
-    currentArrows.push(arrow);
+currentArrows.push(arrow);
 
-    resetTargetZoom();
+updateCurrentEndDisplay();
+resetTargetZoom();
 }
 
 /**
@@ -206,6 +271,7 @@ function resetTargetZoom() {
 
     svg.setAttribute("viewBox", "0 0 300 300");
     renderTargetPins();
+     renderGroupingPins();
 }
 
 /**
@@ -254,4 +320,152 @@ function renderTargetPins() {
 
         pinsGroup.appendChild(pinNumber);
     });
+}
+/**
+ * グルーピング確認用の的に着弾位置を表示する
+ */
+function renderGroupingPins() {
+    const pinsGroup =
+        document.getElementById("groupingPinsGroup");
+
+    if (!pinsGroup) {
+        return;
+    }
+
+    pinsGroup.innerHTML = "";
+
+    currentArrows.forEach(function (arrow, index) {
+        if (arrow.val === "M") {
+            return;
+        }
+
+        const pin = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle"
+        );
+
+        pin.setAttribute("cx", String(arrow.x));
+        pin.setAttribute("cy", String(arrow.y));
+        pin.setAttribute("r", "4");
+        pin.setAttribute("fill", "#ec4899");
+        pin.setAttribute("stroke", "#ffffff");
+        pin.setAttribute("stroke-width", "1.2");
+
+        pinsGroup.appendChild(pin);
+
+        const pinNumber = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+        );
+
+        pinNumber.setAttribute(
+            "x",
+            String(arrow.x + 5)
+        );
+
+        pinNumber.setAttribute(
+            "y",
+            String(arrow.y + 3)
+        );
+
+        pinNumber.setAttribute(
+            "font-size",
+            "8"
+        );
+
+        pinNumber.setAttribute(
+            "font-weight",
+            "bold"
+        );
+
+        pinNumber.setAttribute(
+            "fill",
+            "#111827"
+        );
+
+        pinNumber.textContent =
+            String(index + 1);
+
+        pinsGroup.appendChild(pinNumber);
+    });
+}
+
+/**
+ * 現在入力中の6本と、合計・平均を画面へ反映する
+ */
+function updateCurrentEndDisplay() {
+    const arrowSlots =
+        document.querySelectorAll(".v4-arrow-slot");
+
+    arrowSlots.forEach(function (slot, index) {
+        const scoreElement =
+            slot.querySelector(".v4-arrow-score");
+
+        const arrow = currentArrows[index];
+
+        slot.classList.remove(
+            "is-filled",
+            "is-miss"
+        );
+
+        if (!scoreElement) {
+            return;
+        }
+
+        if (!arrow) {
+            scoreElement.textContent = "－";
+            return;
+        }
+
+        scoreElement.textContent = arrow.val;
+        slot.classList.add("is-filled");
+
+        if (arrow.val === "M") {
+            slot.classList.add("is-miss");
+        }
+    });
+
+    const count = currentArrows.length;
+
+    const total = currentArrows.reduce(
+        function (sum, arrow) {
+            return sum + Number(arrow.score || 0);
+        },
+        0
+    );
+
+    const average =
+        count > 0
+            ? (total / count).toFixed(1)
+            : "0.0";
+
+    const countElement =
+        document.getElementById(
+            "v4CurrentArrowCount"
+        );
+
+    const totalElement =
+        document.getElementById(
+            "v4CurrentArrowTotal"
+        );
+
+    const averageElement =
+        document.getElementById(
+            "v4CurrentArrowAverage"
+        );
+
+    if (countElement) {
+        countElement.textContent =
+            `${count} / 6`;
+    }
+
+    if (totalElement) {
+        totalElement.textContent =
+            String(total);
+    }
+
+    if (averageElement) {
+        averageElement.textContent =
+            average;
+    }
 }
