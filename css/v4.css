@@ -665,8 +665,11 @@ body.v4-body {
 
 .v4-target-layout {
     display: grid;
-    grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr);
-    gap: 24px;
+    grid-template-columns:
+        minmax(300px, 1.2fr)
+        minmax(360px, 1.4fr)
+        minmax(260px, 0.9fr);
+    gap: 20px;
     width: 100%;
     margin-top: 18px;
     align-items: start;
@@ -896,5 +899,322 @@ body.v4-body {
 
     .v4-end-stat-value {
         font-size: 20px;
+    }
+}
+/* ========================================
+   Ver4 スコアキーパッド
+======================================== */
+
+.v4-score-keypad {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.v4-score-key {
+    min-width: 0;
+    min-height: 64px;
+    padding: 10px 6px;
+
+    border: 1px solid rgba(17, 24, 39, 0.18);
+    border-radius: 16px;
+
+    font: inherit;
+    font-size: 22px;
+    font-weight: 900;
+    line-height: 1;
+
+    cursor: pointer;
+    touch-action: manipulation;
+
+    box-shadow:
+        0 8px 16px rgba(17, 24, 39, 0.11),
+        inset 0 1px 0 rgba(255, 255, 255, 0.45);
+
+    transition:
+        transform 0.12s ease,
+        box-shadow 0.12s ease,
+        opacity 0.12s ease;
+}
+
+.v4-score-key:hover {
+    transform: translateY(-1px);
+}
+
+.v4-score-key:active {
+    transform: translateY(1px) scale(0.98);
+    box-shadow:
+        0 3px 8px rgba(17, 24, 39, 0.13);
+}
+
+.v4-score-key:disabled {
+    cursor: default;
+    opacity: 0.42;
+    transform: none;
+}
+
+.v4-score-yellow {
+    background: #ffd700;
+    color: #241c00;
+}
+
+.v4-score-red {
+    background: #ff3b30;
+    color: #ffffff;
+}
+
+.v4-score-blue {
+    background: #007aff;
+    color: #ffffff;
+}
+
+.v4-score-black {
+    background: #333333;
+    color: #ffffff;
+}
+
+.v4-score-white {
+    background: #ffffff;
+    color: #1f2937;
+}
+
+.v4-score-miss {
+    background: #b8bcc4;
+    color: #252932;
+}
+
+.v4-end-actions {
+    display: grid;
+    grid-template-columns: minmax(120px, 1fr) minmax(180px, 2fr);
+    gap: 10px;
+}
+
+.v4-end-action {
+    min-height: 54px;
+    padding: 11px 16px;
+
+    border: 0;
+    border-radius: 15px;
+
+    font: inherit;
+    font-size: 15px;
+    font-weight: 900;
+
+    cursor: pointer;
+    touch-action: manipulation;
+
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease,
+        box-shadow 0.15s ease;
+}
+
+.v4-end-action:active {
+    transform: scale(0.98);
+}
+
+.v4-end-action-clear {
+    background: #6b7280;
+    color: #ffffff;
+}
+
+.v4-end-action-register {
+    background:
+        linear-gradient(
+            135deg,
+            var(--v4-green),
+            #047857
+        );
+    color: #ffffff;
+    box-shadow: 0 9px 20px rgba(16, 185, 129, 0.2);
+}
+
+.v4-end-action:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+    box-shadow: none;
+}
+
+@media (max-width: 700px) {
+    .v4-score-keypad {
+        gap: 8px;
+    }
+
+    .v4-score-key {
+        min-height: 58px;
+        border-radius: 14px;
+        font-size: 20px;
+    }
+
+    .v4-end-actions {
+        grid-template-columns: 1fr 2fr;
+        gap: 8px;
+    }
+
+    .v4-end-action {
+        min-height: 52px;
+        padding-inline: 8px;
+    }
+}
+/* ========================================
+   Ver4 撮影した的の写真表示
+======================================== */
+
+.v4-photo-panel {
+    align-self: stretch;
+}
+
+.v4-photo-description {
+    margin: 0;
+    color: var(--v4-muted);
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.v4-photo-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.v4-photo-select-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 16px;
+
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 900;
+
+    border-radius: 14px;
+    background:
+        linear-gradient(
+            135deg,
+            var(--v4-purple-light),
+            var(--v4-purple-dark)
+        );
+
+    box-shadow:
+        0 8px 18px rgba(109, 40, 217, 0.2);
+
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.v4-photo-viewer {
+    position: relative;
+    display: grid;
+    place-items: center;
+
+    width: 100%;
+    min-height: 320px;
+    overflow: hidden;
+
+    border: 1px solid rgba(109, 40, 217, 0.16);
+    border-radius: 18px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.95),
+            rgba(245, 243, 255, 0.88)
+        );
+}
+
+.v4-photo-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 24px;
+    color: var(--v4-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.v4-photo-empty[hidden] {
+    display: none;
+}
+
+.v4-photo-empty-icon {
+    font-size: 42px;
+}
+
+.v4-photo-preview {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 620px;
+    object-fit: contain;
+    background: #111827;
+}
+
+.v4-photo-preview[hidden] {
+    display: none;
+}
+
+.v4-photo-clear-button {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 14px;
+
+    border: 0;
+    border-radius: 13px;
+    background: #6b7280;
+    color: #ffffff;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 850;
+
+    cursor: pointer;
+}
+
+.v4-photo-clear-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+}
+
+/* 中間幅では写真を1段目に広く表示 */
+@media (min-width: 701px) and (max-width: 1050px) {
+    .v4-target-layout {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .v4-photo-panel {
+        grid-column: 1 / -1;
+    }
+
+    .v4-photo-viewer {
+        min-height: 360px;
+    }
+}
+
+/* スマホでは縦並び */
+@media (max-width: 700px) {
+    .v4-target-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .v4-photo-panel {
+        grid-column: auto;
+    }
+
+    .v4-photo-viewer {
+        min-height: 280px;
+    }
+
+    .v4-photo-select-button,
+    .v4-photo-clear-button {
+        min-height: 50px;
     }
 }
