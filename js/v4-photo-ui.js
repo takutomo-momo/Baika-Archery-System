@@ -223,8 +223,8 @@
             dot.style.position = "absolute";
             dot.style.display = "grid";
             dot.style.placeItems = "center";
-            dot.style.width = "24px";
-            dot.style.height = "24px";
+            dot.style.width = "28px";
+            dot.style.height = "28px";
             dot.style.borderRadius = "50%";
             dot.style.background = "red";
             dot.style.color = "white";
@@ -235,25 +235,199 @@
             dot.style.boxSizing = "border-box";
             dot.style.boxShadow =
                 "0 2px 6px rgba(0, 0, 0, 0.35)";
-            dot.style.pointerEvents = "none";
+            dot.style.pointerEvents = "auto";
+            dot.style.touchAction = "none";
+            dot.style.cursor = "grab";
             dot.style.userSelect = "none";
+            dot.style.webkitUserSelect = "none";
 
             dot.style.left =
                 (
                     screenPoint.x -
                     viewerRect.left -
-                    12
+                    14
                 ) + "px";
 
             dot.style.top =
                 (
                     screenPoint.y -
                     viewerRect.top -
-                    12
+                    14
                 ) + "px";
+
+            dot.dataset.pinIndex = String(index);
+
+            bindPinDrag(
+                dot,
+                pin,
+                elements
+            );
 
             pinLayer.appendChild(dot);
         });
+    }
+
+    function bindPinDrag(
+        dot,
+        pin,
+        elements
+    ) {
+        let dragging = false;
+        let pointerId = null;
+        let grabOffsetX = 0;
+        let grabOffsetY = 0;
+
+        dot.addEventListener(
+            "pointerdown",
+            function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                dragging = true;
+                pointerId = event.pointerId;
+
+                const dotRect =
+                    dot.getBoundingClientRect();
+
+                grabOffsetX =
+                    event.clientX -
+                    (
+                        dotRect.left +
+                        dotRect.width / 2
+                    );
+
+                grabOffsetY =
+                    event.clientY -
+                    (
+                        dotRect.top +
+                        dotRect.height / 2
+                    );
+
+                dot.style.cursor = "grabbing";
+                dot.style.transform = "scale(1.25)";
+                dot.style.zIndex = "10";
+                dot.style.opacity = "0.9";
+
+                try {
+                    dot.setPointerCapture(
+                        event.pointerId
+                    );
+                } catch (error) {
+                    // Pointer Capture未対応時も続行する。
+                }
+            }
+        );
+
+        dot.addEventListener(
+            "pointermove",
+            function (event) {
+                if (
+                    !dragging ||
+                    event.pointerId !== pointerId
+                ) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+
+                const targetClientX =
+                    event.clientX - grabOffsetX;
+
+                const targetClientY =
+                    event.clientY - grabOffsetY;
+
+                const imagePoint =
+                    photoEngine.screenToImagePoint(
+                        targetClientX,
+                        targetClientY
+                    );
+
+                const state =
+                    photoEngine.getState();
+
+                pin.x = Math.max(
+                    0,
+                    Math.min(
+                        state.naturalWidth,
+                        imagePoint.x
+                    )
+                );
+
+                pin.y = Math.max(
+                    0,
+                    Math.min(
+                        state.naturalHeight,
+                        imagePoint.y
+                    )
+                );
+
+                const screenPoint =
+                    photoEngine.imageToScreenPoint(
+                        pin.x,
+                        pin.y
+                    );
+
+                const viewerRect =
+                    elements.viewer.getBoundingClientRect();
+
+                dot.style.left =
+                    (
+                        screenPoint.x -
+                        viewerRect.left -
+                        14
+                    ) + "px";
+
+                dot.style.top =
+                    (
+                        screenPoint.y -
+                        viewerRect.top -
+                        14
+                    ) + "px";
+            }
+        );
+
+        function finishDrag(event) {
+            if (
+                !dragging ||
+                event.pointerId !== pointerId
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            dragging = false;
+            pointerId = null;
+
+            dot.style.cursor = "grab";
+            dot.style.transform = "scale(1)";
+            dot.style.zIndex = "";
+            dot.style.opacity = "1";
+
+            renderPins(elements);
+            console.table(pins);
+        }
+
+        dot.addEventListener(
+            "pointerup",
+            finishDrag
+        );
+
+        dot.addEventListener(
+            "pointercancel",
+            finishDrag
+        );
+
+        dot.addEventListener(
+            "lostpointercapture",
+            function (event) {
+                if (dragging) {
+                    finishDrag(event);
+                }
+            }
+        );
     }
 
     function handlePhotoSelection(event) {
