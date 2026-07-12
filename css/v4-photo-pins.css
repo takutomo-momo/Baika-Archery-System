@@ -1,0 +1,43 @@
+/* Ver4 Photo Engine v2: 着弾ピン */
+
+#v4TargetPhotoViewer {
+    isolation: isolate;
+}
+
+.v4-photo-pin-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 4;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.v4-photo-pin {
+    position: absolute;
+    width: 28px;
+    height: 28px;
+    border: 3px solid #ffffff;
+    border-radius: 50%;
+    background: #e53935;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 22px;
+    text-align: center;
+    box-sizing: border-box;
+    transform: translate(-50%, -50%);
+    box-shadow:
+        0 2px 7px rgba(0, 0, 0, 0.38),
+        0 0 0 1px rgba(0, 0, 0, 0.2);
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+@media (max-width: 600px) {
+    .v4-photo-pin {
+        width: 26px;
+        height: 26px;
+        font-size: 12px;
+        line-height: 20px;
+    }
+}
