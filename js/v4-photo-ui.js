@@ -15,6 +15,7 @@
     let scorePanel = null;
     let scoreEditingPin = null;
     let scoreSummary = null;
+    let scoreList = null;
     let applyToEndButton = null;
 
     document.addEventListener(
@@ -52,6 +53,7 @@
         createPinLayer(elements);
         createScorePanel(elements);
         createScoreSummary(elements);
+        createScoreList(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -152,7 +154,12 @@
 
             clearPins();
             closeScorePanel();
-            updateUndoButton(getPhotoElements());
+
+            const elements =
+                getPhotoElements();
+
+            updateUndoButton(elements);
+            updateScoreList(elements);
             updateApplyToEndButton();
 
             window.alert(
@@ -235,6 +242,7 @@
                     renderPins(elements);
                     updateUndoButton(elements);
                     updateScoreSummary();
+                    updateScoreList(elements);
                     updateApplyToEndButton();
                 }
             );
@@ -312,6 +320,7 @@
                 renderPins(elements);
                 updateUndoButton(elements);
                 updateScoreSummary();
+                updateScoreList(elements);
                 updateApplyToEndButton();
             }
         );
@@ -422,7 +431,6 @@
         }
 
         updateScoreSummary();
-        updateApplyToEndButton();
     }
 
     function updateScoreSummary() {
@@ -466,6 +474,88 @@
             + `<div>合計<br><strong>${total}</strong></div>`
             + `<div>X<br><strong>${xCount}</strong></div>`
             + `<div>10以上<br><strong>${tenCount}</strong></div>`;
+    }
+
+    function createScoreList(elements) {
+        scoreList =
+            document.createElement("div");
+
+        scoreList.style.display = "grid";
+        scoreList.style.gridTemplateColumns =
+            "repeat(3, minmax(0, 1fr))";
+        scoreList.style.gap = "6px";
+        scoreList.style.width = "100%";
+        scoreList.style.marginTop = "8px";
+
+        if (elements.clearButton) {
+            elements.clearButton.insertAdjacentElement(
+                "beforebegin",
+                scoreList
+            );
+        }
+
+        updateScoreList(elements);
+    }
+
+    function updateScoreList(elements) {
+        if (!scoreList) {
+            return;
+        }
+
+        scoreList.replaceChildren();
+
+        for (let index = 0; index < 6; index += 1) {
+            const pin = pins[index];
+
+            const button =
+                document.createElement("button");
+
+            button.type = "button";
+            button.style.minHeight = "46px";
+            button.style.padding = "8px";
+            button.style.border =
+                "1px solid rgba(109, 40, 217, 0.18)";
+            button.style.borderRadius = "10px";
+            button.style.background =
+                pin
+                    ? "rgba(255, 255, 255, 0.96)"
+                    : "rgba(243, 244, 246, 0.9)";
+            button.style.color = "#38275c";
+            button.style.fontWeight = "800";
+            button.style.cursor =
+                pin ? "pointer" : "default";
+            button.style.touchAction = "manipulation";
+
+            const number =
+                String(index + 1);
+
+            const score =
+                pin && pin.score !== null
+                    ? pin.score
+                    : "－";
+
+            button.textContent =
+                `${number}　${score}`;
+
+            button.disabled = !pin;
+
+            if (pin) {
+                button.addEventListener(
+                    "click",
+                    function (event) {
+                        event.preventDefault();
+                        event.stopPropagation();
+
+                        editPinScore(
+                            pin,
+                            elements
+                        );
+                    }
+                );
+            }
+
+            scoreList.appendChild(button);
+        }
     }
 
     function createScorePanel(elements) {
@@ -567,6 +657,7 @@
                     closeScorePanel();
                     renderPins(elements);
                     updateScoreSummary();
+                    updateScoreList(elements);
                     updateApplyToEndButton();
                     console.table(pins);
                 }
@@ -877,6 +968,10 @@
         }
 
         updateScoreSummary();
+
+        const elements = getPhotoElements();
+        updateScoreList(elements);
+        updateApplyToEndButton();
     }
 
     function updateUndoButton(elements) {
