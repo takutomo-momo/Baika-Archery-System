@@ -32,6 +32,17 @@ function readSheetData(sheetName) {
         } catch (e) {}
       }
 
+      if (
+        (header === "date" || header === "matchDate") &&
+        value instanceof Date
+      ) {
+        value = Utilities.formatDate(
+          value,
+          "Asia/Tokyo",
+          "yyyy-MM-dd"
+        );
+      }
+
       obj[header] = value;
     });
 
@@ -46,11 +57,17 @@ function overwriteSheet(sheetName, data) {
   if (!data || data.length === 0) return;
 
   const headers = Object.keys(data[0]);
-  sheet.appendRow(headers);
 
-  data.forEach(item => {
-    const row = headers.map(header => {
-      const value = item[header];
+  const rows = data.map(item => {
+    return headers.map(header => {
+      let value = item[header];
+
+      if (
+        header === "date" ||
+        header === "matchDate"
+      ) {
+        value = normalizeDateText(value);
+      }
 
       if (typeof value === "object" && value !== null) {
         return JSON.stringify(value);
@@ -58,7 +75,71 @@ function overwriteSheet(sheetName, data) {
 
       return value;
     });
+  });
 
-    sheet.appendRow(row);
+  const allValues = [headers, ...rows];
+
+  const range = sheet.getRange(
+    1,
+    1,
+    allValues.length,
+    headers.length
+  );
+
+  range.setValues(allValues);
+
+  headers.forEach((header, index) => {
+    if (
+      header === "date" ||
+      header === "matchDate"
+    ) {
+      sheet
+        .getRange(
+          2,
+          index + 1,
+          rows.length,
+          1
+        )
+        .setNumberFormat("@");
+    }
   });
 }
+
+function normalizeDateText(value) {
+  if (!value) return "";
+
+  if (value instanceof Date) {
+    return Utilities.formatDate(
+      value,
+      "Asia/Tokyo",
+      "yyyy-MM-dd"
+    );
+  }
+
+  const text = String(value).trim();
+
+  const dateOnlyMatch =
+    text.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+
+  if (dateOnlyMatch) {
+    return text;
+  }
+
+  const isoMatch =
+    text.match(/^(\d{4})-(\d{2})-(\d{2})T/);
+
+  if (isoMatch) {
+    const date = new Date(text);
+
+    if (!isNaN(date.getTime())) {
+      return Utilities.formatDate(
+        date,
+        "Asia/Tokyo",
+        "yyyy-MM-dd"
+      );
+    }
+  }
+
+  return text.replace(/\//g, "-");
+}
+
