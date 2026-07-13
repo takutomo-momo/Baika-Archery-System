@@ -15,6 +15,7 @@
     let scorePanel = null;
     let scoreEditingPin = null;
     let scoreSummary = null;
+    let applyToEndButton = null;
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -51,6 +52,7 @@
         createPinLayer(elements);
         createScorePanel(elements);
         createScoreSummary(elements);
+        createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
@@ -69,6 +71,84 @@
         pinLayer.style.zIndex = "5";
 
         elements.viewer.appendChild(pinLayer);
+    }
+
+    function createApplyToEndButton(elements) {
+        applyToEndButton =
+            document.createElement("button");
+
+        applyToEndButton.type = "button";
+        applyToEndButton.id =
+            "v4PhotoApplyToCurrentEnd";
+
+        applyToEndButton.className =
+            elements.clearButton
+                ? elements.clearButton.className
+                : "";
+
+        applyToEndButton.textContent =
+            "📥 現在エンドへ反映";
+
+        applyToEndButton.disabled = true;
+
+        if (elements.clearButton) {
+            elements.clearButton.insertAdjacentElement(
+                "beforebegin",
+                applyToEndButton
+            );
+        }
+
+        applyToEndButton.addEventListener(
+            "click",
+            function () {
+                applyPhotoPinsToCurrentEnd();
+            }
+        );
+
+        updateApplyToEndButton();
+    }
+
+    function applyPhotoPinsToCurrentEnd() {
+        const readyPins =
+            pins.filter(function (pin) {
+                return pin.score !== null;
+            });
+
+        if (
+            pins.length !== 6 ||
+            readyPins.length !== 6
+        ) {
+            return;
+        }
+
+        if (
+            typeof window.replaceCurrentEndFromPhoto
+            !== "function"
+        ) {
+            window.alert(
+                "現在エンドへの反映機能を確認できません。"
+            );
+            return;
+        }
+
+        window.replaceCurrentEndFromPhoto(pins);
+    }
+
+    function updateApplyToEndButton() {
+        if (!applyToEndButton) {
+            return;
+        }
+
+        const readyPins =
+            pins.filter(function (pin) {
+                return pin.score !== null;
+            });
+
+        applyToEndButton.disabled =
+            !(
+                pins.length === 6 &&
+                readyPins.length === 6
+            );
     }
 
     function createUndoButton(elements) {
@@ -123,6 +203,7 @@
                     renderPins(elements);
                     updateUndoButton(elements);
                     updateScoreSummary();
+                    updateApplyToEndButton();
                 }
             );
         }
@@ -199,6 +280,7 @@
                 renderPins(elements);
                 updateUndoButton(elements);
                 updateScoreSummary();
+                updateApplyToEndButton();
             }
         );
     }
@@ -308,6 +390,7 @@
         }
 
         updateScoreSummary();
+        updateApplyToEndButton();
     }
 
     function updateScoreSummary() {
@@ -452,6 +535,7 @@
                     closeScorePanel();
                     renderPins(elements);
                     updateScoreSummary();
+                    updateApplyToEndButton();
                     console.table(pins);
                 }
             );

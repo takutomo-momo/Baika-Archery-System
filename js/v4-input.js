@@ -502,6 +502,63 @@ currentArrows.push({
 }
 
 /**
+ * 写真入力の6本で現在エンドを直接置き換える
+ * 確認ダイアログは表示しない
+ */
+function replaceCurrentEndFromPhoto(photoPins) {
+    if (!Array.isArray(photoPins)) {
+        return false;
+    }
+
+    if (
+        photoPins.length !== 6 ||
+        photoPins.some(function (pin) {
+            return !pin || pin.score == null;
+        })
+    ) {
+        return false;
+    }
+
+    currentArrows =
+        photoPins.map(function (pin) {
+            const label =
+                String(pin.score).toUpperCase();
+
+            let numericScore = 0;
+
+            if (
+                label === "X" ||
+                label === "10"
+            ) {
+                numericScore = 10;
+            } else if (label !== "M") {
+                numericScore = Number(label);
+            }
+
+            return {
+                val: label,
+                score: numericScore,
+                x: null,
+                y: null,
+                inputType: "photo",
+                photoX: Number(pin.x),
+                photoY: Number(pin.y)
+            };
+        });
+
+    resetTargetZoom();
+    updateCurrentEndDisplay();
+    renderTargetPins();
+    renderGroupingPins();
+    updateScoreInputState();
+
+    return true;
+}
+
+window.replaceCurrentEndFromPhoto =
+    replaceCurrentEndFromPhoto;
+
+/**
  * 現在エンドをすべてクリアする
  */
 function clearCurrentEnd() {
