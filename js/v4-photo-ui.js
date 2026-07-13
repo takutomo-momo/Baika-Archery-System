@@ -14,6 +14,7 @@
     let pinLayer = null;
     let scorePanel = null;
     let scoreEditingPin = null;
+    let scoreSummary = null;
 
     document.addEventListener(
         "DOMContentLoaded",
@@ -49,6 +50,7 @@
 
         createPinLayer(elements);
         createScorePanel(elements);
+        createScoreSummary(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
@@ -120,6 +122,7 @@
                     closeScorePanel();
                     renderPins(elements);
                     updateUndoButton(elements);
+                    updateScoreSummary();
                 }
             );
         }
@@ -195,6 +198,7 @@
                 console.table(pins);
                 renderPins(elements);
                 updateUndoButton(elements);
+                updateScoreSummary();
             }
         );
     }
@@ -276,6 +280,77 @@
 
             pinLayer.appendChild(dot);
         });
+    }
+
+    function createScoreSummary(elements) {
+        scoreSummary =
+            document.createElement("div");
+
+        scoreSummary.style.display = "grid";
+        scoreSummary.style.gridTemplateColumns =
+            "repeat(4, minmax(0, 1fr))";
+        scoreSummary.style.gap = "6px";
+        scoreSummary.style.width = "100%";
+        scoreSummary.style.marginTop = "8px";
+        scoreSummary.style.padding = "10px";
+        scoreSummary.style.borderRadius = "12px";
+        scoreSummary.style.background =
+            "rgba(109, 40, 217, 0.08)";
+        scoreSummary.style.color = "#38275c";
+        scoreSummary.style.fontWeight = "800";
+        scoreSummary.style.textAlign = "center";
+
+        if (elements.clearButton) {
+            elements.clearButton.insertAdjacentElement(
+                "beforebegin",
+                scoreSummary
+            );
+        }
+
+        updateScoreSummary();
+    }
+
+    function updateScoreSummary() {
+        if (!scoreSummary) {
+            return;
+        }
+
+        const scoredPins =
+            pins.filter(function (pin) {
+                return pin.score !== null;
+            });
+
+        const total =
+            scoredPins.reduce(function (sum, pin) {
+                if (pin.score === "X") {
+                    return sum + 10;
+                }
+
+                if (pin.score === "M") {
+                    return sum;
+                }
+
+                return sum + Number(pin.score);
+            }, 0);
+
+        const xCount =
+            scoredPins.filter(function (pin) {
+                return pin.score === "X";
+            }).length;
+
+        const tenCount =
+            scoredPins.filter(function (pin) {
+                return (
+                    pin.score === "X" ||
+                    pin.score === "10"
+                );
+            }).length;
+
+        scoreSummary.innerHTML =
+            `<div>本数<br><strong>${scoredPins.length}</strong></div>`
+            + `<div>合計<br><strong>${total}</strong></div>`
+            + `<div>X<br><strong>${xCount}</strong></div>`
+            + `<div>10以上<br><strong>${tenCount}</strong></div>`;
     }
 
     function createScorePanel(elements) {
@@ -376,6 +451,7 @@
                     scoreEditingPin.score = score;
                     closeScorePanel();
                     renderPins(elements);
+                    updateScoreSummary();
                     console.table(pins);
                 }
             );
@@ -683,6 +759,8 @@
         if (pinLayer) {
             pinLayer.replaceChildren();
         }
+
+        updateScoreSummary();
     }
 
     function updateUndoButton(elements) {
