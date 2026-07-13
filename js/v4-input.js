@@ -18,6 +18,9 @@ let zoomCenter = {
     y: 150
 };
 
+const V4_GAS_API_URL =
+    "https://script.google.com/macros/s/AKfycbwGlg88mq5G4fR0_H9BlQ8VmdloL8oBPOBeIBQKWrK_XunDTPalvpo1tLu4I0qA2f16/exec";
+
 document.addEventListener("DOMContentLoaded", function () {
     drawTargetSvg();
     drawGroupingTargetSvg();
@@ -500,6 +503,218 @@ currentArrows.push({
     renderGroupingPins();
     updateScoreInputState();
 }
+
+/**
+ * 写真入力の6本をGoogleスプレッドシートへ登録する
+ */
+async function registerPhotoPracticeEnd(photoPins) {
+    if (!Array.isArray(photoPins)) {
+        return false;
+    }
+
+    if (
+        photoPins.length !== 6 ||
+        photoPins.some(function (pin) {
+            return !pin || pin.score == null;
+        })
+    ) {
+        window.alert(
+            "6本すべての得点を設定してください。"
+        );
+        return false;
+    }
+
+    const memberNameElement =
+        document.getElementById(
+            "v4LoggedInMemberName"
+        );
+
+    let memberName =
+        memberNameElement
+            ? memberNameElement.textContent.trim()
+            : "";
+
+    if (
+        !memberName ||
+        memberName === "未ログイン" ||
+        memberName === "ログイン情報を確認中"
+    ) {
+        const savedMemberName =
+            localStorage.getItem(
+                "v4PhotoPracticeMemberName"
+            ) || "";
+
+        const enteredMemberName =
+            window.prompt(
+                "登録する部員名を入力してください。",
+                savedMemberName
+            );
+
+        if (enteredMemberName === null) {
+            return false;
+        }
+
+        memberName =
+            enteredMemberName.trim();
+
+        if (!memberName) {
+            window.alert(
+                "部員名を入力してください。"
+            );
+            return false;
+        }
+
+        localStorage.setItem(
+            "v4PhotoPracticeMemberName",
+            memberName
+        );
+    }
+
+    const dateElement =
+        document.getElementById(
+            "v4PracticeDate"
+        );
+
+    const distanceElement =
+        document.getElementById(
+            "v4DistanceSelect"
+        );
+
+    const practiceDate =
+        dateElement ? dateElement.value : "";
+
+    const distance =
+        distanceElement ? distanceElement.value : "";
+
+    if (!practiceDate) {
+        window.alert(
+            "練習日を選択してください。"
+        );
+        return false;
+    }
+
+    if (!distance) {
+        window.alert(
+            "距離を選択してください。"
+        );
+        return false;
+    }
+
+    const arrows =
+        photoPins.map(function (pin) {
+            const label =
+                String(pin.score).toUpperCase();
+
+            let numericScore = 0;
+
+            if (
+                label === "X" ||
+                label === "10"
+            ) {
+                numericScore = 10;
+            } else if (label !== "M") {
+                numericScore = Number(label);
+            }
+
+            return {
+                val: label,
+                score: numericScore,
+                x: null,
+                y: null,
+                inputType: "photo",
+                photoX: Number(pin.x),
+                photoY: Number(pin.y)
+            };
+        });
+
+    const sorted =
+        [...arrows].sort(function (a, b) {
+            return b.score - a.score;
+        });
+
+    const record = {
+        date: practiceDate,
+        memberName: memberName,
+        distance: distance,
+        a1: sorted[0].val,
+        a2: sorted[1].val,
+        a3: sorted[2].val,
+        a4: sorted[3].val,
+        a5: sorted[4].val,
+        a6: sorted[5].val,
+        total: sorted.reduce(
+            function (sum, arrow) {
+                return sum + arrow.score;
+            },
+            0
+        ),
+        pins: arrows
+    };
+
+    try {
+        const getResponse =
+            await fetch(V4_GAS_API_URL);
+
+        if (!getResponse.ok) {
+            throw new Error(
+                "クラウドデータを取得できませんでした。"
+            );
+        }
+
+        const cloudData =
+            await getResponse.json();
+
+        const practiceData =
+            Array.isArray(cloudData.practice)
+                ? cloudData.practice
+                : [];
+
+        practiceData.push(record);
+
+        const payload = {
+            mode: "practice",
+            data: practiceData
+        };
+
+        const saveResponse =
+            await fetch(
+                V4_GAS_API_URL,
+                {
+                    method: "POST",
+                    body: JSON.stringify(payload)
+                }
+            );
+
+        if (!saveResponse.ok) {
+            throw new Error(
+                "クラウドへ保存できませんでした。"
+            );
+        }
+
+        await saveResponse.text();
+
+        currentArrows = [];
+        resetTargetZoom();
+        updateCurrentEndDisplay();
+        updateScoreInputState();
+
+        return true;
+    } catch (error) {
+        console.error(
+            "Photo practice save failed:",
+            error
+        );
+
+        window.alert(
+            "クラウド保存に失敗しました。通信環境またはGAS設定を確認してください。"
+        );
+
+        return false;
+    }
+}
+
+window.registerPhotoPracticeEnd =
+    registerPhotoPracticeEnd;
 
 /**
  * 写真入力の6本で現在エンドを直接置き換える

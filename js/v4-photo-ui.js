@@ -59,6 +59,12 @@
 
         window.baikaPhotoEngine = photoEngine;
         window.baikaPhotoPins = pins;
+        window.clearBaikaPhotoPins = function () {
+            clearPins();
+            closeScorePanel();
+            updateUndoButton(elements);
+            updateApplyToEndButton();
+        };
     }
 
     function createPinLayer(elements) {
@@ -87,7 +93,7 @@
                 : "";
 
         applyToEndButton.textContent =
-            "📥 現在エンドへ反映";
+            "💾 写真を登録";
 
         applyToEndButton.disabled = true;
 
@@ -100,15 +106,15 @@
 
         applyToEndButton.addEventListener(
             "click",
-            function () {
-                applyPhotoPinsToCurrentEnd();
+            async function () {
+                await registerPhotoPins();
             }
         );
 
         updateApplyToEndButton();
     }
 
-    function applyPhotoPinsToCurrentEnd() {
+    async function registerPhotoPins() {
         const readyPins =
             pins.filter(function (pin) {
                 return pin.score !== null;
@@ -122,16 +128,42 @@
         }
 
         if (
-            typeof window.replaceCurrentEndFromPhoto
+            typeof window.registerPhotoPracticeEnd
             !== "function"
         ) {
             window.alert(
-                "現在エンドへの反映機能を確認できません。"
+                "写真記録の登録機能を確認できません。"
             );
             return;
         }
 
-        window.replaceCurrentEndFromPhoto(pins);
+        applyToEndButton.disabled = true;
+        applyToEndButton.textContent = "保存中…";
+
+        try {
+            const saved =
+                await window.registerPhotoPracticeEnd(
+                    pins
+                );
+
+            if (!saved) {
+                return;
+            }
+
+            clearPins();
+            closeScorePanel();
+            updateUndoButton(getPhotoElements());
+            updateApplyToEndButton();
+
+            window.alert(
+                "写真の6本を登録しました。"
+            );
+        } finally {
+            applyToEndButton.textContent =
+                "💾 写真を登録";
+
+            updateApplyToEndButton();
+        }
     }
 
     function updateApplyToEndButton() {
