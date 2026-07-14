@@ -322,6 +322,7 @@
                 updateScoreSummary();
                 updateScoreList(elements);
                 updateApplyToEndButton();
+                syncGroupingFromPhoto();
             }
         );
     }
@@ -972,6 +973,28 @@
         const elements = getPhotoElements();
         updateScoreList(elements);
         updateApplyToEndButton();
+        syncGroupingFromPhoto();
+    }
+
+    function syncGroupingFromPhoto() {
+        if (
+            typeof window.syncPhotoPinsToGrouping
+            !== "function"
+        ) {
+            return;
+        }
+
+        const state =
+            photoEngine &&
+            typeof photoEngine.getState === "function"
+                ? photoEngine.getState()
+                : null;
+
+        window.syncPhotoPinsToGrouping(
+            pins,
+            state ? state.naturalWidth : 0,
+            state ? state.naturalHeight : 0
+        );
     }
 
     function updateUndoButton(elements) {

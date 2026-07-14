@@ -12,6 +12,7 @@
  */
 
 let currentArrows = [];
+let photoGroupingArrows = [];
 let isZoomed = false;
 let zoomCenter = {
     x: 150,
@@ -343,7 +344,12 @@ function renderGroupingPins() {
 
     pinsGroup.innerHTML = "";
 
-    currentArrows.forEach(function (arrow, index) {
+    const groupingSource =
+        photoGroupingArrows.length > 0
+            ? photoGroupingArrows
+            : currentArrows;
+
+    groupingSource.forEach(function (arrow, index) {
 if (
     arrow.val === "M" ||
     arrow.x == null ||
@@ -402,6 +408,53 @@ if (
         pinsGroup.appendChild(pinNumber);
     });
 }
+
+/**
+ * 写真上のピンをグルーピング表示へ反映する。
+ * Step29Aでは写真全体を300×300の的へ正規化して表示する。
+ */
+function syncPhotoPinsToGrouping(
+    photoPins,
+    naturalWidth,
+    naturalHeight
+) {
+    if (
+        !Array.isArray(photoPins) ||
+        !naturalWidth ||
+        !naturalHeight
+    ) {
+        photoGroupingArrows = [];
+        renderGroupingPins();
+        return;
+    }
+
+    photoGroupingArrows =
+        photoPins.map(function (pin) {
+            return {
+                val:
+                    pin.score === null
+                        ? ""
+                        : String(pin.score),
+                score: 0,
+                x:
+                    (
+                        Number(pin.x) /
+                        Number(naturalWidth)
+                    ) * 300,
+                y:
+                    (
+                        Number(pin.y) /
+                        Number(naturalHeight)
+                    ) * 300,
+                inputType: "photo-grouping"
+            };
+        });
+
+    renderGroupingPins();
+}
+
+window.syncPhotoPinsToGrouping =
+    syncPhotoPinsToGrouping;
 
 /**
  * 現在入力中の6本と、合計・平均を画面へ反映する
