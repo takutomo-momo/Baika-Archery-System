@@ -42,8 +42,9 @@ html.v4-is-landscape-layout
     width: 100% !important;
     min-width: 0 !important;
     height: auto !important;
+
     position: sticky !important;
-    top: 8px !important;
+    top: calc(82px + env(safe-area-inset-top)) !important;
 
     display: flex !important;
     flex-direction: column !important;
@@ -59,7 +60,6 @@ html.v4-is-landscape-layout
     grid-row: 1 / 2 !important;
 }
 
-/* PC・タブレット横向きの基本高さ */
 html.v4-is-landscape-layout
 #v4TargetPhotoViewer {
     width: 100% !important;
@@ -86,10 +86,7 @@ html.v4-is-landscape-layout
     padding: 10px !important;
 }
 
-/*
- * スマホ横向き専用コンパクト表示
- * 高さ600px以下を対象
- */
+/* スマホ横向き専用 */
 @media (max-height: 600px) {
     html.v4-is-landscape-layout
     .v4-target-layout {
@@ -115,6 +112,7 @@ html.v4-is-landscape-layout
     html.v4-is-landscape-layout
     .v4-target-layout
     > .v4-target-panel:nth-child(3) {
+        top: calc(70px + env(safe-area-inset-top)) !important;
         padding: 8px !important;
     }
 
@@ -125,10 +123,7 @@ html.v4-is-landscape-layout
     }
 
     html.v4-is-landscape-layout
-    .v4-grouping-note {
-        display: none !important;
-    }
-
+    .v4-grouping-note,
     html.v4-is-landscape-layout
     .v4-photo-description {
         display: none !important;
