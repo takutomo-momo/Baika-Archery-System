@@ -1,0 +1,314 @@
+/* ========================================
+   Ver4 撮影した的の写真表示
+======================================== */
+
+.v4-photo-panel {
+    align-self: stretch;
+}
+
+.v4-photo-description {
+    margin: 0;
+    color: var(--v4-muted);
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+}
+
+.v4-photo-file-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.v4-photo-select-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 46px;
+    padding: 10px 16px;
+
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 900;
+
+    border-radius: 14px;
+    background:
+        linear-gradient(
+            135deg,
+            var(--v4-purple-light),
+            var(--v4-purple-dark)
+        );
+
+    box-shadow:
+        0 8px 18px rgba(109, 40, 217, 0.2);
+
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.v4-photo-viewer {
+    position: relative;
+    display: grid;
+    place-items: center;
+
+    width: 100%;
+    min-height: 320px;
+    overflow: hidden;
+
+    border: 1px solid rgba(109, 40, 217, 0.16);
+    border-radius: 18px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.95),
+            rgba(245, 243, 255, 0.88)
+        );
+}
+
+.v4-photo-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    padding: 24px;
+    color: var(--v4-muted);
+    font-size: 13px;
+    text-align: center;
+}
+
+.v4-photo-empty[hidden] {
+    display: none;
+}
+
+.v4-photo-empty-icon {
+    font-size: 42px;
+}
+
+.v4-photo-preview {
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    object-fit: contain;
+    background: #111827;
+
+    transform-origin: center center;
+    will-change: transform;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    pointer-events: none;
+}
+
+.v4-photo-preview[hidden] {
+    display: none;
+}
+
+.v4-photo-clear-button {
+    width: 100%;
+    min-height: 44px;
+    padding: 9px 14px;
+
+    border: 0;
+    border-radius: 13px;
+    background: #6b7280;
+    color: #ffffff;
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 850;
+
+    cursor: pointer;
+}
+
+.v4-photo-clear-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.42;
+}
+
+/* 中間幅では写真を1段目に広く表示 */
+@media (min-width: 701px) and (max-width: 1050px) {
+    .v4-target-layout {
+        grid-template-columns:
+            repeat(2, minmax(0, 1fr));
+    }
+
+    .v4-photo-panel {
+        grid-column: 1 / -1;
+    }
+
+    .v4-photo-viewer {
+        min-height: 360px;
+    }
+}
+
+/* スマホでは縦並び */
+@media (max-width: 700px) {
+    .v4-target-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .v4-photo-panel {
+        grid-column: auto;
+    }
+
+    .v4-photo-viewer {
+        min-height: 280px;
+    }
+
+    .v4-photo-select-button,
+    .v4-photo-clear-button {
+        min-height: 50px;
+    }
+}
+/* ========================================
+   Ver4 写真の拡大・移動・回転
+======================================== */
+
+.v4-photo-controls {
+    display: grid;
+    grid-template-columns:
+        minmax(44px, 0.7fr)
+        minmax(70px, 1fr)
+        minmax(44px, 0.7fr)
+        minmax(80px, 1fr)
+        minmax(80px, 1fr);
+    gap: 7px;
+    width: 100%;
+}
+
+.v4-photo-control-button {
+    min-width: 0;
+    min-height: 44px;
+    padding: 8px 6px;
+
+    border: 1px solid rgba(109, 40, 217, 0.18);
+    border-radius: 12px;
+
+    background: #ffffff;
+    color: var(--v4-purple-dark);
+
+    font: inherit;
+    font-size: 13px;
+    font-weight: 900;
+
+    cursor: pointer;
+    touch-action: manipulation;
+
+    box-shadow:
+        0 6px 14px rgba(76, 29, 149, 0.08);
+
+    transition:
+        transform 0.12s ease,
+        opacity 0.12s ease,
+        background-color 0.12s ease;
+}
+
+.v4-photo-control-button:hover:not(:disabled) {
+    background: #f3e8ff;
+    transform: translateY(-1px);
+}
+
+.v4-photo-control-button:active:not(:disabled) {
+    transform: translateY(1px);
+}
+
+.v4-photo-control-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.38;
+    box-shadow: none;
+}
+
+.v4-photo-viewer {
+    cursor: default;
+    touch-action: none;
+}
+
+.v4-photo-viewer.has-photo {
+    cursor: grab;
+}
+
+.v4-photo-viewer.is-dragging {
+    cursor: grabbing;
+}
+
+.v4-photo-preview {
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+
+    transform-origin: center center;
+    will-change: transform;
+
+    user-select: none;
+    -webkit-user-select: none;
+
+    pointer-events: none;
+}
+
+@media (max-width: 700px) {
+    .v4-photo-controls {
+        grid-template-columns:
+            repeat(3, minmax(0, 1fr));
+    }
+
+    .v4-photo-control-button {
+        min-height: 48px;
+    }
+
+    #v4PhotoRotateLeft,
+    #v4PhotoRotateRight {
+        grid-column: span 1;
+    }
+}
+/*
+ * Ver4 的写真ビューアー
+ */
+#v4TargetPhotoViewer {
+    position: relative;
+    overflow: hidden;
+
+    width: 100%;
+    min-height: 280px;
+
+    touch-action: none;
+    overscroll-behavior: contain;
+
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#v4TargetPhotoPreview {
+
+    position:absolute;
+
+    left:50%;
+    top:50%;
+
+    width:auto;
+    height:auto;
+
+    max-width:100%;
+    max-height:100%;
+
+    object-fit:contain;
+
+    pointer-events:none;
+
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-user-drag:none;
+
+    transform-origin:center center;
+
+    will-change:transform;
+}
