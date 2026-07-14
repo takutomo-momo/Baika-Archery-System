@@ -2,12 +2,12 @@ html.v4-is-landscape-layout .v4-target-layout {
     display: grid !important;
     grid-template-columns:
         minmax(0, 1.45fr)
-        minmax(210px, 0.75fr) !important;
+        minmax(190px, 0.72fr) !important;
     grid-template-rows:
         auto
         auto !important;
-    gap: 12px !important;
-    align-items: stretch !important;
+    gap: 10px !important;
+    align-items: start !important;
     width: 100% !important;
 }
 
@@ -22,7 +22,7 @@ html.v4-is-landscape-layout
     position: static !important;
 }
 
-/* 入力用の的：2段目いっぱい */
+/* 入力用の的：2段目 */
 html.v4-is-landscape-layout
 .v4-target-layout
 > .v4-target-panel:nth-child(2) {
@@ -33,7 +33,7 @@ html.v4-is-landscape-layout
     position: static !important;
 }
 
-/* グルーピング：右上・写真パネルと同じ高さ */
+/* グルーピング：右上 */
 html.v4-is-landscape-layout
 .v4-target-layout
 > .v4-target-panel:nth-child(3) {
@@ -41,14 +41,13 @@ html.v4-is-landscape-layout
     grid-row: 1 / 2 !important;
     width: 100% !important;
     min-width: 0 !important;
-    height: 100% !important;
-    position: static !important;
+    height: auto !important;
+    position: sticky !important;
+    top: 8px !important;
 
-    display: grid !important;
-    grid-template-rows:
-        auto
-        minmax(0, 1fr)
-        auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
     align-items: center !important;
 }
 
@@ -60,33 +59,97 @@ html.v4-is-landscape-layout
     grid-row: 1 / 2 !important;
 }
 
+/* PC・タブレット横向きの基本高さ */
 html.v4-is-landscape-layout
 #v4TargetPhotoViewer {
     width: 100% !important;
-    min-height: 280px !important;
-    height: min(62vh, 500px) !important;
+    min-height: 250px !important;
+    height: min(54vh, 430px) !important;
 }
 
-/* グルーピングの的を縦横中央へ */
 html.v4-is-landscape-layout
 .v4-grouping-container {
-    align-self: center !important;
-    justify-self: center !important;
-
     width: 100% !important;
-    max-width: min(42vh, 300px) !important;
-    margin: auto !important;
+    max-width: min(38vh, 270px) !important;
+    margin: 0 auto !important;
 }
 
 html.v4-is-landscape-layout
 .v4-grouping-note {
-    align-self: end !important;
     min-height: 0 !important;
-    margin-top: 4px !important;
-    font-size: 11px !important;
+    margin: 4px 0 0 !important;
+    font-size: 10px !important;
 }
 
 html.v4-is-landscape-layout
 .v4-target-panel {
-    padding: 12px !important;
+    padding: 10px !important;
+}
+
+/*
+ * スマホ横向き専用コンパクト表示
+ * 高さ600px以下を対象
+ */
+@media (max-height: 600px) {
+    html.v4-is-landscape-layout
+    .v4-target-layout {
+        grid-template-columns:
+            minmax(0, 1.5fr)
+            minmax(170px, 0.65fr) !important;
+        gap: 8px !important;
+    }
+
+    html.v4-is-landscape-layout
+    #v4TargetPhotoViewer {
+        min-height: 210px !important;
+        height: 44vh !important;
+        max-height: 300px !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-grouping-container {
+        width: min(100%, 34vh) !important;
+        max-width: 220px !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-target-layout
+    > .v4-target-panel:nth-child(3) {
+        padding: 8px !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-target-panel-title {
+        margin: 0 !important;
+        font-size: 12px !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-grouping-note {
+        display: none !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-photo-description {
+        display: none !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-photo-controls {
+        gap: 4px !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-photo-control-button {
+        min-height: 38px !important;
+        padding: 5px 4px !important;
+        font-size: 11px !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-photo-select-button {
+        min-height: 38px !important;
+        padding: 7px 10px !important;
+        font-size: 12px !important;
+    }
 }
