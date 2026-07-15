@@ -293,7 +293,12 @@ function renderTargetPins() {
 
     pinsGroup.innerHTML = "";
 
-    currentArrows.forEach(function (arrow, index) {
+    const targetSource =
+        photoGroupingArrows.length > 0
+            ? photoGroupingArrows
+            : currentArrows;
+
+    targetSource.forEach(function (arrow, index) {
 if (
     arrow.val === "M" ||
     arrow.x == null ||
@@ -450,6 +455,7 @@ function syncPhotoPinsToGrouping(
             };
         });
 
+    renderTargetPins();
     renderGroupingPins();
 }
 

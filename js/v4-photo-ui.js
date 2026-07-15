@@ -244,6 +244,7 @@
                     updateScoreSummary();
                     updateScoreList(elements);
                     updateApplyToEndButton();
+                    syncGroupingFromPhoto();
                 }
             );
         }
