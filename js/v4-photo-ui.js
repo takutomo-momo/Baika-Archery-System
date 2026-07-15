@@ -880,6 +880,7 @@
             }
 
             renderPins(elements);
+            syncGroupingFromPhoto();
             console.table(pins);
         }
 
