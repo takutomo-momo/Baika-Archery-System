@@ -848,6 +848,8 @@
                         screenPoint.y -
                         viewerRect.top
                     ) + "px";
+
+                syncGroupingFromPhoto();
             }
         );
 
