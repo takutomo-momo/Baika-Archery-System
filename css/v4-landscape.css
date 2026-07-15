@@ -3,10 +3,10 @@
  * Step30-2 landscape helpers
  *
  * 配置はv4-responsive.cssで管理し、
- * このファイルでは横向き時の高さ・固定位置・省スペース化だけを行う。
+ * このファイルでは固定位置・高さ・省スペース化を行う。
  */
 
-/* JavaScriptが横向きと判定したとき */
+/* スマホ・タブレット横向き：右上の入力用の的を固定 */
 html.v4-is-landscape-layout
 .v4-target-layout
 > .v4-target-panel:nth-child(2) {
@@ -80,5 +80,19 @@ html.v4-is-landscape-layout
         min-height: 38px !important;
         padding: 7px 10px !important;
         font-size: 12px !important;
+    }
+}
+
+/*
+ * PC版：
+ * 3列表示の右端にあるグルーピングパネルを
+ * ヘッダー直下で固定する。
+ */
+@media (min-width: 1051px) and (min-height: 701px) {
+    .v4-target-layout
+    > .v4-target-panel:nth-child(3) {
+        position: sticky !important;
+        top: 100px !important;
+        align-self: start !important;
     }
 }
