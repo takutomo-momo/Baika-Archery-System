@@ -18,6 +18,12 @@
     let scoreList = null;
     let applyToEndButton = null;
 
+    let calibrationMode = null;
+    let calibrationCenter = null;
+    let calibrationRadius = null;
+    let calibrationButton = null;
+    let calibrationStatus = null;
+
     document.addEventListener(
         "DOMContentLoaded",
         initializePhotoUI
@@ -54,6 +60,7 @@
         createScorePanel(elements);
         createScoreSummary(elements);
         createScoreList(elements);
+        createCalibrationControls(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -79,6 +86,155 @@
         pinLayer.style.zIndex = "5";
 
         elements.viewer.appendChild(pinLayer);
+    }
+
+    function createCalibrationControls(elements) {
+        const wrapper =
+            document.createElement("div");
+
+        wrapper.style.display = "grid";
+        wrapper.style.gap = "6px";
+        wrapper.style.width = "100%";
+        wrapper.style.marginTop = "8px";
+
+        calibrationButton =
+            document.createElement("button");
+
+        calibrationButton.type = "button";
+        calibrationButton.textContent =
+            "🎯 写真の的を校正";
+        calibrationButton.className =
+            elements.clearButton
+                ? elements.clearButton.className
+                : "";
+
+        calibrationStatus =
+            document.createElement("div");
+
+        calibrationStatus.style.padding = "8px";
+        calibrationStatus.style.borderRadius = "10px";
+        calibrationStatus.style.background =
+            "rgba(109, 40, 217, 0.08)";
+        calibrationStatus.style.color = "#38275c";
+        calibrationStatus.style.fontSize = "12px";
+        calibrationStatus.style.fontWeight = "700";
+        calibrationStatus.style.textAlign = "center";
+        calibrationStatus.textContent =
+            "未校正：写真全体を基準に表示";
+
+        calibrationButton.addEventListener(
+            "click",
+            function () {
+                calibrationMode = "center";
+                calibrationCenter = null;
+                calibrationRadius = null;
+
+                calibrationButton.textContent =
+                    "① 的中心をタップ";
+                calibrationStatus.textContent =
+                    "写真上の的中心を1回タップしてください。";
+            }
+        );
+
+        wrapper.appendChild(calibrationButton);
+        wrapper.appendChild(calibrationStatus);
+
+        if (elements.clearButton) {
+            elements.clearButton.insertAdjacentElement(
+                "beforebegin",
+                wrapper
+            );
+        }
+    }
+
+    function handleCalibrationPoint(
+        imageX,
+        imageY
+    ) {
+        if (!calibrationMode) {
+            return false;
+        }
+
+        const x = Number(imageX);
+        const y = Number(imageY);
+
+        if (
+            !Number.isFinite(x) ||
+            !Number.isFinite(y)
+        ) {
+            return true;
+        }
+
+        if (calibrationMode === "center") {
+            calibrationCenter = { x: x, y: y };
+            calibrationMode = "radius";
+
+            calibrationButton.textContent =
+                "② 的外周をタップ";
+            calibrationStatus.textContent =
+                "中心から見て的紙の最外周を1回タップしてください。";
+
+            return true;
+        }
+
+        const radius = Math.hypot(
+            x - calibrationCenter.x,
+            y - calibrationCenter.y
+        );
+
+        if (!Number.isFinite(radius) || radius < 10) {
+            window.alert(
+                "中心から十分離れた的の外周をタップしてください。"
+            );
+            return true;
+        }
+
+        calibrationRadius = radius;
+        calibrationMode = null;
+
+        calibrationButton.textContent =
+            "🎯 写真の的を再校正";
+        calibrationStatus.textContent =
+            "校正済み：中心と外周を基準に同期";
+
+        syncGroupingFromPhoto();
+
+        return true;
+    }
+
+    function getCalibration() {
+        return {
+            ready:
+                calibrationCenter !== null &&
+                Number.isFinite(calibrationRadius) &&
+                calibrationRadius > 0,
+            centerX:
+                calibrationCenter
+                    ? calibrationCenter.x
+                    : 0,
+            centerY:
+                calibrationCenter
+                    ? calibrationCenter.y
+                    : 0,
+            radius:
+                calibrationRadius || 0
+        };
+    }
+
+    function resetCalibration() {
+        calibrationMode = null;
+        calibrationCenter = null;
+        calibrationRadius = null;
+
+        if (calibrationButton) {
+            calibrationButton.textContent =
+                "🎯 写真の的を校正";
+        }
+
+        if (calibrationStatus) {
+            calibrationStatus.textContent =
+                "未校正：写真全体を基準に表示";
+        }
     }
 
     function createApplyToEndButton(elements) {
@@ -310,6 +466,15 @@
             "baika-photo-singletap",
             function (event) {
                 const point = event.detail;
+
+                if (
+                    handleCalibrationPoint(
+                        point.imageX,
+                        point.imageY
+                    )
+                ) {
+                    return;
+                }
 
                 pins.push({
                     x: Math.round(point.imageX),
@@ -661,6 +826,7 @@
                     updateScoreSummary();
                     updateScoreList(elements);
                     updateApplyToEndButton();
+                    syncGroupingFromPhoto();
                     console.table(pins);
                 }
             );
@@ -829,6 +995,12 @@
                     )
                 );
 
+                /*
+                 * 写真側で現在動かしている番号だけを
+                 * 入力用・グルーピングへ再反映する。
+                 */
+                pin.photoPositionChanged = true;
+
                 const screenPoint =
                     photoEngine.imageToScreenPoint(
                         pin.x,
@@ -851,6 +1023,7 @@
                     ) + "px";
 
                 syncGroupingFromPhoto();
+                pin.photoPositionChanged = false;
             }
         );
 
@@ -882,8 +1055,10 @@
                 return;
             }
 
+            pin.photoPositionChanged = true;
             renderPins(elements);
             syncGroupingFromPhoto();
+            pin.photoPositionChanged = false;
             console.table(pins);
         }
 
@@ -977,6 +1152,7 @@
         const elements = getPhotoElements();
         updateScoreList(elements);
         updateApplyToEndButton();
+        resetCalibration();
         syncGroupingFromPhoto();
     }
 
@@ -997,7 +1173,8 @@
         window.syncPhotoPinsToGrouping(
             pins,
             state ? state.naturalWidth : 0,
-            state ? state.naturalHeight : 0
+            state ? state.naturalHeight : 0,
+            getCalibration()
         );
     }
 

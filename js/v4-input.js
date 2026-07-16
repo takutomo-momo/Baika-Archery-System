@@ -158,7 +158,35 @@ function drawGroupingTargetSvg() {
 function handleTargetClick(event) {
     const svg = document.getElementById("targetSvg");
 
-    if (!svg || currentArrows.length >= 6) {
+    if (!svg) {
+        return;
+    }
+
+    /*
+     * Target Engineがピンドラッグ／ピンタップとして
+     * 処理した直後のclickは、ズームへ渡さない。
+     */
+    if (
+        window.baikaTargetGesture &&
+        typeof window.baikaTargetGesture
+            .consumeSuppressedClick === "function" &&
+        window.baikaTargetGesture
+            .consumeSuppressedClick()
+    ) {
+        return;
+    }
+
+    /*
+     * ピンク丸そのものをタップした場合も、
+     * 的ズームや新規入力として扱わない。
+     */
+    if (
+        event.target &&
+        typeof event.target.closest === "function" &&
+        event.target.closest(
+            "[data-target-pin-index]"
+        )
+    ) {
         return;
     }
 
@@ -183,6 +211,14 @@ function handleTargetClick(event) {
             `${tappedX - 50} ${tappedY - 50} 100 100`
         );
 
+        return;
+    }
+
+    /*
+     * 6本入力済みでもズーム表示は利用できる。
+     * ただし、新しい7本目は追加しない。
+     */
+    if (currentArrows.length >= 6) {
         return;
     }
 
@@ -314,11 +350,50 @@ if (
 
         pin.setAttribute("cx", String(arrow.x));
         pin.setAttribute("cy", String(arrow.y));
-        pin.setAttribute("r", "3.5");
+        pin.setAttribute("r", "5");
         pin.setAttribute("fill", "#ec4899");
         pin.setAttribute("stroke", "#ffffff");
         pin.setAttribute("stroke-width", "1");
+        pin.setAttribute(
+            "data-target-pin-index",
+            String(index)
+        );
+        pin.style.cursor = "grab";
+        pin.style.pointerEvents = "all";
+        pin.style.touchAction = "none";
 
+        /*
+         * スマホで掴みやすい透明な当たり判定。
+         * 見た目は変えず、半径12の範囲でドラッグ可能にする。
+         */
+        const pinHitArea =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "circle"
+            );
+
+        pinHitArea.setAttribute(
+            "cx",
+            String(arrow.x)
+        );
+        pinHitArea.setAttribute(
+            "cy",
+            String(arrow.y)
+        );
+        pinHitArea.setAttribute("r", "12");
+        pinHitArea.setAttribute(
+            "fill",
+            "transparent"
+        );
+        pinHitArea.setAttribute(
+            "data-target-pin-index",
+            String(index)
+        );
+        pinHitArea.style.cursor = "grab";
+        pinHitArea.style.pointerEvents = "all";
+        pinHitArea.style.touchAction = "none";
+
+        pinsGroup.appendChild(pinHitArea);
         pinsGroup.appendChild(pin);
 
         const pinNumber = document.createElementNS(
@@ -332,6 +407,11 @@ if (
         pinNumber.setAttribute("font-weight", "bold");
         pinNumber.setAttribute("fill", "#111827");
         pinNumber.textContent = String(index + 1);
+        pinNumber.setAttribute(
+            "data-target-pin-label-index",
+            String(index)
+        );
+        pinNumber.style.pointerEvents = "none";
 
         pinsGroup.appendChild(pinNumber);
     });
@@ -339,6 +419,87 @@ if (
 /**
  * グルーピング確認用の的に着弾位置を表示する
  */
+function getTargetSvgPoint(event) {
+    const svg = document.getElementById("targetSvg");
+
+    if (!svg) {
+        return null;
+    }
+
+    const point = svg.createSVGPoint();
+    point.x = event.clientX;
+    point.y = event.clientY;
+
+    const matrix = svg.getScreenCTM();
+
+    if (!matrix) {
+        return null;
+    }
+
+    const svgPoint =
+        point.matrixTransform(matrix.inverse());
+
+    return {
+        x: Math.max(0, Math.min(300, svgPoint.x)),
+        y: Math.max(0, Math.min(300, svgPoint.y))
+    };
+}
+
+function getPhotoGroupingArrows() {
+    return photoGroupingArrows;
+}
+
+function updateTargetPinPosition(
+    index,
+    x,
+    y
+) {
+    if (!photoGroupingArrows[index]) {
+        return false;
+    }
+
+    photoGroupingArrows[index].x =
+        Math.max(0, Math.min(300, Number(x)));
+
+    photoGroupingArrows[index].y =
+        Math.max(0, Math.min(300, Number(y)));
+
+    photoGroupingArrows[index].targetAdjusted =
+        true;
+
+    renderGroupingPins();
+
+    return true;
+}
+
+function finishTargetPinPosition(
+    index,
+    x,
+    y
+) {
+    const updated =
+        updateTargetPinPosition(
+            index,
+            x,
+            y
+        );
+
+    if (!updated) {
+        return false;
+    }
+
+    renderTargetPins();
+    renderGroupingPins();
+
+    return true;
+}
+
+window.baikaTargetModel = {
+    getArrows: getPhotoGroupingArrows,
+    updatePinPosition: updateTargetPinPosition,
+    finishPinPosition: finishTargetPinPosition
+};
+
 function renderGroupingPins() {
     const pinsGroup =
         document.getElementById("groupingPinsGroup");
@@ -410,8 +571,162 @@ if (
         pinNumber.textContent =
             String(index + 1);
 
+        pinNumber.style.pointerEvents = "none";
+
         pinsGroup.appendChild(pinNumber);
+
     });
+
+    renderGroupingCenter(
+        pinsGroup,
+        groupingSource
+    );
+}
+
+/**
+ * グルーピングの平均着弾位置を表示する
+ */
+function renderGroupingCenter(
+    pinsGroup,
+    arrows
+) {
+    const validArrows =
+        arrows.filter(function (arrow) {
+            if (!arrow) {
+                return false;
+            }
+
+            const scoreLabel =
+                String(
+                    arrow.val != null
+                        ? arrow.val
+                        : ""
+                )
+                    .trim()
+                    .toUpperCase();
+
+            const isMiss =
+                arrow.isMiss === true ||
+                scoreLabel === "M";
+
+            return (
+                !isMiss &&
+                arrow.x != null &&
+                arrow.y != null &&
+                Number.isFinite(Number(arrow.x)) &&
+                Number.isFinite(Number(arrow.y))
+            );
+        });
+
+    if (validArrows.length === 0) {
+        return;
+    }
+
+    const centerX =
+        validArrows.reduce(
+            function (sum, arrow) {
+                return sum + Number(arrow.x);
+            },
+            0
+        ) / validArrows.length;
+
+    const centerY =
+        validArrows.reduce(
+            function (sum, arrow) {
+                return sum + Number(arrow.y);
+            },
+            0
+        ) / validArrows.length;
+
+    const markerGroup =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "g"
+        );
+
+    markerGroup.setAttribute(
+        "aria-label",
+        "グルーピング中心"
+    );
+
+    const outerCircle =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle"
+        );
+
+    outerCircle.setAttribute("cx", String(centerX));
+    outerCircle.setAttribute("cy", String(centerY));
+    outerCircle.setAttribute("r", "7");
+    outerCircle.setAttribute("fill", "none");
+    outerCircle.setAttribute("stroke", "#06b6d4");
+    outerCircle.setAttribute("stroke-width", "2");
+
+    markerGroup.appendChild(outerCircle);
+
+    const horizontalLine =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "line"
+        );
+
+    horizontalLine.setAttribute(
+        "x1",
+        String(centerX - 10)
+    );
+    horizontalLine.setAttribute(
+        "x2",
+        String(centerX + 10)
+    );
+    horizontalLine.setAttribute("y1", String(centerY));
+    horizontalLine.setAttribute("y2", String(centerY));
+    horizontalLine.setAttribute("stroke", "#06b6d4");
+    horizontalLine.setAttribute("stroke-width", "1.8");
+
+    markerGroup.appendChild(horizontalLine);
+
+    const verticalLine =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "line"
+        );
+
+    verticalLine.setAttribute("x1", String(centerX));
+    verticalLine.setAttribute("x2", String(centerX));
+    verticalLine.setAttribute(
+        "y1",
+        String(centerY - 10)
+    );
+    verticalLine.setAttribute(
+        "y2",
+        String(centerY + 10)
+    );
+    verticalLine.setAttribute("stroke", "#06b6d4");
+    verticalLine.setAttribute("stroke-width", "1.8");
+
+    markerGroup.appendChild(verticalLine);
+
+    const label =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+        );
+
+    label.setAttribute(
+        "x",
+        String(centerX + 10)
+    );
+    label.setAttribute(
+        "y",
+        String(centerY - 8)
+    );
+    label.setAttribute("font-size", "8");
+    label.setAttribute("font-weight", "bold");
+    label.setAttribute("fill", "#0891b2");
+    label.textContent = "中心";
+
+    markerGroup.appendChild(label);
+    pinsGroup.appendChild(markerGroup);
 }
 
 /**
@@ -421,7 +736,8 @@ if (
 function syncPhotoPinsToGrouping(
     photoPins,
     naturalWidth,
-    naturalHeight
+    naturalHeight,
+    calibration
 ) {
     if (
         !Array.isArray(photoPins) ||
@@ -433,24 +749,86 @@ function syncPhotoPinsToGrouping(
         return;
     }
 
+    const previousTargetArrows =
+        Array.isArray(photoGroupingArrows)
+            ? photoGroupingArrows
+            : [];
+
     photoGroupingArrows =
-        photoPins.map(function (pin) {
-            return {
-                val:
-                    pin.score === null
-                        ? ""
-                        : String(pin.score),
-                score: 0,
-                x:
-                    (
+        photoPins.map(function (pin, index) {
+            const scoreLabel =
+                pin.score === null
+                    ? ""
+                    : String(pin.score)
+                        .trim()
+                        .toUpperCase();
+
+            const isMiss =
+                scoreLabel === "M";
+
+            const photoTargetX =
+                calibration &&
+                calibration.ready
+                    ? (
+                        150 +
+                        (
+                            Number(pin.x) -
+                            Number(calibration.centerX)
+                        ) /
+                        Number(calibration.radius) *
+                        150
+                    )
+                    : (
                         Number(pin.x) /
                         Number(naturalWidth)
-                    ) * 300,
-                y:
-                    (
+                    ) * 300;
+
+            const photoTargetY =
+                calibration &&
+                calibration.ready
+                    ? (
+                        150 +
+                        (
+                            Number(pin.y) -
+                            Number(calibration.centerY)
+                        ) /
+                        Number(calibration.radius) *
+                        150
+                    )
+                    : (
                         Number(pin.y) /
                         Number(naturalHeight)
-                    ) * 300,
+                    ) * 300;
+
+            const previous =
+                previousTargetArrows[index];
+
+            const preserveManualAdjustment =
+                previous &&
+                previous.targetAdjusted === true &&
+                pin.photoPositionChanged !== true;
+
+            return {
+                val: scoreLabel,
+                score:
+                    isMiss
+                        ? 0
+                        : (
+                            scoreLabel === "X"
+                                ? 10
+                                : Number(scoreLabel || 0)
+                        ),
+                isMiss: isMiss,
+                x:
+                    preserveManualAdjustment
+                        ? Number(previous.x)
+                        : photoTargetX,
+                y:
+                    preserveManualAdjustment
+                        ? Number(previous.y)
+                        : photoTargetY,
+                targetAdjusted:
+                    preserveManualAdjustment,
                 inputType: "photo-grouping"
             };
         });
