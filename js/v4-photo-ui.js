@@ -19,8 +19,13 @@
     let applyToEndButton = null;
 
     let calibrationMode = null;
-    let calibrationCenter = null;
-    let calibrationRadius = null;
+    let calibrationPoints = {
+        center: null,
+        left: null,
+        right: null,
+        top: null,
+        bottom: null
+    };
     let calibrationButton = null;
     let calibrationStatus = null;
 
@@ -102,7 +107,7 @@
 
         calibrationButton.type = "button";
         calibrationButton.textContent =
-            "🎯 写真の的を校正";
+            "🎯 写真の的を4点校正";
         calibrationButton.className =
             elements.clearButton
                 ? elements.clearButton.className
@@ -126,13 +131,18 @@
             "click",
             function () {
                 calibrationMode = "center";
-                calibrationCenter = null;
-                calibrationRadius = null;
+                calibrationPoints = {
+                    center: null,
+                    left: null,
+                    right: null,
+                    top: null,
+                    bottom: null
+                };
 
                 calibrationButton.textContent =
                     "① 的中心をタップ";
                 calibrationStatus.textContent =
-                    "写真上の的中心を1回タップしてください。";
+                    "写真上の的中心をタップしてください。";
             }
         );
 
@@ -147,6 +157,36 @@
         }
     }
 
+    function updateCalibrationPrompt() {
+        const prompts = {
+            left: [
+                "② 左端をタップ",
+                "的紙の左端をタップしてください。"
+            ],
+            right: [
+                "③ 右端をタップ",
+                "的紙の右端をタップしてください。"
+            ],
+            top: [
+                "④ 上端をタップ",
+                "的紙の上端をタップしてください。"
+            ],
+            bottom: [
+                "⑤ 下端をタップ",
+                "的紙の下端をタップしてください。"
+            ]
+        };
+
+        const prompt = prompts[calibrationMode];
+
+        if (!prompt) {
+            return;
+        }
+
+        calibrationButton.textContent = prompt[0];
+        calibrationStatus.textContent = prompt[1];
+    }
+
     function handleCalibrationPoint(
         imageX,
         imageY
@@ -155,47 +195,60 @@
             return false;
         }
 
-        const x = Number(imageX);
-        const y = Number(imageY);
+        const point = {
+            x: Number(imageX),
+            y: Number(imageY)
+        };
 
         if (
-            !Number.isFinite(x) ||
-            !Number.isFinite(y)
+            !Number.isFinite(point.x) ||
+            !Number.isFinite(point.y)
         ) {
             return true;
         }
 
         if (calibrationMode === "center") {
-            calibrationCenter = { x: x, y: y };
-            calibrationMode = "radius";
-
-            calibrationButton.textContent =
-                "② 的外周をタップ";
-            calibrationStatus.textContent =
-                "中心から見て的紙の最外周を1回タップしてください。";
-
+            calibrationPoints.center = point;
+            calibrationMode = "left";
+            updateCalibrationPrompt();
             return true;
         }
 
-        const radius = Math.hypot(
-            x - calibrationCenter.x,
-            y - calibrationCenter.y
-        );
+        calibrationPoints[calibrationMode] = point;
 
-        if (!Number.isFinite(radius) || radius < 10) {
+        const order = [
+            "left",
+            "right",
+            "top",
+            "bottom"
+        ];
+
+        const currentIndex =
+            order.indexOf(calibrationMode);
+
+        if (currentIndex < order.length - 1) {
+            calibrationMode =
+                order[currentIndex + 1];
+            updateCalibrationPrompt();
+            return true;
+        }
+
+        const calibration =
+            getCalibration();
+
+        if (!calibration.ready) {
             window.alert(
-                "中心から十分離れた的の外周をタップしてください。"
+                "校正点が近すぎます。もう一度設定してください。"
             );
+            resetCalibration();
             return true;
         }
 
-        calibrationRadius = radius;
         calibrationMode = null;
-
         calibrationButton.textContent =
             "🎯 写真の的を再校正";
         calibrationStatus.textContent =
-            "校正済み：中心と外周を基準に同期";
+            "4点校正済み：横・縦方向を個別補正";
 
         syncGroupingFromPhoto();
 
@@ -203,32 +256,66 @@
     }
 
     function getCalibration() {
+        const center = calibrationPoints.center;
+        const left = calibrationPoints.left;
+        const right = calibrationPoints.right;
+        const top = calibrationPoints.top;
+        const bottom = calibrationPoints.bottom;
+
+        if (
+            !center ||
+            !left ||
+            !right ||
+            !top ||
+            !bottom
+        ) {
+            return {
+                ready: false,
+                centerX: 0,
+                centerY: 0,
+                radiusX: 0,
+                radiusY: 0
+            };
+        }
+
+        const radiusX =
+            (
+                Math.abs(center.x - left.x) +
+                Math.abs(right.x - center.x)
+            ) / 2;
+
+        const radiusY =
+            (
+                Math.abs(center.y - top.y) +
+                Math.abs(bottom.y - center.y)
+            ) / 2;
+
         return {
             ready:
-                calibrationCenter !== null &&
-                Number.isFinite(calibrationRadius) &&
-                calibrationRadius > 0,
-            centerX:
-                calibrationCenter
-                    ? calibrationCenter.x
-                    : 0,
-            centerY:
-                calibrationCenter
-                    ? calibrationCenter.y
-                    : 0,
-            radius:
-                calibrationRadius || 0
+                Number.isFinite(radiusX) &&
+                Number.isFinite(radiusY) &&
+                radiusX >= 10 &&
+                radiusY >= 10,
+            centerX: center.x,
+            centerY: center.y,
+            radiusX: radiusX,
+            radiusY: radiusY
         };
     }
 
     function resetCalibration() {
         calibrationMode = null;
-        calibrationCenter = null;
-        calibrationRadius = null;
+        calibrationPoints = {
+            center: null,
+            left: null,
+            right: null,
+            top: null,
+            bottom: null
+        };
 
         if (calibrationButton) {
             calibrationButton.textContent =
-                "🎯 写真の的を校正";
+                "🎯 写真の的を4点校正";
         }
 
         if (calibrationStatus) {

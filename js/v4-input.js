@@ -775,7 +775,7 @@ function syncPhotoPinsToGrouping(
                             Number(pin.x) -
                             Number(calibration.centerX)
                         ) /
-                        Number(calibration.radius) *
+                        Number(calibration.radiusX) *
                         150
                     )
                     : (
@@ -792,7 +792,7 @@ function syncPhotoPinsToGrouping(
                             Number(pin.y) -
                             Number(calibration.centerY)
                         ) /
-                        Number(calibration.radius) *
+                        Number(calibration.radiusY) *
                         150
                     )
                     : (
