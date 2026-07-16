@@ -201,7 +201,7 @@
         arrowDetectButton.textContent =
             "解析中…";
         arrowDetectStatus.textContent =
-            "緑色のノック・羽根を探索しています。";
+            "緑色候補とシャフト方向を解析しています。";
 
         window.setTimeout(
             function () {
@@ -267,49 +267,127 @@
 
         arrowCandidates.forEach(
             function (candidate, index) {
-                const screenPoint =
+                const startPoint =
                     photoEngine.imageToScreenPoint(
                         candidate.x,
                         candidate.y
                     );
 
-                const marker =
+                const impactPoint =
+                    photoEngine.imageToScreenPoint(
+                        candidate.impactX,
+                        candidate.impactY
+                    );
+
+                const startX =
+                    startPoint.x - viewerRect.left;
+                const startY =
+                    startPoint.y - viewerRect.top;
+                const endX =
+                    impactPoint.x - viewerRect.left;
+                const endY =
+                    impactPoint.y - viewerRect.top;
+
+                const lineLength =
+                    Math.hypot(
+                        endX - startX,
+                        endY - startY
+                    );
+
+                const lineAngle =
+                    Math.atan2(
+                        endY - startY,
+                        endX - startX
+                    ) *
+                    180 /
+                    Math.PI;
+
+                const line =
                     document.createElement("div");
 
-                marker.textContent =
+                line.style.position = "absolute";
+                line.style.left = startX + "px";
+                line.style.top = startY + "px";
+                line.style.width = lineLength + "px";
+                line.style.height = "3px";
+                line.style.transformOrigin = "0 50%";
+                line.style.transform =
+                    `rotate(${lineAngle}deg)`;
+                line.style.background =
+                    candidate.shaftConfidence >= 0.22
+                        ? "rgba(249, 115, 22, 0.9)"
+                        : "rgba(148, 163, 184, 0.8)";
+                line.style.borderRadius = "999px";
+                line.style.boxShadow =
+                    "0 0 0 1px rgba(255,255,255,0.8)";
+
+                const candidateMarker =
+                    document.createElement("div");
+
+                candidateMarker.textContent =
                     `候補${index + 1}`;
 
-                marker.style.position = "absolute";
-                marker.style.left =
-                    (
-                        screenPoint.x -
-                        viewerRect.left
-                    ) + "px";
-                marker.style.top =
-                    (
-                        screenPoint.y -
-                        viewerRect.top
-                    ) + "px";
-                marker.style.transform =
+                candidateMarker.style.position =
+                    "absolute";
+                candidateMarker.style.left =
+                    startX + "px";
+                candidateMarker.style.top =
+                    startY + "px";
+                candidateMarker.style.transform =
                     "translate(-50%, -50%)";
-                marker.style.display = "grid";
-                marker.style.placeItems = "center";
-                marker.style.minWidth = "46px";
-                marker.style.height = "24px";
-                marker.style.padding = "0 6px";
-                marker.style.borderRadius = "999px";
-                marker.style.background =
+                candidateMarker.style.display = "grid";
+                candidateMarker.style.placeItems =
+                    "center";
+                candidateMarker.style.minWidth = "46px";
+                candidateMarker.style.height = "24px";
+                candidateMarker.style.padding = "0 6px";
+                candidateMarker.style.borderRadius =
+                    "999px";
+                candidateMarker.style.background =
                     "rgba(6, 182, 212, 0.9)";
-                marker.style.border =
+                candidateMarker.style.border =
                     "2px solid #ffffff";
-                marker.style.color = "#ffffff";
-                marker.style.fontSize = "10px";
-                marker.style.fontWeight = "900";
-                marker.style.boxShadow =
+                candidateMarker.style.color = "#ffffff";
+                candidateMarker.style.fontSize = "10px";
+                candidateMarker.style.fontWeight = "900";
+                candidateMarker.style.boxShadow =
                     "0 2px 8px rgba(0,0,0,0.3)";
 
+                const impactMarker =
+                    document.createElement("div");
+
+                impactMarker.textContent =
+                    `着弾${index + 1}`;
+
+                impactMarker.style.position =
+                    "absolute";
+                impactMarker.style.left = endX + "px";
+                impactMarker.style.top = endY + "px";
+                impactMarker.style.transform =
+                    "translate(-50%, -50%)";
+                impactMarker.style.display = "grid";
+                impactMarker.style.placeItems = "center";
+                impactMarker.style.minWidth = "46px";
+                impactMarker.style.height = "24px";
+                impactMarker.style.padding = "0 6px";
+                impactMarker.style.borderRadius =
+                    "999px";
+                impactMarker.style.background =
+                    "rgba(249, 115, 22, 0.92)";
+                impactMarker.style.border =
+                    "2px solid #ffffff";
+                impactMarker.style.color = "#ffffff";
+                impactMarker.style.fontSize = "10px";
+                impactMarker.style.fontWeight = "900";
+                impactMarker.style.boxShadow =
+                    "0 2px 8px rgba(0,0,0,0.3)";
+
+                arrowCandidateLayer.appendChild(line);
                 arrowCandidateLayer.appendChild(
-                    marker
+                    candidateMarker
+                );
+                arrowCandidateLayer.appendChild(
+                    impactMarker
                 );
             }
         );

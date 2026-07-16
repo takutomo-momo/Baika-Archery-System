@@ -2,78 +2,53 @@
 
 /*
  * Baika Archery System Ver4
- * Step34-1 Arrow Candidate Detector
+ * Step34-2 Arrow Candidate Detector
  *
- * 初期試作:
- * 緑色のノック／羽根を画像処理で抽出し、
- * 矢候補の位置を返す。
+ * 1. 緑色のノック／羽根を検出
+ * 2. 周囲の暗い細長い画素をPCAで解析
+ * 3. シャフト方向と着弾位置候補を推定
  *
- * この段階では着弾点や得点を自動確定しない。
+ * この段階では自動登録しない。
  */
 
 (function () {
     function createWorkCanvas(image, maxSide) {
         const naturalWidth =
             Number(image.naturalWidth || image.width);
-
         const naturalHeight =
             Number(image.naturalHeight || image.height);
 
         if (!naturalWidth || !naturalHeight) {
-            throw new Error(
-                "画像サイズを取得できません。"
-            );
+            throw new Error("画像サイズを取得できません。");
         }
 
         const scale =
             Math.min(
                 1,
                 maxSide /
-                Math.max(
-                    naturalWidth,
-                    naturalHeight
-                )
+                Math.max(naturalWidth, naturalHeight)
             );
 
         const width =
-            Math.max(
-                1,
-                Math.round(naturalWidth * scale)
-            );
-
+            Math.max(1, Math.round(naturalWidth * scale));
         const height =
-            Math.max(
-                1,
-                Math.round(naturalHeight * scale)
-            );
+            Math.max(1, Math.round(naturalHeight * scale));
 
-        const canvas =
-            document.createElement("canvas");
-
+        const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
 
         const context =
             canvas.getContext(
                 "2d",
-                {
-                    willReadFrequently: true
-                }
+                { willReadFrequently: true }
             );
 
         if (!context) {
-            throw new Error(
-                "Canvasを初期化できません。"
-            );
+            throw new Error("Canvasを初期化できません。");
         }
 
-        context.drawImage(
-            image,
-            0,
-            0,
-            width,
-            height
-        );
+        context.drawImage(image, 0, 0, width, height);
 
         return {
             canvas,
@@ -87,14 +62,9 @@
     }
 
     function isGreenCandidate(r, g, b) {
-        const maxValue =
-            Math.max(r, g, b);
-
-        const minValue =
-            Math.min(r, g, b);
-
-        const saturation =
-            maxValue - minValue;
+        const maxValue = Math.max(r, g, b);
+        const minValue = Math.min(r, g, b);
+        const saturation = maxValue - minValue;
 
         return (
             g >= 90 &&
@@ -108,18 +78,13 @@
         );
     }
 
-    function buildMask(imageData) {
+    function buildGreenMask(imageData) {
         const width = imageData.width;
         const height = imageData.height;
         const data = imageData.data;
-        const mask =
-            new Uint8Array(width * height);
+        const mask = new Uint8Array(width * height);
 
-        for (
-            let index = 0;
-            index < width * height;
-            index += 1
-        ) {
+        for (let index = 0; index < width * height; index += 1) {
             const offset = index * 4;
             const r = data[offset];
             const g = data[offset + 1];
@@ -133,19 +98,13 @@
         return mask;
     }
 
-    function findComponents(
-        mask,
-        width,
-        height
-    ) {
-        const visited =
-            new Uint8Array(mask.length);
-
+    function findComponents(mask, width, height) {
+        const visited = new Uint8Array(mask.length);
         const components = [];
         const directions = [
             [-1, -1], [0, -1], [1, -1],
             [-1, 0],           [1, 0],
-            [-1, 1],  [0, 1],  [1, 1]
+            [-1, 1],  [0, 1], [1, 1]
         ];
 
         const stackX = [];
@@ -153,13 +112,9 @@
 
         for (let y = 0; y < height; y += 1) {
             for (let x = 0; x < width; x += 1) {
-                const startIndex =
-                    y * width + x;
+                const startIndex = y * width + x;
 
-                if (
-                    !mask[startIndex] ||
-                    visited[startIndex]
-                ) {
+                if (!mask[startIndex] || visited[startIndex]) {
                     continue;
                 }
 
@@ -178,59 +133,40 @@
                 visited[startIndex] = 1;
 
                 while (stackX.length > 0) {
-                    const currentX =
-                        stackX.pop();
-
-                    const currentY =
-                        stackY.pop();
+                    const currentX = stackX.pop();
+                    const currentY = stackY.pop();
 
                     area += 1;
                     sumX += currentX;
                     sumY += currentY;
-                    minX =
-                        Math.min(minX, currentX);
-                    maxX =
-                        Math.max(maxX, currentX);
-                    minY =
-                        Math.min(minY, currentY);
-                    maxY =
-                        Math.max(maxY, currentY);
+                    minX = Math.min(minX, currentX);
+                    maxX = Math.max(maxX, currentX);
+                    minY = Math.min(minY, currentY);
+                    maxY = Math.max(maxY, currentY);
 
-                    directions.forEach(
-                        function (direction) {
-                            const nextX =
-                                currentX +
-                                direction[0];
+                    directions.forEach(function (direction) {
+                        const nextX = currentX + direction[0];
+                        const nextY = currentY + direction[1];
 
-                            const nextY =
-                                currentY +
-                                direction[1];
-
-                            if (
-                                nextX < 0 ||
-                                nextY < 0 ||
-                                nextX >= width ||
-                                nextY >= height
-                            ) {
-                                return;
-                            }
-
-                            const nextIndex =
-                                nextY * width +
-                                nextX;
-
-                            if (
-                                !mask[nextIndex] ||
-                                visited[nextIndex]
-                            ) {
-                                return;
-                            }
-
-                            visited[nextIndex] = 1;
-                            stackX.push(nextX);
-                            stackY.push(nextY);
+                        if (
+                            nextX < 0 ||
+                            nextY < 0 ||
+                            nextX >= width ||
+                            nextY >= height
+                        ) {
+                            return;
                         }
-                    );
+
+                        const nextIndex = nextY * width + nextX;
+
+                        if (!mask[nextIndex] || visited[nextIndex]) {
+                            return;
+                        }
+
+                        visited[nextIndex] = 1;
+                        stackX.push(nextX);
+                        stackY.push(nextY);
+                    });
                 }
 
                 components.push({
@@ -250,13 +186,8 @@
         return components;
     }
 
-    function mergeNearby(
-        components,
-        distance
-    ) {
-        const remaining =
-            components.slice();
-
+    function mergeNearby(components, distance) {
+        const remaining = components.slice();
         const merged = [];
 
         while (remaining.length > 0) {
@@ -264,8 +195,7 @@
             const group = [seed];
 
             for (
-                let index =
-                    remaining.length - 1;
+                let index = remaining.length - 1;
                 index >= 0;
                 index -= 1
             ) {
@@ -273,10 +203,8 @@
 
                 if (
                     Math.hypot(
-                        item.centerX -
-                            seed.centerX,
-                        item.centerY -
-                            seed.centerY
+                        item.centerX - seed.centerX,
+                        item.centerY - seed.centerY
                     ) <= distance
                 ) {
                     group.push(item);
@@ -285,41 +213,223 @@
             }
 
             const totalArea =
-                group.reduce(
-                    function (sum, item) {
-                        return sum + item.area;
-                    },
-                    0
-                );
+                group.reduce(function (sum, item) {
+                    return sum + item.area;
+                }, 0);
 
             merged.push({
                 area: totalArea,
                 centerX:
-                    group.reduce(
-                        function (sum, item) {
-                            return (
-                                sum +
-                                item.centerX *
-                                item.area
-                            );
-                        },
-                        0
-                    ) / totalArea,
+                    group.reduce(function (sum, item) {
+                        return sum + item.centerX * item.area;
+                    }, 0) / totalArea,
                 centerY:
-                    group.reduce(
-                        function (sum, item) {
-                            return (
-                                sum +
-                                item.centerY *
-                                item.area
-                            );
-                        },
-                        0
-                    ) / totalArea
+                    group.reduce(function (sum, item) {
+                        return sum + item.centerY * item.area;
+                    }, 0) / totalArea
             });
         }
 
         return merged;
+    }
+
+    function isDarkPixel(data, offset) {
+        const r = data[offset];
+        const g = data[offset + 1];
+        const b = data[offset + 2];
+
+        const brightness =
+            0.299 * r +
+            0.587 * g +
+            0.114 * b;
+
+        const spread =
+            Math.max(r, g, b) -
+            Math.min(r, g, b);
+
+        return (
+            brightness <= 105 &&
+            spread <= 75
+        );
+    }
+
+    function estimateShaft(
+        candidate,
+        imageData,
+        imageCenter
+    ) {
+        const width = imageData.width;
+        const height = imageData.height;
+        const data = imageData.data;
+
+        const windowRadius =
+            Math.max(
+                32,
+                Math.round(
+                    Math.min(width, height) * 0.07
+                )
+            );
+
+        const points = [];
+
+        const minX =
+            Math.max(
+                0,
+                Math.floor(candidate.centerX - windowRadius)
+            );
+        const maxX =
+            Math.min(
+                width - 1,
+                Math.ceil(candidate.centerX + windowRadius)
+            );
+        const minY =
+            Math.max(
+                0,
+                Math.floor(candidate.centerY - windowRadius)
+            );
+        const maxY =
+            Math.min(
+                height - 1,
+                Math.ceil(candidate.centerY + windowRadius)
+            );
+
+        for (let y = minY; y <= maxY; y += 1) {
+            for (let x = minX; x <= maxX; x += 1) {
+                const distance =
+                    Math.hypot(
+                        x - candidate.centerX,
+                        y - candidate.centerY
+                    );
+
+                if (
+                    distance < 5 ||
+                    distance > windowRadius
+                ) {
+                    continue;
+                }
+
+                const offset = (y * width + x) * 4;
+
+                if (isDarkPixel(data, offset)) {
+                    points.push({ x, y });
+                }
+            }
+        }
+
+        if (points.length < 18) {
+            return {
+                angle: null,
+                confidence: 0,
+                impactX: candidate.centerX,
+                impactY: candidate.centerY
+            };
+        }
+
+        const meanX =
+            points.reduce(
+                (sum, point) => sum + point.x,
+                0
+            ) / points.length;
+
+        const meanY =
+            points.reduce(
+                (sum, point) => sum + point.y,
+                0
+            ) / points.length;
+
+        let covarianceXX = 0;
+        let covarianceXY = 0;
+        let covarianceYY = 0;
+
+        points.forEach(function (point) {
+            const dx = point.x - meanX;
+            const dy = point.y - meanY;
+
+            covarianceXX += dx * dx;
+            covarianceXY += dx * dy;
+            covarianceYY += dy * dy;
+        });
+
+        covarianceXX /= points.length;
+        covarianceXY /= points.length;
+        covarianceYY /= points.length;
+
+        const trace = covarianceXX + covarianceYY;
+        const difference = covarianceXX - covarianceYY;
+        const root =
+            Math.sqrt(
+                difference * difference +
+                4 * covarianceXY * covarianceXY
+            );
+
+        const largestEigenvalue =
+            (trace + root) / 2;
+
+        let directionX =
+            covarianceXY;
+        let directionY =
+            largestEigenvalue - covarianceXX;
+
+        if (
+            Math.abs(directionX) +
+            Math.abs(directionY) < 0.0001
+        ) {
+            directionX = 1;
+            directionY = 0;
+        }
+
+        const length =
+            Math.hypot(directionX, directionY);
+
+        directionX /= length;
+        directionY /= length;
+
+        const towardCenterX =
+            imageCenter.x - candidate.centerX;
+        const towardCenterY =
+            imageCenter.y - candidate.centerY;
+
+        if (
+            directionX * towardCenterX +
+            directionY * towardCenterY < 0
+        ) {
+            directionX *= -1;
+            directionY *= -1;
+        }
+
+        const anisotropy =
+            root /
+            Math.max(trace, 1);
+
+        const estimateLength =
+            Math.max(
+                55,
+                Math.min(
+                    210,
+                    Math.hypot(
+                        imageCenter.x - candidate.centerX,
+                        imageCenter.y - candidate.centerY
+                    ) * 0.55
+                )
+            );
+
+        return {
+            angle:
+                Math.atan2(directionY, directionX),
+            directionX,
+            directionY,
+            confidence:
+                Math.max(
+                    0,
+                    Math.min(1, anisotropy)
+                ),
+            impactX:
+                candidate.centerX +
+                directionX * estimateLength,
+            impactY:
+                candidate.centerY +
+                directionY * estimateLength
+        };
     }
 
     function detect(image, options) {
@@ -333,10 +443,7 @@
             );
 
         const work =
-            createWorkCanvas(
-                image,
-                settings.maxSide
-            );
+            createWorkCanvas(image, settings.maxSide);
 
         const imageData =
             work.context.getImageData(
@@ -347,7 +454,7 @@
             );
 
         const mask =
-            buildMask(imageData);
+            buildGreenMask(imageData);
 
         const rawComponents =
             findComponents(
@@ -367,22 +474,19 @@
             );
 
         const filtered =
-            rawComponents.filter(
-                function (component) {
-                    return (
-                        component.area >=
-                            minimumArea &&
-                        component.area <=
-                            work.width *
-                            work.height *
-                            0.004 &&
-                        component.width <=
-                            work.width * 0.12 &&
-                        component.height <=
-                            work.height * 0.12
-                    );
-                }
-            );
+            rawComponents.filter(function (component) {
+                return (
+                    component.area >= minimumArea &&
+                    component.area <=
+                        work.width *
+                        work.height *
+                        0.004 &&
+                    component.width <=
+                        work.width * 0.12 &&
+                    component.height <=
+                        work.height * 0.12
+                );
+            });
 
         const merged =
             mergeNearby(
@@ -393,18 +497,24 @@
                 )
             );
 
+        const imageCenter = {
+            x: work.width / 2,
+            y: work.height / 2
+        };
+
         return merged
             .sort(function (a, b) {
                 return b.area - a.area;
             })
-            .slice(
-                0,
-                settings.maxCandidates
-            )
-            .map(function (
-                candidate,
-                index
-            ) {
+            .slice(0, settings.maxCandidates)
+            .map(function (candidate, index) {
+                const shaft =
+                    estimateShaft(
+                        candidate,
+                        imageData,
+                        imageCenter
+                    );
+
                 return {
                     id: index + 1,
                     x:
@@ -421,7 +531,16 @@
                                 candidate.area + 1
                             ) * 0.18
                         ),
-                    area: candidate.area
+                    area: candidate.area,
+                    shaftAngle: shaft.angle,
+                    shaftConfidence:
+                        shaft.confidence,
+                    impactX:
+                        shaft.impactX /
+                        work.scale,
+                    impactY:
+                        shaft.impactY /
+                        work.scale
                 };
             });
     }
