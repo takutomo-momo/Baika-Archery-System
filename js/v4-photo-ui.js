@@ -29,6 +29,11 @@
     let calibrationButton = null;
     let calibrationStatus = null;
 
+    let arrowCandidateLayer = null;
+    let arrowCandidates = [];
+    let arrowDetectButton = null;
+    let arrowDetectStatus = null;
+
     document.addEventListener(
         "DOMContentLoaded",
         initializePhotoUI
@@ -62,10 +67,12 @@
         );
 
         createPinLayer(elements);
+        createArrowCandidateLayer(elements);
         createScorePanel(elements);
         createScoreSummary(elements);
         createScoreList(elements);
         createCalibrationControls(elements);
+        createArrowDetectionControls(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -91,6 +98,234 @@
         pinLayer.style.zIndex = "5";
 
         elements.viewer.appendChild(pinLayer);
+    }
+
+    function createArrowCandidateLayer(elements) {
+        arrowCandidateLayer =
+            document.createElement("div");
+
+        arrowCandidateLayer.style.position =
+            "absolute";
+        arrowCandidateLayer.style.inset = "0";
+        arrowCandidateLayer.style.overflow =
+            "hidden";
+        arrowCandidateLayer.style.pointerEvents =
+            "none";
+        arrowCandidateLayer.style.zIndex = "4";
+
+        elements.viewer.appendChild(
+            arrowCandidateLayer
+        );
+    }
+
+    function createArrowDetectionControls(elements) {
+        const wrapper =
+            document.createElement("div");
+
+        wrapper.style.display = "grid";
+        wrapper.style.gap = "6px";
+        wrapper.style.width = "100%";
+        wrapper.style.marginTop = "8px";
+
+        arrowDetectButton =
+            document.createElement("button");
+
+        arrowDetectButton.type = "button";
+        arrowDetectButton.textContent =
+            "✨ 矢候補を自動検出";
+        arrowDetectButton.className =
+            elements.clearButton
+                ? elements.clearButton.className
+                : "";
+        arrowDetectButton.disabled = true;
+
+        arrowDetectStatus =
+            document.createElement("div");
+
+        arrowDetectStatus.style.padding = "8px";
+        arrowDetectStatus.style.borderRadius =
+            "10px";
+        arrowDetectStatus.style.background =
+            "rgba(6, 182, 212, 0.08)";
+        arrowDetectStatus.style.color = "#155e75";
+        arrowDetectStatus.style.fontSize = "12px";
+        arrowDetectStatus.style.fontWeight = "700";
+        arrowDetectStatus.style.textAlign = "center";
+        arrowDetectStatus.textContent =
+            "写真を選択すると検出できます。";
+
+        arrowDetectButton.addEventListener(
+            "click",
+            function () {
+                detectArrowCandidates(elements);
+            }
+        );
+
+        wrapper.appendChild(arrowDetectButton);
+        wrapper.appendChild(arrowDetectStatus);
+
+        if (elements.clearButton) {
+            elements.clearButton.insertAdjacentElement(
+                "beforebegin",
+                wrapper
+            );
+        }
+    }
+
+    function detectArrowCandidates(elements) {
+        if (
+            !elements.preview ||
+            elements.preview.hidden ||
+            !elements.preview.complete ||
+            !elements.preview.naturalWidth
+        ) {
+            window.alert(
+                "写真の読み込み完了後に実行してください。"
+            );
+            return;
+        }
+
+        if (
+            !window.BaikaArrowCandidateDetector ||
+            typeof window
+                .BaikaArrowCandidateDetector
+                .detect !== "function"
+        ) {
+            window.alert(
+                "v4-arrow-detector.jsが読み込まれていません。"
+            );
+            return;
+        }
+
+        arrowDetectButton.disabled = true;
+        arrowDetectButton.textContent =
+            "解析中…";
+        arrowDetectStatus.textContent =
+            "緑色のノック・羽根を探索しています。";
+
+        window.setTimeout(
+            function () {
+                try {
+                    arrowCandidates =
+                        window
+                            .BaikaArrowCandidateDetector
+                            .detect(
+                                elements.preview,
+                                {
+                                    maxSide: 900,
+                                    maxCandidates: 12
+                                }
+                            );
+
+                    renderArrowCandidates(elements);
+
+                    arrowDetectStatus.textContent =
+                        arrowCandidates.length > 0
+                            ? (
+                                `${arrowCandidates.length}個の`
+                                + "矢候補を検出しました。"
+                            )
+                            : (
+                                "候補を検出できませんでした。"
+                            );
+                } catch (error) {
+                    console.error(
+                        "Arrow candidate detection error:",
+                        error
+                    );
+
+                    arrowCandidates = [];
+                    renderArrowCandidates(elements);
+                    arrowDetectStatus.textContent =
+                        "検出中にエラーが発生しました。";
+                } finally {
+                    arrowDetectButton.disabled = false;
+                    arrowDetectButton.textContent =
+                        "✨ 矢候補を再検出";
+                }
+            },
+            30
+        );
+    }
+
+    function renderArrowCandidates(elements) {
+        if (
+            !arrowCandidateLayer ||
+            !photoEngine
+        ) {
+            return;
+        }
+
+        arrowCandidateLayer.replaceChildren();
+
+        if (arrowCandidates.length === 0) {
+            return;
+        }
+
+        const viewerRect =
+            elements.viewer.getBoundingClientRect();
+
+        arrowCandidates.forEach(
+            function (candidate, index) {
+                const screenPoint =
+                    photoEngine.imageToScreenPoint(
+                        candidate.x,
+                        candidate.y
+                    );
+
+                const marker =
+                    document.createElement("div");
+
+                marker.textContent =
+                    `候補${index + 1}`;
+
+                marker.style.position = "absolute";
+                marker.style.left =
+                    (
+                        screenPoint.x -
+                        viewerRect.left
+                    ) + "px";
+                marker.style.top =
+                    (
+                        screenPoint.y -
+                        viewerRect.top
+                    ) + "px";
+                marker.style.transform =
+                    "translate(-50%, -50%)";
+                marker.style.display = "grid";
+                marker.style.placeItems = "center";
+                marker.style.minWidth = "46px";
+                marker.style.height = "24px";
+                marker.style.padding = "0 6px";
+                marker.style.borderRadius = "999px";
+                marker.style.background =
+                    "rgba(6, 182, 212, 0.9)";
+                marker.style.border =
+                    "2px solid #ffffff";
+                marker.style.color = "#ffffff";
+                marker.style.fontSize = "10px";
+                marker.style.fontWeight = "900";
+                marker.style.boxShadow =
+                    "0 2px 8px rgba(0,0,0,0.3)";
+
+                arrowCandidateLayer.appendChild(
+                    marker
+                );
+            }
+        );
+    }
+
+    function clearArrowCandidates() {
+        arrowCandidates = [];
+
+        if (arrowCandidateLayer) {
+            arrowCandidateLayer.replaceChildren();
+        }
+
+        if (arrowDetectStatus) {
+            arrowDetectStatus.textContent =
+                "写真を選択すると検出できます。";
+        }
     }
 
     function createCalibrationControls(elements) {
@@ -546,6 +781,7 @@
                 );
 
                 renderPins(elements);
+                renderArrowCandidates(elements);
             }
         );
 
@@ -1199,6 +1435,27 @@
         elements.preview.hidden = false;
         elements.preview.src = currentPhotoUrl;
 
+        clearArrowCandidates();
+
+        elements.preview.addEventListener(
+            "load",
+            function handleArrowPhotoLoad() {
+                elements.preview.removeEventListener(
+                    "load",
+                    handleArrowPhotoLoad
+                );
+
+                if (arrowDetectButton) {
+                    arrowDetectButton.disabled = false;
+                }
+
+                if (arrowDetectStatus) {
+                    arrowDetectStatus.textContent =
+                        "「矢候補を自動検出」を押してください。";
+                }
+            }
+        );
+
         updatePhotoUI(elements, true);
     }
 
@@ -1207,6 +1464,7 @@
 
         releasePhotoUrl();
         clearPins();
+        clearArrowCandidates();
         closeScorePanel();
         updateUndoButton(elements);
 
@@ -1298,6 +1556,10 @@
                     "is-dragging"
                 );
             }
+        }
+
+        if (arrowDetectButton) {
+            arrowDetectButton.disabled = !hasPhoto;
         }
 
         [
