@@ -2,7 +2,7 @@
 
 /*
  * Baika Archery System Ver4
- * Step35-1: 撮影専用モード
+ * Step35-2: 連続撮影・端末保存
  * 写真はIndexedDB（端末内）だけに保存し、クラウド送信しない。
  */
 (function () {
@@ -14,6 +14,9 @@
     let sessionCount = 0;
     let lastCaptureId = null;
     let databasePromise = null;
+    let captureInProgress = false;
+    let sessionId = "";
+    let messageTimer = null;
 
     document.addEventListener("DOMContentLoaded", initializeCameraMode);
 
@@ -48,6 +51,8 @@
 
         sessionCount = 0;
         lastCaptureId = null;
+        captureInProgress = false;
+        sessionId = createSessionId();
         el.sessionCount.textContent = "0";
         el.deleteLast.disabled = true;
         el.capture.disabled = true;
@@ -95,8 +100,9 @@
 
     async function capturePhoto() {
         const el = getElements();
-        if (!stream || !el.video.videoWidth || !el.video.videoHeight) return;
+        if (captureInProgress || !stream || !el.video.videoWidth || !el.video.videoHeight) return;
 
+        captureInProgress = true;
         el.capture.disabled = true;
         el.message.textContent = "保存中…";
 
@@ -111,9 +117,14 @@
             const settings = readPracticeSettings();
             const guide = calculateGuideMetadata(el.stage, canvas.width, canvas.height);
 
+            const endNumber = sessionCount + 1;
+            const createdAt = new Date();
             const record = {
                 blob: blob,
-                createdAt: new Date().toISOString(),
+                sessionId: sessionId,
+                endNumber: endNumber,
+                fileName: createPhotoFileName(createdAt, settings.distance, endNumber),
+                createdAt: createdAt.toISOString(),
                 memberName: settings.memberName,
                 practiceDate: settings.practiceDate,
                 distance: settings.distance,
@@ -127,7 +138,7 @@
             sessionCount += 1;
             el.sessionCount.textContent = String(sessionCount);
             el.deleteLast.disabled = false;
-            el.message.textContent = "保存しました。続けて撮影できます。";
+            showCaptureFeedback(el, "End " + endNumber + " を保存しました");
             await refreshCounts();
 
             if (navigator.vibrate) navigator.vibrate(35);
@@ -136,6 +147,7 @@
             el.message.textContent = "保存に失敗しました。";
             window.alert("写真を端末内へ保存できませんでした。空き容量を確認してください。");
         } finally {
+            captureInProgress = false;
             el.capture.disabled = !stream;
         }
     }
@@ -156,6 +168,36 @@
             console.error("Delete capture failed:", error);
             window.alert("直前の写真を削除できませんでした。");
         }
+    }
+
+
+    function showCaptureFeedback(el, text) {
+        el.stage.classList.remove("v4-camera-flash-active");
+        void el.stage.offsetWidth;
+        el.stage.classList.add("v4-camera-flash-active");
+        el.message.textContent = text;
+
+        if (messageTimer) window.clearTimeout(messageTimer);
+        messageTimer = window.setTimeout(function () {
+            el.stage.classList.remove("v4-camera-flash-active");
+            if (stream) el.message.textContent = "次の的を合わせて撮影";
+        }, 700);
+    }
+
+    function createSessionId() {
+        return new Date().toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
+    }
+
+    function createPhotoFileName(date, distance, endNumber) {
+        const pad = function (value, length) { return String(value).padStart(length, "0"); };
+        const stamp = date.getFullYear()
+            + pad(date.getMonth() + 1, 2)
+            + pad(date.getDate(), 2) + "_"
+            + pad(date.getHours(), 2)
+            + pad(date.getMinutes(), 2)
+            + pad(date.getSeconds(), 2);
+        const distanceText = String(distance || "distance").replace(/[^0-9A-Za-z_-]/g, "");
+        return stamp + "_" + distanceText + "_End" + pad(endNumber, 2) + ".jpg";
     }
 
     function readPracticeSettings() {
@@ -231,6 +273,15 @@
         });
     }
 
+    async function getAllPhotos() {
+        const db = await openDatabase();
+        return new Promise(function (resolve, reject) {
+            const request = db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).getAll();
+            request.onsuccess = function () { resolve(request.result || []); };
+            request.onerror = function () { reject(request.error); };
+        });
+    }
+
     async function countPhotos() {
         const db = await openDatabase();
         return new Promise(function (resolve, reject) {
@@ -272,6 +323,7 @@
     window.BaikaLocalPhotoStore = {
         databaseName: DB_NAME,
         storeName: STORE_NAME,
-        refreshCounts: refreshCounts
+        refreshCounts: refreshCounts,
+        getAllPhotos: getAllPhotos
     };
 })();

@@ -139,3 +139,23 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
   .v4-camera-secondary { min-height:44px; padding:5px 6px; font-size:11px; }
   .v4-camera-message { bottom:116px; font-size:11px; }
 }
+
+
+/* Step35-2: 撮影完了を一瞬だけ視覚表示 */
+.v4-camera-stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: rgba(255, 255, 255, 0);
+    pointer-events: none;
+}
+
+.v4-camera-stage.v4-camera-flash-active::after {
+    animation: v4-camera-capture-flash 0.28s ease-out;
+}
+
+@keyframes v4-camera-capture-flash {
+    0% { background: rgba(255, 255, 255, 0.82); }
+    100% { background: rgba(255, 255, 255, 0); }
+}
