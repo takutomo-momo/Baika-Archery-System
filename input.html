@@ -137,13 +137,23 @@
     </p>
 
     <div class="v4-camera-launch-area">
-        <button
-            type="button"
-            id="v4OpenCameraButton"
-            class="v4-camera-launch-button"
-        >
-            📷 撮影専用モードを開く
-        </button>
+        <div class="v4-camera-launch-buttons">
+            <button
+                type="button"
+                id="v4OpenCameraButton"
+                class="v4-camera-launch-button"
+            >
+                📷 撮影専用モードを開く
+            </button>
+
+            <button
+                type="button"
+                id="v4OpenPhotoListButton"
+                class="v4-photo-list-button"
+            >
+                🗂 撮影済み一覧を開く
+            </button>
+        </div>
 
         <div class="v4-camera-local-status" aria-live="polite">
             この端末に保存済み：
@@ -681,6 +691,57 @@
 
 
 <div
+    id="v4PhotoListModal"
+    class="v4-photo-list-modal"
+    hidden
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="v4PhotoListTitle"
+>
+    <div class="v4-photo-list-shell">
+        <header class="v4-photo-list-header">
+            <div>
+                <div class="v4-photo-list-eyebrow">LOCAL PHOTO LIBRARY</div>
+                <h2 id="v4PhotoListTitle">🗂 撮影済み一覧</h2>
+                <p>端末内に保存した写真です。写真はクラウドへ送信されません。</p>
+            </div>
+            <button type="button" id="v4ClosePhotoListButton" class="v4-photo-list-close" aria-label="一覧を閉じる">×</button>
+        </header>
+
+        <div class="v4-photo-list-summary">
+            <span>全 <strong id="v4PhotoListTotal">0</strong> 枚</span>
+            <span>未入力 <strong id="v4PhotoListPending">0</strong> 枚</span>
+        </div>
+
+        <div id="v4PhotoListEmpty" class="v4-photo-list-empty" hidden>
+            <span>📷</span>
+            <strong>撮影済み写真はありません</strong>
+            <small>撮影専用モードで写真を撮ると、ここに表示されます。</small>
+        </div>
+
+        <div id="v4PhotoListGrid" class="v4-photo-list-grid" aria-live="polite"></div>
+    </div>
+</div>
+
+<div
+    id="v4PhotoPreviewModal"
+    class="v4-photo-preview-modal"
+    hidden
+    aria-modal="true"
+    role="dialog"
+    aria-label="撮影写真の確認"
+>
+    <div class="v4-photo-preview-shell">
+        <button type="button" id="v4ClosePhotoPreviewButton" class="v4-photo-preview-close" aria-label="写真を閉じる">×</button>
+        <img id="v4SavedPhotoPreview" alt="端末内に保存された的写真">
+        <div class="v4-photo-preview-meta">
+            <strong id="v4SavedPhotoTitle">End</strong>
+            <span id="v4SavedPhotoDetails"></span>
+        </div>
+    </div>
+</div>
+
+<div
     id="v4CameraModal"
     class="v4-camera-modal"
     hidden
@@ -734,6 +795,6 @@
 <script src="js/v4-target-engine.js?v=341"></script>
 <script src="js/v4-arrow-detector.js?v=341"></script>
 <script src="js/v4-photo-ui.js?v=341"></script>
-<script src="js/v4-camera.js?v=352a"></script>
+<script src="js/v4-camera.js?v=353"></script>
 </body>
 </html>

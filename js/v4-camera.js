@@ -2,7 +2,7 @@
 
 /*
  * Baika Archery System Ver4
- * Step35-2: 連続撮影・端末保存
+ * Step35-3: 撮影済み一覧
  * 写真はIndexedDB（端末内）だけに保存し、クラウド送信しない。
  */
 (function () {
@@ -17,6 +17,8 @@
     let captureInProgress = false;
     let sessionId = "";
     let messageTimer = null;
+    let listObjectUrls = [];
+    let previewObjectUrl = null;
 
     document.addEventListener("DOMContentLoaded", initializeCameraMode);
 
@@ -29,9 +31,18 @@
         el.finish.addEventListener("click", closeCamera);
         el.capture.addEventListener("click", capturePhoto);
         el.deleteLast.addEventListener("click", deleteLastCapture);
+        if (el.openList) el.openList.addEventListener("click", openPhotoList);
+        if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
+        if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
 
         el.modal.addEventListener("click", function (event) {
             if (event.target === el.modal) closeCamera();
+        });
+        if (el.listModal) el.listModal.addEventListener("click", function (event) {
+            if (event.target === el.listModal) closePhotoList();
+        });
+        if (el.previewModal) el.previewModal.addEventListener("click", function (event) {
+            if (event.target === el.previewModal) closePhotoPreview();
         });
 
         document.addEventListener("visibilitychange", function () {
@@ -87,6 +98,100 @@
         stopCameraStream();
         el.modal.hidden = true;
         document.body.classList.remove("v4-camera-open");
+    }
+
+    async function openPhotoList() {
+        const el = getElements();
+        if (!el.listModal) return;
+        el.listModal.hidden = false;
+        document.body.classList.add("v4-camera-open");
+        await renderPhotoList();
+    }
+
+    function closePhotoList() {
+        const el = getElements();
+        if (el.listModal) el.listModal.hidden = true;
+        revokeListObjectUrls();
+        document.body.classList.remove("v4-camera-open");
+    }
+
+    async function renderPhotoList() {
+        const el = getElements();
+        if (!el.listGrid) return;
+        revokeListObjectUrls();
+        el.listGrid.innerHTML = "";
+        try {
+            const photos = await getAllPhotos();
+            photos.sort(function (a, b) { return String(b.createdAt || "").localeCompare(String(a.createdAt || "")); });
+            const pending = photos.filter(function (photo) { return photo.status !== "complete"; }).length;
+            el.listTotal.textContent = String(photos.length);
+            el.listPending.textContent = String(pending);
+            el.listEmpty.hidden = photos.length !== 0;
+            el.listGrid.hidden = photos.length === 0;
+
+            photos.forEach(function (photo) {
+                const url = URL.createObjectURL(photo.blob);
+                listObjectUrls.push(url);
+                const card = document.createElement("button");
+                card.type = "button";
+                card.className = "v4-photo-card";
+                const statusText = photo.status === "complete" ? "入力済み" : "未入力";
+                const statusClass = photo.status === "complete" ? " is-complete" : "";
+                card.innerHTML = '<img class="v4-photo-card-image" alt="End ' + escapeHtml(photo.endNumber) + ' の的写真">'
+                    + '<div class="v4-photo-card-body">'
+                    + '<div class="v4-photo-card-title"><span>📷 End ' + escapeHtml(photo.endNumber) + '</span><span class="v4-photo-card-status' + statusClass + '">' + statusText + '</span></div>'
+                    + '<div class="v4-photo-card-meta"><span>🕒 ' + formatDateTime(photo.createdAt) + '</span><span>🎯 ' + escapeHtml(photo.distance || "距離未設定") + '</span></div>'
+                    + '</div>';
+                card.querySelector("img").src = url;
+                card.addEventListener("click", function () { openPhotoPreview(photo); });
+                el.listGrid.appendChild(card);
+            });
+        } catch (error) {
+            console.error("Photo list failed:", error);
+            window.alert("撮影済み一覧を読み込めませんでした。");
+        }
+    }
+
+    function openPhotoPreview(photo) {
+        const el = getElements();
+        if (!el.previewModal || !photo || !photo.blob) return;
+        closePhotoPreview();
+        previewObjectUrl = URL.createObjectURL(photo.blob);
+        el.savedPreview.src = previewObjectUrl;
+        el.savedTitle.textContent = "End " + (photo.endNumber || "-");
+        el.savedDetails.textContent = formatDateTime(photo.createdAt) + " ／ " + (photo.distance || "距離未設定") + " ／ " + (photo.status === "complete" ? "入力済み" : "未入力");
+        el.previewModal.hidden = false;
+    }
+
+    function closePhotoPreview() {
+        const el = getElements();
+        if (el.previewModal) el.previewModal.hidden = true;
+        if (el.savedPreview) el.savedPreview.removeAttribute("src");
+        if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
+        previewObjectUrl = null;
+    }
+
+    function revokeListObjectUrls() {
+        listObjectUrls.forEach(function (url) { URL.revokeObjectURL(url); });
+        listObjectUrls = [];
+    }
+
+    function formatDateTime(value) {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return "時刻不明";
+        return String(date.getMonth() + 1).padStart(2, "0") + "/"
+            + String(date.getDate()).padStart(2, "0") + " "
+            + String(date.getHours()).padStart(2, "0") + ":"
+            + String(date.getMinutes()).padStart(2, "0");
+    }
+
+    function escapeHtml(value) {
+        return String(value == null ? "" : value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     function stopCameraStream() {
@@ -302,6 +407,7 @@
             const count = await countPhotos();
             el.localCount.textContent = String(count);
             el.totalCount.textContent = String(count);
+            if (el.listModal && !el.listModal.hidden) await renderPhotoList();
         } catch (error) {
             console.error("Photo count failed:", error);
         }
@@ -322,7 +428,19 @@
             message: document.getElementById("v4CameraMessage"),
             sessionCount: document.getElementById("v4CameraSessionCount"),
             totalCount: document.getElementById("v4CameraTotalCount"),
-            localCount: document.getElementById("v4LocalPhotoCount")
+            localCount: document.getElementById("v4LocalPhotoCount"),
+            openList: document.getElementById("v4OpenPhotoListButton"),
+            listModal: document.getElementById("v4PhotoListModal"),
+            closeList: document.getElementById("v4ClosePhotoListButton"),
+            listGrid: document.getElementById("v4PhotoListGrid"),
+            listEmpty: document.getElementById("v4PhotoListEmpty"),
+            listTotal: document.getElementById("v4PhotoListTotal"),
+            listPending: document.getElementById("v4PhotoListPending"),
+            previewModal: document.getElementById("v4PhotoPreviewModal"),
+            closePreview: document.getElementById("v4ClosePhotoPreviewButton"),
+            savedPreview: document.getElementById("v4SavedPhotoPreview"),
+            savedTitle: document.getElementById("v4SavedPhotoTitle"),
+            savedDetails: document.getElementById("v4SavedPhotoDetails")
         };
     }
 

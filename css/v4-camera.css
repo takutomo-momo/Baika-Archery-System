@@ -166,3 +166,34 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
   background:rgba(15,118,110,.92);
   font-size:14px;
 }
+
+/* Step35-3: 撮影済み一覧 */
+.v4-camera-launch-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.v4-photo-list-button{width:100%;min-height:52px;border:0;border-radius:14px;padding:11px 16px;background:linear-gradient(135deg,#6d28d9,#9333ea);color:#fff;font:inherit;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 8px 18px rgba(109,40,217,.2);touch-action:manipulation}
+.v4-photo-list-modal[hidden],.v4-photo-preview-modal[hidden]{display:none}
+.v4-photo-list-modal{position:fixed;inset:0;z-index:10020;background:rgba(15,23,42,.82);padding:max(12px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));overflow:auto;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.v4-photo-list-shell{width:min(1040px,100%);min-height:100%;margin:0 auto;background:#f8fafc;border-radius:20px;padding:18px;color:#0f172a;box-shadow:0 24px 60px rgba(0,0,0,.35)}
+.v4-photo-list-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;padding-bottom:14px;border-bottom:1px solid #e2e8f0}
+.v4-photo-list-header h2{margin:2px 0 6px;font-size:clamp(22px,5vw,32px)}
+.v4-photo-list-header p{margin:0;color:#64748b;font-size:13px}
+.v4-photo-list-eyebrow{font-size:11px;font-weight:900;letter-spacing:.12em;color:#7c3aed}
+.v4-photo-list-close,.v4-photo-preview-close{flex:0 0 44px;width:44px;height:44px;border:0;border-radius:50%;background:#0f172a;color:#fff;font-size:28px;line-height:1;cursor:pointer}
+.v4-photo-list-summary{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0}
+.v4-photo-list-summary span{padding:8px 12px;border-radius:999px;background:#ede9fe;color:#5b21b6;font-size:13px;font-weight:800}
+.v4-photo-list-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px}
+.v4-photo-card{border:1px solid #e2e8f0;border-radius:16px;background:#fff;overflow:hidden;box-shadow:0 6px 16px rgba(15,23,42,.08);cursor:pointer;text-align:left;padding:0;font:inherit;color:inherit}
+.v4-photo-card-image{display:block;width:100%;aspect-ratio:4/3;object-fit:cover;background:#cbd5e1}
+.v4-photo-card-body{padding:11px}
+.v4-photo-card-title{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:900}
+.v4-photo-card-status{font-size:10px;padding:4px 7px;border-radius:999px;background:#fef3c7;color:#92400e;white-space:nowrap}
+.v4-photo-card-status.is-complete{background:#dcfce7;color:#166534}
+.v4-photo-card-meta{display:grid;gap:3px;margin-top:7px;color:#64748b;font-size:11px}
+.v4-photo-list-empty{min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:#64748b;text-align:center}
+.v4-photo-list-empty[hidden]{display:none}
+.v4-photo-list-empty>span{font-size:54px}.v4-photo-list-empty strong{color:#334155}.v4-photo-list-empty small{max-width:320px}
+.v4-photo-preview-modal{position:fixed;inset:0;z-index:10040;background:rgba(0,0,0,.94);padding:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));display:flex;align-items:center;justify-content:center}
+.v4-photo-preview-shell{position:relative;width:min(100%,1000px);height:100%;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.v4-photo-preview-shell img{display:block;max-width:100%;max-height:calc(100% - 74px);object-fit:contain;border-radius:12px;background:#111}
+.v4-photo-preview-close{position:absolute;z-index:2;top:0;right:0;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.35)}
+.v4-photo-preview-meta{width:100%;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;color:#fff;text-align:center;font-size:13px}.v4-photo-preview-meta strong{font-size:16px}
+@media(max-width:640px){.v4-camera-launch-buttons{grid-template-columns:1fr}.v4-photo-list-shell{border-radius:15px;padding:14px}.v4-photo-list-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v4-photo-card-body{padding:9px}.v4-photo-card-title{font-size:13px}.v4-photo-card-meta{font-size:10px}}
