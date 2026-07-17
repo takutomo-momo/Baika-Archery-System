@@ -290,17 +290,68 @@
             const context = canvas.getContext("2d", { willReadFrequently: true });
             context.drawImage(el.savedPreview, 0, 0);
 
-            // 1画素だけでは反射や影の影響を受けるため、周囲5×5の中央値に近い平均色を使う。
-            const radius = 2;
+            // ノックは画面上では小さいため、単純平均すると周囲の的・畳の色に負ける。
+            // タップ周辺から「背景色との差が大きく、中心に近い色」を探し、その色だけを平均する。
+            const radius = 8;
             const startX = Math.max(0, imageX - radius);
             const startY = Math.max(0, imageY - radius);
             const width = Math.min(canvas.width - startX, radius * 2 + 1);
             const height = Math.min(canvas.height - startY, radius * 2 + 1);
-            const pixels = context.getImageData(startX, startY, width, height).data;
-            let r = 0, g = 0, b = 0, count = 0;
-            for (let i = 0; i < pixels.length; i += 4) {
-                r += pixels[i]; g += pixels[i + 1]; b += pixels[i + 2]; count += 1;
+            const imageData = context.getImageData(startX, startY, width, height);
+            const pixels = imageData.data;
+
+            function pixelAt(x, y) {
+                const offset = (y * width + x) * 4;
+                return { r: pixels[offset], g: pixels[offset + 1], b: pixels[offset + 2] };
             }
+            function distance(a, b) {
+                return Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
+            }
+
+            // 外周は背景である可能性が高いので、外周画素の中央値を背景色とする。
+            const borderR = [], borderG = [], borderB = [];
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    if (x !== 0 && y !== 0 && x !== width - 1 && y !== height - 1) continue;
+                    const color = pixelAt(x, y);
+                    borderR.push(color.r); borderG.push(color.g); borderB.push(color.b);
+                }
+            }
+            function median(values) {
+                values.sort(function (a, b) { return a - b; });
+                return values[Math.floor(values.length / 2)];
+            }
+            const background = { r: median(borderR), g: median(borderG), b: median(borderB) };
+
+            const centerX = Math.min(width - 1, imageX - startX);
+            const centerY = Math.min(height - 1, imageY - startY);
+            let seed = pixelAt(centerX, centerY);
+            let bestScore = -Infinity;
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    const color = pixelAt(x, y);
+                    const centerDistance = Math.hypot(x - centerX, y - centerY);
+                    const backgroundDistance = distance(color, background);
+                    const score = backgroundDistance - centerDistance * 8;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        seed = color;
+                    }
+                }
+            }
+
+            // 選んだ種色に近い画素だけを平均し、背景の混入を防ぐ。
+            let r = 0, g = 0, b = 0, count = 0;
+            const seedTolerance = 72;
+            for (let y = 0; y < height; y += 1) {
+                for (let x = 0; x < width; x += 1) {
+                    const color = pixelAt(x, y);
+                    if (distance(color, seed) > seedTolerance) continue;
+                    if (Math.hypot(x - centerX, y - centerY) > radius) continue;
+                    r += color.r; g += color.g; b += color.b; count += 1;
+                }
+            }
+            if (!count) { r = seed.r; g = seed.g; b = seed.b; count = 1; }
             selectedArrowColor = {
                 r: Math.round(r / count),
                 g: Math.round(g / count),
