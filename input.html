@@ -733,10 +733,20 @@
 >
     <div class="v4-photo-preview-shell">
         <button type="button" id="v4ClosePhotoPreviewButton" class="v4-photo-preview-close" aria-label="写真を閉じる">×</button>
-        <img id="v4SavedPhotoPreview" alt="端末内に保存された的写真">
+
+        <div class="v4-photo-analysis-stage">
+            <img id="v4SavedPhotoPreview" alt="端末内に保存された的写真">
+            <svg id="v4SavedPhotoCandidateLayer" class="v4-photo-candidate-layer" aria-label="矢候補表示"></svg>
+        </div>
+
         <div class="v4-photo-preview-meta">
             <strong id="v4SavedPhotoTitle">End</strong>
             <span id="v4SavedPhotoDetails"></span>
+        </div>
+
+        <div class="v4-photo-analysis-controls">
+            <button type="button" id="v4AnalyzeSavedPhotoButton" class="v4-photo-analyze-button">✨ AI解析開始</button>
+            <div id="v4SavedPhotoAnalysisStatus" class="v4-photo-analysis-status" aria-live="polite">写真を確認して「AI解析開始」を押してください。</div>
         </div>
     </div>
 </div>
@@ -795,6 +805,6 @@
 <script src="js/v4-target-engine.js?v=341"></script>
 <script src="js/v4-arrow-detector.js?v=341"></script>
 <script src="js/v4-photo-ui.js?v=341"></script>
-<script src="js/v4-camera.js?v=353"></script>
+<script src="js/v4-camera.js?v=354"></script>
 </body>
 </html>

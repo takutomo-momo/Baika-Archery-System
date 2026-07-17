@@ -197,3 +197,18 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 .v4-photo-preview-close{position:absolute;z-index:2;top:0;right:0;background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.35)}
 .v4-photo-preview-meta{width:100%;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;color:#fff;text-align:center;font-size:13px}.v4-photo-preview-meta strong{font-size:16px}
 @media(max-width:640px){.v4-camera-launch-buttons{grid-template-columns:1fr}.v4-photo-list-shell{border-radius:15px;padding:14px}.v4-photo-list-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.v4-photo-card-body{padding:9px}.v4-photo-card-title{font-size:13px}.v4-photo-card-meta{font-size:10px}}
+
+/* Step35-4: 撮影済み写真のAI解析開始画面 */
+.v4-photo-analysis-stage{position:relative;display:flex;align-items:center;justify-content:center;min-height:0;max-width:100%;max-height:calc(100% - 150px)}
+.v4-photo-analysis-stage img{display:block;max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;background:#111}
+.v4-photo-candidate-layer{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.v4-saved-candidate circle{fill:rgba(239,68,68,.18);stroke:#ef4444;stroke-width:5;vector-effect:non-scaling-stroke;filter:drop-shadow(0 2px 3px rgba(0,0,0,.75))}
+.v4-saved-candidate text{fill:#fff;font-weight:900;paint-order:stroke;stroke:#b91c1c;stroke-width:5;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.v4-photo-analysis-controls{width:min(100%,720px);display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:12px;padding:10px 12px;border-radius:14px;background:rgba(15,23,42,.88);color:#fff}
+.v4-photo-analyze-button{min-height:48px;border:0;border-radius:12px;padding:10px 18px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;font:inherit;font-weight:900;cursor:pointer;white-space:nowrap}
+.v4-photo-analyze-button:disabled{opacity:.55;cursor:wait}
+.v4-photo-analysis-status{min-width:0;font-size:13px;line-height:1.45;color:#e2e8f0}
+.v4-photo-card-badges{display:flex;gap:6px;margin-top:7px}
+.v4-photo-card-analysis{font-size:10px;padding:4px 7px;border-radius:999px;background:#e2e8f0;color:#475569;font-weight:800}
+.v4-photo-card-analysis.is-analyzed{background:#dbeafe;color:#1d4ed8}
+@media(max-width:640px){.v4-photo-preview-shell{justify-content:flex-start;padding-top:48px}.v4-photo-analysis-stage{width:100%;height:min(58vh,520px);max-height:none}.v4-photo-analysis-controls{grid-template-columns:1fr;gap:7px}.v4-photo-analyze-button{width:100%}.v4-photo-analysis-status{text-align:center;font-size:12px}}

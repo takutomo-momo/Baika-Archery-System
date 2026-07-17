@@ -2,7 +2,7 @@
 
 /*
  * Baika Archery System Ver4
- * Step35-3: 撮影済み一覧
+ * Step35-4: 撮影済み写真のAI解析開始画面
  * 写真はIndexedDB（端末内）だけに保存し、クラウド送信しない。
  */
 (function () {
@@ -19,6 +19,8 @@
     let messageTimer = null;
     let listObjectUrls = [];
     let previewObjectUrl = null;
+    let currentPreviewPhoto = null;
+    let analysisInProgress = false;
 
     document.addEventListener("DOMContentLoaded", initializeCameraMode);
 
@@ -34,6 +36,7 @@
         if (el.openList) el.openList.addEventListener("click", openPhotoList);
         if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
+        if (el.analyzeSaved) el.analyzeSaved.addEventListener("click", analyzeSavedPhoto);
 
         el.modal.addEventListener("click", function (event) {
             if (event.target === el.modal) closeCamera();
@@ -137,9 +140,12 @@
                 card.className = "v4-photo-card";
                 const statusText = photo.status === "complete" ? "入力済み" : "未入力";
                 const statusClass = photo.status === "complete" ? " is-complete" : "";
+                const analysisText = photo.aiStatus === "analyzed" ? "AI解析済み" : "未解析";
+                const analysisClass = photo.aiStatus === "analyzed" ? " is-analyzed" : "";
                 card.innerHTML = '<img class="v4-photo-card-image" alt="End ' + escapeHtml(photo.endNumber) + ' の的写真">'
                     + '<div class="v4-photo-card-body">'
                     + '<div class="v4-photo-card-title"><span>📷 End ' + escapeHtml(photo.endNumber) + '</span><span class="v4-photo-card-status' + statusClass + '">' + statusText + '</span></div>'
+                    + '<div class="v4-photo-card-badges"><span class="v4-photo-card-analysis' + analysisClass + '">' + analysisText + '</span></div>'
                     + '<div class="v4-photo-card-meta"><span>🕒 ' + formatDateTime(photo.createdAt) + '</span><span>🎯 ' + escapeHtml(photo.distance || "距離未設定") + '</span></div>'
                     + '</div>';
                 card.querySelector("img").src = url;
@@ -156,19 +162,131 @@
         const el = getElements();
         if (!el.previewModal || !photo || !photo.blob) return;
         closePhotoPreview();
+        currentPreviewPhoto = photo;
         previewObjectUrl = URL.createObjectURL(photo.blob);
         el.savedPreview.src = previewObjectUrl;
         el.savedTitle.textContent = "End " + (photo.endNumber || "-");
         el.savedDetails.textContent = formatDateTime(photo.createdAt) + " ／ " + (photo.distance || "距離未設定") + " ／ " + (photo.status === "complete" ? "入力済み" : "未入力");
+        el.analysisStatus.textContent = photo.aiStatus === "analyzed"
+            ? "前回の解析結果：矢候補 " + ((photo.aiCandidates || []).length) + "件"
+            : "写真を確認して「AI解析開始」を押してください。";
+        el.analyzeSaved.disabled = false;
+        el.analyzeSaved.textContent = photo.aiStatus === "analyzed" ? "✨ 再解析する" : "✨ AI解析開始";
         el.previewModal.hidden = false;
+        el.savedPreview.onload = function () {
+            if (currentPreviewPhoto && currentPreviewPhoto.aiStatus === "analyzed") {
+                renderSavedCandidates(currentPreviewPhoto.aiCandidates || []);
+            }
+        };
     }
 
     function closePhotoPreview() {
         const el = getElements();
         if (el.previewModal) el.previewModal.hidden = true;
-        if (el.savedPreview) el.savedPreview.removeAttribute("src");
+        if (el.savedPreview) {
+            el.savedPreview.onload = null;
+            el.savedPreview.removeAttribute("src");
+        }
+        clearSavedCandidates();
         if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
         previewObjectUrl = null;
+        currentPreviewPhoto = null;
+        analysisInProgress = false;
+    }
+
+    async function analyzeSavedPhoto() {
+        const el = getElements();
+        if (analysisInProgress || !currentPreviewPhoto || !el.savedPreview) return;
+        if (!window.BaikaArrowCandidateDetector || typeof window.BaikaArrowCandidateDetector.detect !== "function") {
+            window.alert("矢候補検出プログラムを読み込めませんでした。ページを再読み込みしてください。");
+            return;
+        }
+
+        analysisInProgress = true;
+        el.analyzeSaved.disabled = true;
+        el.analyzeSaved.textContent = "解析中…";
+        el.analysisStatus.textContent = "緑色のノック／羽根を探しています…";
+        clearSavedCandidates();
+
+        try {
+            await waitForImage(el.savedPreview);
+            await nextPaint();
+            const candidates = window.BaikaArrowCandidateDetector.detect(el.savedPreview, {
+                maxSide: 900,
+                maxCandidates: 12
+            });
+            renderSavedCandidates(candidates);
+
+            currentPreviewPhoto.aiCandidates = candidates;
+            currentPreviewPhoto.aiStatus = "analyzed";
+            currentPreviewPhoto.analyzedAt = new Date().toISOString();
+            await putPhoto(currentPreviewPhoto);
+
+            if (candidates.length > 0) {
+                el.analysisStatus.textContent = "解析完了：矢候補を " + candidates.length + " 件表示しました。";
+            } else {
+                el.analysisStatus.textContent = "解析完了：緑色の矢候補は見つかりませんでした。";
+            }
+            el.analyzeSaved.textContent = "✨ 再解析する";
+            if (el.listModal && !el.listModal.hidden) await renderPhotoList();
+        } catch (error) {
+            console.error("Saved photo analysis failed:", error);
+            el.analysisStatus.textContent = "解析に失敗しました。もう一度お試しください。";
+            el.analyzeSaved.textContent = "✨ AI解析開始";
+        } finally {
+            analysisInProgress = false;
+            el.analyzeSaved.disabled = false;
+        }
+    }
+
+    function waitForImage(image) {
+        if (image.complete && image.naturalWidth > 0) return Promise.resolve();
+        return new Promise(function (resolve, reject) {
+            image.addEventListener("load", resolve, { once: true });
+            image.addEventListener("error", function () { reject(new Error("画像を読み込めませんでした。")); }, { once: true });
+        });
+    }
+
+    function nextPaint() {
+        return new Promise(function (resolve) {
+            window.requestAnimationFrame(function () { window.requestAnimationFrame(resolve); });
+        });
+    }
+
+    function renderSavedCandidates(candidates) {
+        const el = getElements();
+        const layer = el.candidateLayer;
+        const image = el.savedPreview;
+        if (!layer || !image || !image.naturalWidth || !image.naturalHeight) return;
+        layer.setAttribute("viewBox", "0 0 " + image.naturalWidth + " " + image.naturalHeight);
+        layer.innerHTML = "";
+
+        candidates.forEach(function (candidate, index) {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttribute("class", "v4-saved-candidate");
+            const radius = Math.max(14, Math.min(image.naturalWidth, image.naturalHeight) * 0.018);
+
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", candidate.x);
+            circle.setAttribute("cy", candidate.y);
+            circle.setAttribute("r", radius);
+
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", candidate.x);
+            text.setAttribute("y", candidate.y + radius * 0.28);
+            text.setAttribute("text-anchor", "middle");
+            text.setAttribute("font-size", radius * 0.95);
+            text.textContent = String(index + 1);
+
+            group.appendChild(circle);
+            group.appendChild(text);
+            layer.appendChild(group);
+        });
+    }
+
+    function clearSavedCandidates() {
+        const layer = document.getElementById("v4SavedPhotoCandidateLayer");
+        if (layer) layer.innerHTML = "";
     }
 
     function revokeListObjectUrls() {
@@ -374,6 +492,15 @@
         });
     }
 
+    async function putPhoto(record) {
+        const db = await openDatabase();
+        return new Promise(function (resolve, reject) {
+            const request = db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).put(record);
+            request.onsuccess = function () { resolve(request.result); };
+            request.onerror = function () { reject(request.error); };
+        });
+    }
+
     async function deletePhoto(id) {
         const db = await openDatabase();
         return new Promise(function (resolve, reject) {
@@ -440,7 +567,10 @@
             closePreview: document.getElementById("v4ClosePhotoPreviewButton"),
             savedPreview: document.getElementById("v4SavedPhotoPreview"),
             savedTitle: document.getElementById("v4SavedPhotoTitle"),
-            savedDetails: document.getElementById("v4SavedPhotoDetails")
+            savedDetails: document.getElementById("v4SavedPhotoDetails"),
+            analyzeSaved: document.getElementById("v4AnalyzeSavedPhotoButton"),
+            analysisStatus: document.getElementById("v4SavedPhotoAnalysisStatus"),
+            candidateLayer: document.getElementById("v4SavedPhotoCandidateLayer")
         };
     }
 
