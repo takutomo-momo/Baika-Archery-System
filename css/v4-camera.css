@@ -141,21 +141,28 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 }
 
 
-/* Step35-2: 撮影完了を一瞬だけ視覚表示 */
-.v4-camera-stage::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    z-index: 30;
-    background: rgba(255, 255, 255, 0);
-    pointer-events: none;
+/* Step35-2a: iPhone Safariでも確実に見える実体オーバーレイ */
+.v4-camera-flash {
+  position:absolute;
+  inset:0;
+  z-index:50;
+  background:#fff;
+  opacity:0;
+  pointer-events:none;
 }
-
-.v4-camera-stage.v4-camera-flash-active::after {
-    animation: v4-camera-capture-flash 0.28s ease-out;
+.v4-camera-flash.is-active {
+  animation:v4-camera-real-flash .34s ease-out;
 }
-
-@keyframes v4-camera-capture-flash {
-    0% { background: rgba(255, 255, 255, 0.82); }
-    100% { background: rgba(255, 255, 255, 0); }
+@keyframes v4-camera-real-flash {
+  0% { opacity:.92; }
+  100% { opacity:0; }
+}
+.v4-camera-message {
+  z-index:60;
+  min-width:180px;
+  box-shadow:0 4px 18px rgba(0,0,0,.35);
+}
+.v4-camera-message.is-saved {
+  background:rgba(15,118,110,.92);
+  font-size:14px;
 }

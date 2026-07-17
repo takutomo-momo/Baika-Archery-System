@@ -172,16 +172,21 @@
 
 
     function showCaptureFeedback(el, text) {
-        el.stage.classList.remove("v4-camera-flash-active");
-        void el.stage.offsetWidth;
-        el.stage.classList.add("v4-camera-flash-active");
+        if (el.flash) {
+            el.flash.classList.remove("is-active");
+            void el.flash.offsetWidth;
+            el.flash.classList.add("is-active");
+        }
+
         el.message.textContent = text;
+        el.message.classList.add("is-saved");
 
         if (messageTimer) window.clearTimeout(messageTimer);
         messageTimer = window.setTimeout(function () {
-            el.stage.classList.remove("v4-camera-flash-active");
+            if (el.flash) el.flash.classList.remove("is-active");
+            el.message.classList.remove("is-saved");
             if (stream) el.message.textContent = "次の的を合わせて撮影";
-        }, 700);
+        }, 1400);
     }
 
     function createSessionId() {
@@ -313,6 +318,7 @@
             video: document.getElementById("v4CameraVideo"),
             canvas: document.getElementById("v4CameraCanvas"),
             stage: document.getElementById("v4CameraStage"),
+            flash: document.getElementById("v4CameraFlash"),
             message: document.getElementById("v4CameraMessage"),
             sessionCount: document.getElementById("v4CameraSessionCount"),
             totalCount: document.getElementById("v4CameraTotalCount"),
