@@ -29,3 +29,47 @@
 .v4-camera-storage-note { margin:0; color:#d1d5db; font-size:11px; line-height:1.4; text-align:center; }
 body.v4-camera-open { overflow:hidden; }
 @media (orientation:landscape) and (max-height:700px) { .v4-camera-shell { width:min(100%,980px); height:100%; grid-template-columns:minmax(0,1fr) 280px; grid-template-rows:auto 1fr auto; } .v4-camera-header { grid-column:1/-1; } .v4-camera-stage { grid-column:1; grid-row:2/4; } .v4-camera-info,.v4-camera-actions,.v4-camera-storage-note { grid-column:2; } .v4-camera-actions { grid-template-columns:1fr; justify-items:stretch; } .v4-camera-capture { justify-self:center; } }
+
+/* Step35-1a: iPhone Safariで撮影操作部を常に画面内へ表示 */
+.v4-camera-modal {
+  place-items: stretch;
+  padding:
+    max(8px, env(safe-area-inset-top))
+    max(8px, env(safe-area-inset-right))
+    max(8px, env(safe-area-inset-bottom))
+    max(8px, env(safe-area-inset-left));
+  overflow: hidden;
+}
+
+.v4-camera-shell {
+  width: 100%;
+  max-width: 720px;
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+  margin: 0 auto;
+  grid-template-rows: auto minmax(180px, 1fr) auto auto auto;
+}
+
+.v4-camera-stage {
+  min-height: 180px;
+}
+
+.v4-camera-info,
+.v4-camera-actions,
+.v4-camera-storage-note {
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) and (orientation: portrait) {
+  .v4-camera-shell { gap: 7px; }
+  .v4-camera-header { min-height: 44px; }
+  .v4-camera-help { display: none; }
+  .v4-camera-stage { min-height: 160px; }
+  .v4-camera-info { padding: 6px 10px; font-size: 12px; }
+  .v4-camera-actions { grid-template-columns: 1fr 68px 1fr; gap: 8px; }
+  .v4-camera-capture { width: 68px; height: 68px; }
+  .v4-camera-capture span { width: 50px; height: 50px; }
+  .v4-camera-secondary { min-height: 44px; padding: 6px; font-size: 11px; }
+  .v4-camera-storage-note { font-size: 10px; }
+}
