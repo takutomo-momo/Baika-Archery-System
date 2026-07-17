@@ -212,3 +212,17 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 .v4-photo-card-analysis{font-size:10px;padding:4px 7px;border-radius:999px;background:#e2e8f0;color:#475569;font-weight:800}
 .v4-photo-card-analysis.is-analyzed{background:#dbeafe;color:#1d4ed8}
 @media(max-width:640px){.v4-photo-preview-shell{justify-content:flex-start;padding-top:48px}.v4-photo-analysis-stage{width:100%;height:min(58vh,520px);max-height:none}.v4-photo-analysis-controls{grid-template-columns:1fr;gap:7px}.v4-photo-analyze-button{width:100%}.v4-photo-analysis-status{text-align:center;font-size:12px}}
+
+
+/* Step35-4a: 写真からノック／羽根色を選択 */
+.v4-photo-analysis-stage{touch-action:manipulation;cursor:crosshair}
+.v4-photo-color-tap-marker{position:absolute;z-index:4;width:30px;height:30px;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 3px #7c3aed,0 3px 12px rgba(0,0,0,.65);transform:translate(-50%,-50%);pointer-events:none}
+.v4-photo-color-controls{width:min(100%,720px);display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:14px;background:rgba(255,255,255,.96);color:#0f172a}
+.v4-photo-color-guide{display:flex;align-items:center;gap:10px;min-width:0}
+.v4-photo-color-guide>div{display:grid;gap:2px;min-width:0}
+.v4-photo-color-guide strong{font-size:13px}
+.v4-photo-color-guide small{font-size:11px;color:#64748b;line-height:1.35}
+.v4-photo-color-swatch{flex:0 0 34px;width:34px;height:34px;border:3px solid #fff;border-radius:50%;background:conic-gradient(#ef4444,#f59e0b,#22c55e,#3b82f6,#a855f7,#ef4444);box-shadow:0 0 0 1px #cbd5e1}
+.v4-photo-color-swatch.is-selected{background:var(--v4-selected-arrow-color);box-shadow:0 0 0 2px #7c3aed}
+.v4-photo-color-reset{min-height:38px;border:1px solid #cbd5e1;border-radius:10px;padding:7px 11px;background:#f8fafc;color:#475569;font:inherit;font-size:11px;font-weight:850;white-space:nowrap;cursor:pointer}
+@media(max-width:640px){.v4-photo-color-controls{align-items:stretch}.v4-photo-color-reset{flex:0 0 auto}.v4-photo-color-guide small{font-size:10px}}

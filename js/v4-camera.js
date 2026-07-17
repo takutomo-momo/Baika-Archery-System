@@ -21,6 +21,8 @@
     let previewObjectUrl = null;
     let currentPreviewPhoto = null;
     let analysisInProgress = false;
+    let selectedArrowColor = null;
+    let selectedColorPoint = null;
 
     document.addEventListener("DOMContentLoaded", initializeCameraMode);
 
@@ -37,6 +39,8 @@
         if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
         if (el.analyzeSaved) el.analyzeSaved.addEventListener("click", analyzeSavedPhoto);
+        if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
+        if (el.resetColor) el.resetColor.addEventListener("click", resetSelectedArrowColor);
 
         el.modal.addEventListener("click", function (event) {
             if (event.target === el.modal) closeCamera();
@@ -167,13 +171,19 @@
         el.savedPreview.src = previewObjectUrl;
         el.savedTitle.textContent = "End " + (photo.endNumber || "-");
         el.savedDetails.textContent = formatDateTime(photo.createdAt) + " ／ " + (photo.distance || "距離未設定") + " ／ " + (photo.status === "complete" ? "入力済み" : "未入力");
-        el.analysisStatus.textContent = photo.aiStatus === "analyzed"
-            ? "前回の解析結果：矢候補 " + ((photo.aiCandidates || []).length) + "件"
-            : "写真を確認して「AI解析開始」を押してください。";
-        el.analyzeSaved.disabled = false;
+        selectedArrowColor = normalizeColor(photo.selectedArrowColor) || loadMemberArrowColor(photo.memberName);
+        selectedColorPoint = photo.selectedColorPoint || null;
+        updateColorSelectionUI();
+        el.analysisStatus.textContent = selectedArrowColor
+            ? (photo.aiStatus === "analyzed"
+                ? "前回の解析結果：矢候補 " + ((photo.aiCandidates || []).length) + "件。色を変更すると再解析できます。"
+                : "選択した色で解析できます。")
+            : "先に写真内のノック／羽根をタップしてください。";
+        el.analyzeSaved.disabled = !selectedArrowColor;
         el.analyzeSaved.textContent = photo.aiStatus === "analyzed" ? "✨ 再解析する" : "✨ AI解析開始";
         el.previewModal.hidden = false;
         el.savedPreview.onload = function () {
+            updateColorSelectionUI();
             if (currentPreviewPhoto && currentPreviewPhoto.aiStatus === "analyzed") {
                 renderSavedCandidates(currentPreviewPhoto.aiCandidates || []);
             }
@@ -192,6 +202,8 @@
         previewObjectUrl = null;
         currentPreviewPhoto = null;
         analysisInProgress = false;
+        selectedArrowColor = null;
+        selectedColorPoint = null;
     }
 
     async function analyzeSavedPhoto() {
@@ -202,10 +214,15 @@
             return;
         }
 
+        if (!selectedArrowColor) {
+            el.analysisStatus.textContent = "先に写真内のノック／羽根をタップしてください。";
+            return;
+        }
+
         analysisInProgress = true;
         el.analyzeSaved.disabled = true;
         el.analyzeSaved.textContent = "解析中…";
-        el.analysisStatus.textContent = "緑色のノック／羽根を探しています…";
+        el.analysisStatus.textContent = "選択した色に近いノック／羽根を探しています…";
         clearSavedCandidates();
 
         try {
@@ -213,11 +230,14 @@
             await nextPaint();
             const candidates = window.BaikaArrowCandidateDetector.detect(el.savedPreview, {
                 maxSide: 900,
-                maxCandidates: 12
+                maxCandidates: 12,
+                targetColor: selectedArrowColor
             });
             renderSavedCandidates(candidates);
 
             currentPreviewPhoto.aiCandidates = candidates;
+            currentPreviewPhoto.selectedArrowColor = selectedArrowColor;
+            currentPreviewPhoto.selectedColorPoint = selectedColorPoint;
             currentPreviewPhoto.aiStatus = "analyzed";
             currentPreviewPhoto.analyzedAt = new Date().toISOString();
             await putPhoto(currentPreviewPhoto);
@@ -225,7 +245,7 @@
             if (candidates.length > 0) {
                 el.analysisStatus.textContent = "解析完了：矢候補を " + candidates.length + " 件表示しました。";
             } else {
-                el.analysisStatus.textContent = "解析完了：緑色の矢候補は見つかりませんでした。";
+                el.analysisStatus.textContent = "解析完了：選択した色の矢候補は見つかりませんでした。色の選択位置を変えてお試しください。";
             }
             el.analyzeSaved.textContent = "✨ 再解析する";
             if (el.listModal && !el.listModal.hidden) await renderPhotoList();
@@ -235,7 +255,7 @@
             el.analyzeSaved.textContent = "✨ AI解析開始";
         } finally {
             analysisInProgress = false;
-            el.analyzeSaved.disabled = false;
+            el.analyzeSaved.disabled = !selectedArrowColor;
         }
     }
 
@@ -251,6 +271,140 @@
         return new Promise(function (resolve) {
             window.requestAnimationFrame(function () { window.requestAnimationFrame(resolve); });
         });
+    }
+
+    function selectArrowColorFromPhoto(event) {
+        const el = getElements();
+        if (!currentPreviewPhoto || !el.savedPreview || !el.savedPreview.naturalWidth) return;
+
+        const rect = el.savedPreview.getBoundingClientRect();
+        const localX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
+        const localY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+        const imageX = Math.max(0, Math.min(el.savedPreview.naturalWidth - 1, Math.round(localX / rect.width * el.savedPreview.naturalWidth)));
+        const imageY = Math.max(0, Math.min(el.savedPreview.naturalHeight - 1, Math.round(localY / rect.height * el.savedPreview.naturalHeight)));
+
+        try {
+            const canvas = document.createElement("canvas");
+            canvas.width = el.savedPreview.naturalWidth;
+            canvas.height = el.savedPreview.naturalHeight;
+            const context = canvas.getContext("2d", { willReadFrequently: true });
+            context.drawImage(el.savedPreview, 0, 0);
+
+            // 1画素だけでは反射や影の影響を受けるため、周囲5×5の中央値に近い平均色を使う。
+            const radius = 2;
+            const startX = Math.max(0, imageX - radius);
+            const startY = Math.max(0, imageY - radius);
+            const width = Math.min(canvas.width - startX, radius * 2 + 1);
+            const height = Math.min(canvas.height - startY, radius * 2 + 1);
+            const pixels = context.getImageData(startX, startY, width, height).data;
+            let r = 0, g = 0, b = 0, count = 0;
+            for (let i = 0; i < pixels.length; i += 4) {
+                r += pixels[i]; g += pixels[i + 1]; b += pixels[i + 2]; count += 1;
+            }
+            selectedArrowColor = {
+                r: Math.round(r / count),
+                g: Math.round(g / count),
+                b: Math.round(b / count)
+            };
+            selectedColorPoint = {
+                x: imageX,
+                y: imageY,
+                normalizedX: imageX / el.savedPreview.naturalWidth,
+                normalizedY: imageY / el.savedPreview.naturalHeight
+            };
+
+            currentPreviewPhoto.selectedArrowColor = selectedArrowColor;
+            currentPreviewPhoto.selectedColorPoint = selectedColorPoint;
+            saveMemberArrowColor(currentPreviewPhoto.memberName, selectedArrowColor);
+            putPhoto(currentPreviewPhoto).catch(function (error) {
+                console.error("Selected arrow color save failed:", error);
+            });
+            clearSavedCandidates();
+            updateColorSelectionUI();
+            el.analysisStatus.textContent = "色を選択しました。「AI解析開始」を押してください。";
+            el.analyzeSaved.textContent = currentPreviewPhoto.aiStatus === "analyzed" ? "✨ 再解析する" : "✨ AI解析開始";
+        } catch (error) {
+            console.error("Color sampling failed:", error);
+            el.analysisStatus.textContent = "色を取得できませんでした。写真内をもう一度タップしてください。";
+        }
+    }
+
+    function resetSelectedArrowColor() {
+        const el = getElements();
+        selectedArrowColor = null;
+        selectedColorPoint = null;
+        if (currentPreviewPhoto) {
+            delete currentPreviewPhoto.selectedArrowColor;
+            delete currentPreviewPhoto.selectedColorPoint;
+            putPhoto(currentPreviewPhoto).catch(function (error) {
+                console.error("Selected arrow color reset failed:", error);
+            });
+        }
+        clearSavedCandidates();
+        updateColorSelectionUI();
+        if (el.analysisStatus) el.analysisStatus.textContent = "写真内のノックまたは羽根を1回タップしてください。";
+    }
+
+    function updateColorSelectionUI() {
+        const el = getElements();
+        if (!el.colorSwatch || !el.colorInstruction || !el.analyzeSaved) return;
+        if (selectedArrowColor) {
+            const cssColor = "rgb(" + selectedArrowColor.r + ", " + selectedArrowColor.g + ", " + selectedArrowColor.b + ")";
+            el.colorSwatch.style.setProperty("--v4-selected-arrow-color", cssColor);
+            el.colorSwatch.classList.add("is-selected");
+            el.colorInstruction.textContent = "選択色：" + cssColor + "（写真をタップすると変更）";
+            el.analyzeSaved.disabled = analysisInProgress;
+        } else {
+            el.colorSwatch.classList.remove("is-selected");
+            el.colorSwatch.style.removeProperty("--v4-selected-arrow-color");
+            el.colorInstruction.textContent = "写真内のノックまたは羽根を1回タップしてください。";
+            el.analyzeSaved.disabled = true;
+        }
+        renderColorTapMarker();
+    }
+
+    function renderColorTapMarker() {
+        const el = getElements();
+        if (!el.colorMarker || !el.savedPreview || !selectedColorPoint) {
+            if (el.colorMarker) el.colorMarker.hidden = true;
+            return;
+        }
+        const imageRect = el.savedPreview.getBoundingClientRect();
+        const stageRect = el.savedPreview.parentElement.getBoundingClientRect();
+        const normalizedX = Number(selectedColorPoint.normalizedX);
+        const normalizedY = Number(selectedColorPoint.normalizedY);
+        if (!Number.isFinite(normalizedX) || !Number.isFinite(normalizedY)) {
+            el.colorMarker.hidden = true;
+            return;
+        }
+        el.colorMarker.style.left = (imageRect.left - stageRect.left + imageRect.width * normalizedX) + "px";
+        el.colorMarker.style.top = (imageRect.top - stageRect.top + imageRect.height * normalizedY) + "px";
+        el.colorMarker.hidden = false;
+    }
+
+    function normalizeColor(value) {
+        if (!value) return null;
+        const r = Number(value.r), g = Number(value.g), b = Number(value.b);
+        if (![r, g, b].every(Number.isFinite)) return null;
+        return {
+            r: Math.max(0, Math.min(255, Math.round(r))),
+            g: Math.max(0, Math.min(255, Math.round(g))),
+            b: Math.max(0, Math.min(255, Math.round(b)))
+        };
+    }
+
+    function memberColorStorageKey(memberName) {
+        return "baika-arrow-color:" + String(memberName || "default").trim();
+    }
+
+    function saveMemberArrowColor(memberName, color) {
+        try { localStorage.setItem(memberColorStorageKey(memberName), JSON.stringify(color)); }
+        catch (error) { console.warn("Arrow color local save failed:", error); }
+    }
+
+    function loadMemberArrowColor(memberName) {
+        try { return normalizeColor(JSON.parse(localStorage.getItem(memberColorStorageKey(memberName)) || "null")); }
+        catch (error) { return null; }
     }
 
     function renderSavedCandidates(candidates) {
@@ -570,7 +724,11 @@
             savedDetails: document.getElementById("v4SavedPhotoDetails"),
             analyzeSaved: document.getElementById("v4AnalyzeSavedPhotoButton"),
             analysisStatus: document.getElementById("v4SavedPhotoAnalysisStatus"),
-            candidateLayer: document.getElementById("v4SavedPhotoCandidateLayer")
+            candidateLayer: document.getElementById("v4SavedPhotoCandidateLayer"),
+            colorMarker: document.getElementById("v4PhotoColorTapMarker"),
+            colorSwatch: document.getElementById("v4SelectedArrowColor"),
+            colorInstruction: document.getElementById("v4PhotoColorInstruction"),
+            resetColor: document.getElementById("v4ResetArrowColorButton")
         };
     }
 

@@ -2,550 +2,178 @@
 
 /*
  * Baika Archery System Ver4
- * Step34-2 Arrow Candidate Detector
- *
- * 1. 緑色のノック／羽根を検出
- * 2. 周囲の暗い細長い画素をPCAで解析
- * 3. シャフト方向と着弾位置候補を推定
- *
- * この段階では自動登録しない。
+ * Step35-4a Arrow Candidate Detector
+ * 写真上で選択したノック／羽根色に近い領域を検出する。
+ * この段階では候補表示のみで、自動登録は行わない。
  */
-
 (function () {
     function createWorkCanvas(image, maxSide) {
-        const naturalWidth =
-            Number(image.naturalWidth || image.width);
-        const naturalHeight =
-            Number(image.naturalHeight || image.height);
+        const naturalWidth = Number(image.naturalWidth || image.width);
+        const naturalHeight = Number(image.naturalHeight || image.height);
+        if (!naturalWidth || !naturalHeight) throw new Error("画像サイズを取得できません。");
 
-        if (!naturalWidth || !naturalHeight) {
-            throw new Error("画像サイズを取得できません。");
-        }
-
-        const scale =
-            Math.min(
-                1,
-                maxSide /
-                Math.max(naturalWidth, naturalHeight)
-            );
-
-        const width =
-            Math.max(1, Math.round(naturalWidth * scale));
-        const height =
-            Math.max(1, Math.round(naturalHeight * scale));
-
+        const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight));
+        const width = Math.max(1, Math.round(naturalWidth * scale));
+        const height = Math.max(1, Math.round(naturalHeight * scale));
         const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-
-        const context =
-            canvas.getContext(
-                "2d",
-                { willReadFrequently: true }
-            );
-
-        if (!context) {
-            throw new Error("Canvasを初期化できません。");
-        }
-
+        const context = canvas.getContext("2d", { willReadFrequently: true });
+        if (!context) throw new Error("Canvasを初期化できません。");
         context.drawImage(image, 0, 0, width, height);
-
-        return {
-            canvas,
-            context,
-            width,
-            height,
-            scale,
-            naturalWidth,
-            naturalHeight
-        };
+        return { context, width, height, scale, naturalWidth, naturalHeight };
     }
 
-    function isGreenCandidate(r, g, b) {
-        const maxValue = Math.max(r, g, b);
-        const minValue = Math.min(r, g, b);
-        const saturation = maxValue - minValue;
-
-        return (
-            g >= 90 &&
-            g >= r * 1.12 &&
-            g >= b * 1.03 &&
-            saturation >= 32 &&
-            (
-                g - r >= 18 ||
-                g - b >= 12
-            )
-        );
+    function rgbToHsv(r, g, b) {
+        r /= 255; g /= 255; b /= 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const delta = max - min;
+        let h = 0;
+        if (delta !== 0) {
+            if (max === r) h = 60 * (((g - b) / delta) % 6);
+            else if (max === g) h = 60 * (((b - r) / delta) + 2);
+            else h = 60 * (((r - g) / delta) + 4);
+        }
+        if (h < 0) h += 360;
+        return { h, s: max === 0 ? 0 : delta / max, v: max };
     }
 
-    function buildGreenMask(imageData) {
+    function hueDistance(a, b) {
+        const d = Math.abs(a - b);
+        return Math.min(d, 360 - d);
+    }
+
+    function buildColorMask(imageData, targetColor, tolerance) {
         const width = imageData.width;
         const height = imageData.height;
         const data = imageData.data;
         const mask = new Uint8Array(width * height);
+        const target = rgbToHsv(targetColor.r, targetColor.g, targetColor.b);
+        const hueTolerance = Number(tolerance && tolerance.hue) || 24;
+        const saturationTolerance = Number(tolerance && tolerance.saturation) || 0.34;
+        const valueTolerance = Number(tolerance && tolerance.value) || 0.38;
+        const rgbTolerance = Number(tolerance && tolerance.rgb) || 105;
 
         for (let index = 0; index < width * height; index += 1) {
             const offset = index * 4;
             const r = data[offset];
             const g = data[offset + 1];
             const b = data[offset + 2];
+            const hsv = rgbToHsv(r, g, b);
+            const rgbDistance = Math.hypot(r - targetColor.r, g - targetColor.g, b - targetColor.b);
 
-            if (isGreenCandidate(r, g, b)) {
-                mask[index] = 1;
+            let match;
+            if (target.s < 0.18) {
+                // 白・灰・黒系は色相が不安定なのでRGBと明るさを中心に比較する。
+                match = rgbDistance <= rgbTolerance && Math.abs(hsv.v - target.v) <= 0.30;
+            } else {
+                match = hueDistance(hsv.h, target.h) <= hueTolerance
+                    && Math.abs(hsv.s - target.s) <= saturationTolerance
+                    && Math.abs(hsv.v - target.v) <= valueTolerance
+                    && rgbDistance <= rgbTolerance * 1.45;
             }
+            if (match) mask[index] = 1;
         }
-
         return mask;
     }
 
     function findComponents(mask, width, height) {
         const visited = new Uint8Array(mask.length);
         const components = [];
-        const directions = [
-            [-1, -1], [0, -1], [1, -1],
-            [-1, 0],           [1, 0],
-            [-1, 1],  [0, 1], [1, 1]
-        ];
-
-        const stackX = [];
-        const stackY = [];
+        const directions = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
+        const stack = [];
 
         for (let y = 0; y < height; y += 1) {
             for (let x = 0; x < width; x += 1) {
-                const startIndex = y * width + x;
-
-                if (!mask[startIndex] || visited[startIndex]) {
-                    continue;
-                }
-
-                let area = 0;
-                let sumX = 0;
-                let sumY = 0;
-                let minX = x;
-                let maxX = x;
-                let minY = y;
-                let maxY = y;
-
-                stackX.length = 0;
-                stackY.length = 0;
-                stackX.push(x);
-                stackY.push(y);
-                visited[startIndex] = 1;
-
-                while (stackX.length > 0) {
-                    const currentX = stackX.pop();
-                    const currentY = stackY.pop();
-
-                    area += 1;
-                    sumX += currentX;
-                    sumY += currentY;
-                    minX = Math.min(minX, currentX);
-                    maxX = Math.max(maxX, currentX);
-                    minY = Math.min(minY, currentY);
-                    maxY = Math.max(maxY, currentY);
-
-                    directions.forEach(function (direction) {
-                        const nextX = currentX + direction[0];
-                        const nextY = currentY + direction[1];
-
-                        if (
-                            nextX < 0 ||
-                            nextY < 0 ||
-                            nextX >= width ||
-                            nextY >= height
-                        ) {
-                            return;
-                        }
-
-                        const nextIndex = nextY * width + nextX;
-
-                        if (!mask[nextIndex] || visited[nextIndex]) {
-                            return;
-                        }
-
-                        visited[nextIndex] = 1;
-                        stackX.push(nextX);
-                        stackY.push(nextY);
+                const start = y * width + x;
+                if (!mask[start] || visited[start]) continue;
+                let area = 0, sumX = 0, sumY = 0, minX = x, maxX = x, minY = y, maxY = y;
+                stack.length = 0;
+                stack.push([x, y]);
+                visited[start] = 1;
+                while (stack.length) {
+                    const point = stack.pop();
+                    const cx = point[0], cy = point[1];
+                    area += 1; sumX += cx; sumY += cy;
+                    minX = Math.min(minX, cx); maxX = Math.max(maxX, cx);
+                    minY = Math.min(minY, cy); maxY = Math.max(maxY, cy);
+                    directions.forEach(function (d) {
+                        const nx = cx + d[0], ny = cy + d[1];
+                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) return;
+                        const ni = ny * width + nx;
+                        if (!mask[ni] || visited[ni]) return;
+                        visited[ni] = 1;
+                        stack.push([nx, ny]);
                     });
                 }
-
                 components.push({
                     area,
                     centerX: sumX / area,
                     centerY: sumY / area,
-                    minX,
-                    maxX,
-                    minY,
-                    maxY,
+                    minX, maxX, minY, maxY,
                     width: maxX - minX + 1,
                     height: maxY - minY + 1
                 });
             }
         }
-
         return components;
     }
 
     function mergeNearby(components, distance) {
         const remaining = components.slice();
         const merged = [];
-
-        while (remaining.length > 0) {
+        while (remaining.length) {
             const seed = remaining.shift();
             const group = [seed];
-
-            for (
-                let index = remaining.length - 1;
-                index >= 0;
-                index -= 1
-            ) {
-                const item = remaining[index];
-
-                if (
-                    Math.hypot(
-                        item.centerX - seed.centerX,
-                        item.centerY - seed.centerY
-                    ) <= distance
-                ) {
+            for (let i = remaining.length - 1; i >= 0; i -= 1) {
+                const item = remaining[i];
+                if (Math.hypot(item.centerX - seed.centerX, item.centerY - seed.centerY) <= distance) {
                     group.push(item);
-                    remaining.splice(index, 1);
+                    remaining.splice(i, 1);
                 }
             }
-
-            const totalArea =
-                group.reduce(function (sum, item) {
-                    return sum + item.area;
-                }, 0);
-
+            const area = group.reduce(function (sum, item) { return sum + item.area; }, 0);
             merged.push({
-                area: totalArea,
-                centerX:
-                    group.reduce(function (sum, item) {
-                        return sum + item.centerX * item.area;
-                    }, 0) / totalArea,
-                centerY:
-                    group.reduce(function (sum, item) {
-                        return sum + item.centerY * item.area;
-                    }, 0) / totalArea
+                area,
+                centerX: group.reduce(function (sum, item) { return sum + item.centerX * item.area; }, 0) / area,
+                centerY: group.reduce(function (sum, item) { return sum + item.centerY * item.area; }, 0) / area
             });
         }
-
         return merged;
     }
 
-    function isDarkPixel(data, offset) {
-        const r = data[offset];
-        const g = data[offset + 1];
-        const b = data[offset + 2];
-
-        const brightness =
-            0.299 * r +
-            0.587 * g +
-            0.114 * b;
-
-        const spread =
-            Math.max(r, g, b) -
-            Math.min(r, g, b);
-
-        return (
-            brightness <= 105 &&
-            spread <= 75
-        );
-    }
-
-    function estimateShaft(
-        candidate,
-        imageData,
-        imageCenter
-    ) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-
-        const windowRadius =
-            Math.max(
-                32,
-                Math.round(
-                    Math.min(width, height) * 0.07
-                )
-            );
-
-        const points = [];
-
-        const minX =
-            Math.max(
-                0,
-                Math.floor(candidate.centerX - windowRadius)
-            );
-        const maxX =
-            Math.min(
-                width - 1,
-                Math.ceil(candidate.centerX + windowRadius)
-            );
-        const minY =
-            Math.max(
-                0,
-                Math.floor(candidate.centerY - windowRadius)
-            );
-        const maxY =
-            Math.min(
-                height - 1,
-                Math.ceil(candidate.centerY + windowRadius)
-            );
-
-        for (let y = minY; y <= maxY; y += 1) {
-            for (let x = minX; x <= maxX; x += 1) {
-                const distance =
-                    Math.hypot(
-                        x - candidate.centerX,
-                        y - candidate.centerY
-                    );
-
-                if (
-                    distance < 5 ||
-                    distance > windowRadius
-                ) {
-                    continue;
-                }
-
-                const offset = (y * width + x) * 4;
-
-                if (isDarkPixel(data, offset)) {
-                    points.push({ x, y });
-                }
-            }
-        }
-
-        if (points.length < 18) {
-            return {
-                angle: null,
-                confidence: 0,
-                impactX: candidate.centerX,
-                impactY: candidate.centerY
-            };
-        }
-
-        const meanX =
-            points.reduce(
-                (sum, point) => sum + point.x,
-                0
-            ) / points.length;
-
-        const meanY =
-            points.reduce(
-                (sum, point) => sum + point.y,
-                0
-            ) / points.length;
-
-        let covarianceXX = 0;
-        let covarianceXY = 0;
-        let covarianceYY = 0;
-
-        points.forEach(function (point) {
-            const dx = point.x - meanX;
-            const dy = point.y - meanY;
-
-            covarianceXX += dx * dx;
-            covarianceXY += dx * dy;
-            covarianceYY += dy * dy;
-        });
-
-        covarianceXX /= points.length;
-        covarianceXY /= points.length;
-        covarianceYY /= points.length;
-
-        const trace = covarianceXX + covarianceYY;
-        const difference = covarianceXX - covarianceYY;
-        const root =
-            Math.sqrt(
-                difference * difference +
-                4 * covarianceXY * covarianceXY
-            );
-
-        const largestEigenvalue =
-            (trace + root) / 2;
-
-        let directionX =
-            covarianceXY;
-        let directionY =
-            largestEigenvalue - covarianceXX;
-
-        if (
-            Math.abs(directionX) +
-            Math.abs(directionY) < 0.0001
-        ) {
-            directionX = 1;
-            directionY = 0;
-        }
-
-        const length =
-            Math.hypot(directionX, directionY);
-
-        directionX /= length;
-        directionY /= length;
-
-        const towardCenterX =
-            imageCenter.x - candidate.centerX;
-        const towardCenterY =
-            imageCenter.y - candidate.centerY;
-
-        if (
-            directionX * towardCenterX +
-            directionY * towardCenterY < 0
-        ) {
-            directionX *= -1;
-            directionY *= -1;
-        }
-
-        const anisotropy =
-            root /
-            Math.max(trace, 1);
-
-        const estimateLength =
-            Math.max(
-                55,
-                Math.min(
-                    210,
-                    Math.hypot(
-                        imageCenter.x - candidate.centerX,
-                        imageCenter.y - candidate.centerY
-                    ) * 0.55
-                )
-            );
-
-        return {
-            angle:
-                Math.atan2(directionY, directionX),
-            directionX,
-            directionY,
-            confidence:
-                Math.max(
-                    0,
-                    Math.min(1, anisotropy)
-                ),
-            impactX:
-                candidate.centerX +
-                directionX * estimateLength,
-            impactY:
-                candidate.centerY +
-                directionY * estimateLength
-        };
-    }
-
     function detect(image, options) {
-        const settings =
-            Object.assign(
-                {
-                    maxSide: 900,
-                    maxCandidates: 12
-                },
-                options || {}
-            );
-
-        const work =
-            createWorkCanvas(image, settings.maxSide);
-
-        const imageData =
-            work.context.getImageData(
-                0,
-                0,
-                work.width,
-                work.height
-            );
-
-        const mask =
-            buildGreenMask(imageData);
-
-        const rawComponents =
-            findComponents(
-                mask,
-                work.width,
-                work.height
-            );
-
-        const minimumArea =
-            Math.max(
-                3,
-                Math.round(
-                    work.width *
-                    work.height *
-                    0.000004
-                )
-            );
-
-        const filtered =
-            rawComponents.filter(function (component) {
-                return (
-                    component.area >= minimumArea &&
-                    component.area <=
-                        work.width *
-                        work.height *
-                        0.004 &&
-                    component.width <=
-                        work.width * 0.12 &&
-                    component.height <=
-                        work.height * 0.12
-                );
-            });
-
-        const merged =
-            mergeNearby(
-                filtered,
-                Math.max(
-                    7,
-                    work.width * 0.012
-                )
-            );
-
-        const imageCenter = {
-            x: work.width / 2,
-            y: work.height / 2
-        };
-
+        const settings = Object.assign({ maxSide: 900, maxCandidates: 12, targetColor: null }, options || {});
+        if (!settings.targetColor) throw new Error("検出するノック色が選択されていません。");
+        const work = createWorkCanvas(image, settings.maxSide);
+        const imageData = work.context.getImageData(0, 0, work.width, work.height);
+        const mask = buildColorMask(imageData, settings.targetColor, settings.colorTolerance);
+        const raw = findComponents(mask, work.width, work.height);
+        const imageArea = work.width * work.height;
+        const minimumArea = Math.max(3, Math.round(imageArea * 0.000004));
+        const filtered = raw.filter(function (component) {
+            return component.area >= minimumArea
+                && component.area <= imageArea * 0.006
+                && component.width <= work.width * 0.16
+                && component.height <= work.height * 0.16;
+        });
+        const merged = mergeNearby(filtered, Math.max(7, work.width * 0.012));
         return merged
-            .sort(function (a, b) {
-                return b.area - a.area;
-            })
+            .sort(function (a, b) { return b.area - a.area; })
             .slice(0, settings.maxCandidates)
             .map(function (candidate, index) {
-                const shaft =
-                    estimateShaft(
-                        candidate,
-                        imageData,
-                        imageCenter
-                    );
-
                 return {
                     id: index + 1,
-                    x:
-                        candidate.centerX /
-                        work.scale,
-                    y:
-                        candidate.centerY /
-                        work.scale,
-                    confidence:
-                        Math.min(
-                            0.99,
-                            0.45 +
-                            Math.log10(
-                                candidate.area + 1
-                            ) * 0.18
-                        ),
+                    x: candidate.centerX / work.scale,
+                    y: candidate.centerY / work.scale,
+                    confidence: Math.min(0.99, 0.45 + Math.log10(candidate.area + 1) * 0.18),
                     area: candidate.area,
-                    shaftAngle: shaft.angle,
-                    shaftConfidence:
-                        shaft.confidence,
-                    impactX:
-                        shaft.impactX /
-                        work.scale,
-                    impactY:
-                        shaft.impactY /
-                        work.scale
+                    impactX: candidate.centerX / work.scale,
+                    impactY: candidate.centerY / work.scale
                 };
             });
     }
 
-    window.BaikaArrowCandidateDetector = {
-        detect
-    };
+    window.BaikaArrowCandidateDetector = { detect };
 })();
