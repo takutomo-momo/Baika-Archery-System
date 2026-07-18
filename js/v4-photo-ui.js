@@ -881,7 +881,7 @@
                  */
                 if (state.scale <= 1.05) {
                     photoEngine.zoomAt(
-                        3,
+                        6,
                         point.clientX,
                         point.clientY
                     );
