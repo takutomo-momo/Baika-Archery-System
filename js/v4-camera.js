@@ -44,6 +44,7 @@
     let currentAiCandidateIndex = 0;
     let showAllImpactPins = true;
     let photoSelectionMode = false;
+    let photoPickerMode = false;
     const selectedPhotoIds = new Set();
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
@@ -52,7 +53,6 @@
 
     function initializeCameraMode() {
         let el = getElements();
-        ensureAnalysisControls(el);
         ensurePhotoManagementControls();
         el = getElements();
         if (!el.open || !el.modal || !el.video) return;
@@ -65,23 +65,16 @@
         if (el.openList) el.openList.addEventListener("click", openPhotoList);
         if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
-        if (el.analyzeSaved) el.analyzeSaved.addEventListener("click", analyzeSavedPhoto);
-        if (el.manualAddPin) el.manualAddPin.addEventListener("click", startManualImpactPin);
+
         // PCはclick、iPhoneはtouchendから直接色取得する。
         // touchstartでpreventDefaultするため、iPhoneでは合成clickが発生しない場合がある。
         if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
-        initializeDirectPhotoTap(el);
+
         if (el.zoomIn) el.zoomIn.addEventListener("click", function () { setPreviewZoom(previewZoom.scale + 0.5); });
         if (el.zoomOut) el.zoomOut.addEventListener("click", function () { setPreviewZoom(previewZoom.scale - 0.5); });
         if (el.zoomReset) el.zoomReset.addEventListener("click", resetPreviewZoom);
         initializePreviewGestures(el);
-        if (el.resetColor) el.resetColor.addEventListener("click", resetSelectedArrowColor);
-        if (el.startProfile) el.startProfile.addEventListener("click", startArrowProfileEditing);
-        if (el.cancelProfile) el.cancelProfile.addEventListener("click", cancelArrowProfileEditing);
-        if (el.saveProfile) el.saveProfile.addEventListener("click", saveArrowProfile);
-        if (el.profileSlots) el.profileSlots.addEventListener("click", selectProfilePart);
-        if (el.candidateList) el.candidateList.addEventListener("click", selectAiCandidate);
-        initializeImpactPinEditing(el);
+
 
         el.modal.addEventListener("click", function (event) {
             if (event.target === el.modal) closeCamera();
@@ -148,7 +141,8 @@
         document.body.classList.remove("v4-camera-open");
     }
 
-    async function openPhotoList() {
+    async function openPhotoList(pickerMode) {
+        photoPickerMode = pickerMode === true;
         const el = getElements();
         if (!el.listModal) return;
         el.listModal.hidden = false;
@@ -160,6 +154,7 @@
     function closePhotoList() {
         const el = getElements();
         if (el.listModal) el.listModal.hidden = true;
+        photoPickerMode = false;
         revokeListObjectUrls();
         document.body.classList.remove("v4-camera-open");
     }
@@ -196,23 +191,21 @@
                     + '<button type="button" class="v4-photo-open-button">'
                     + '<img class="v4-photo-card-image" alt="End ' + escapeHtml(photo.endNumber) + ' の的写真">'
                     + '<div class="v4-photo-card-body">'
-                    + '<div class="v4-photo-card-title"><span>📷 End ' + escapeHtml(photo.endNumber) + '</span><span class="v4-photo-card-status' + (complete ? " is-complete" : "") + '">' + (complete ? "✓ 入力済み" : "未入力") + '</span></div>'
+                    + '<div class="v4-photo-card-title"><span>📷 End ' + escapeHtml(photo.endNumber) + '</span><span class="v4-photo-card-status' + (complete ? " is-complete" : "") + '">' + (complete ? "入力済み" : "未入力") + '</span></div>'
                     + '<div class="v4-photo-card-meta"><span>🕒 ' + formatDateTime(photo.createdAt) + '</span><span>🎯 ' + escapeHtml(photo.distance || "距離未設定") + '</span></div>'
                     + '</div></button>'
                     + '<div class="v4-photo-card-actions">'
-                    + '<label class="v4-photo-complete-toggle"><input type="checkbox" class="v4-photo-complete-input" ' + (complete ? "checked" : "") + '><span>入力済み</span></label>'
                     + '<button type="button" class="v4-photo-delete-button">削除</button>'
                     + '</div>';
                 card.querySelector("img").src = url;
-                card.querySelector(".v4-photo-open-button").addEventListener("click", function () { openPhotoPreview(photo); });
+                card.querySelector(".v4-photo-open-button").addEventListener("click", function () {
+                    if (photoPickerMode) { selectPhotoForTargetInput(photoId); }
+                    else { openPhotoPreview(photo); }
+                });
                 card.querySelector(".v4-photo-select-input").addEventListener("change", function (event) {
                     if (event.target.checked) selectedPhotoIds.add(photoId); else selectedPhotoIds.delete(photoId);
                     card.classList.toggle("is-selected", event.target.checked);
                     updatePhotoSelectionToolbar(photos);
-                });
-                card.querySelector(".v4-photo-complete-input").addEventListener("change", async function (event) {
-                    await setPhotoComplete(photoId, event.target.checked);
-                    await renderPhotoList();
                 });
                 card.querySelector(".v4-photo-delete-button").addEventListener("click", async function () {
                     if (!window.confirm("この写真を削除しますか？\n登録済みの得点・グルーピング記録は削除されません。")) return;
@@ -319,7 +312,6 @@
 
     async function openPhotoPreview(photo) {
         let el = getElements();
-        ensureAnalysisControls(el);
         el = getElements();
         if (!el.previewModal || !photo || photo.id == null) return;
         closePhotoPreview();
@@ -336,35 +328,13 @@
 
             el.savedTitle.textContent = "End " + (freshPhoto.endNumber || "-");
             el.savedDetails.textContent = formatDateTime(freshPhoto.createdAt) + " ／ " + (freshPhoto.distance || "距離未設定") + " ／ " + (freshPhoto.status === "complete" ? "入力済み" : "未入力");
-            arrowProfile = loadArrowProfile(freshPhoto.memberName);
-            profileDraft = cloneArrowProfile(arrowProfile);
-            profileEditing = false;
-            profileStepIndex = 0;
-            selectedArrowColor = normalizeColor(currentPhotoAnalysis && currentPhotoAnalysis.selectedArrowColor)
-                || normalizeColor(arrowProfile && arrowProfile.nock && arrowProfile.nock.color)
-                || loadMemberArrowColor(freshPhoto.memberName);
-            selectedColorPoint = currentPhotoAnalysis && currentPhotoAnalysis.selectedColorPoint || null;
-            updateArrowProfileUI();
-            updateColorSelectionUI();
-
-            const analyzed = currentPhotoAnalysis && currentPhotoAnalysis.status === "analyzed";
-            const candidates = analyzed && Array.isArray(currentPhotoAnalysis.candidates) ? currentPhotoAnalysis.candidates : [];
-            el.analysisStatus.textContent = selectedArrowColor
-                ? (analyzed ? "前回の解析結果：矢候補 " + candidates.length + "件。再解析もできます。" : "選択した色で解析できます。")
-                : "先に写真内のノック／羽根をタップしてください。";
-            el.analyzeSaved.hidden = false;
-            el.analyzeSaved.disabled = !selectedArrowColor;
-            el.analyzeSaved.textContent = analyzed ? "✨ 再解析する" : "✨ AI解析開始";
-
+            clearSavedCandidates();
             resetPreviewZoom();
             el.previewModal.hidden = false;
             el.savedPreview.onload = function () {
                 if (loadToken !== previewLoadToken) return;
                 resetPreviewZoom();
-                updateColorSelectionUI();
-                if (currentPhotoAnalysis && currentPhotoAnalysis.status === "analyzed") {
-                    renderSavedCandidates(currentPhotoAnalysis.candidates || []);
-                }
+
             };
             el.savedPreview.onerror = function () {
                 if (loadToken !== previewLoadToken) return;
@@ -1225,6 +1195,21 @@
     }
 
 
+    async function selectPhotoForTargetInput(photoId) {
+        try {
+            const photo = await getPhoto(Number(photoId));
+            if (!photo || !photo.blob) return;
+            window.dispatchEvent(new CustomEvent("baika:select-local-photo", {
+                detail: { photoId: Number(photo.id), blob: photo.blob, name: "target-photo-" + photo.id + ".jpg" }
+            }));
+            closePhotoList();
+        } catch (error) {
+            console.error("Photo selection failed:", error);
+            window.alert("写真を入力画面へ表示できませんでした。");
+        }
+    }
+
+
     function ensureAnalysisControls(el) {
         const shell = document.querySelector("#v4PhotoPreviewModal .v4-photo-preview-shell");
         if (!shell) return;
@@ -1756,6 +1741,7 @@
         storeName: STORE_NAME,
         refreshCounts: refreshCounts,
         getAllPhotos: getAllPhotos,
+        openPicker: function () { return openPhotoList(true); },
         markPhotoComplete: function (photoId) { return setPhotoComplete(photoId, true); },
         markPhotoPending: function (photoId) { return setPhotoComplete(photoId, false); },
         deletePhoto: deletePhoto

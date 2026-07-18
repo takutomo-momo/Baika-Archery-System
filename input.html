@@ -162,19 +162,16 @@
         </div>
     </div>
 
-    <label
-        for="v4TargetPhotoInput"
+    <button
+        type="button"
+        id="v4SelectSavedPhotoButton"
         class="v4-photo-select-button"
+        onclick="window.BaikaLocalPhotoStore && window.BaikaLocalPhotoStore.openPicker()"
     >
-        📁 写真を選択
-    </label>
+        📷 写真一覧から選択
+    </button>
 
-    <input
-        type="file"
-        id="v4TargetPhotoInput"
-        accept="image/*"
-        class="v4-photo-file-input"
-    >
+    <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
 <div class="v4-photo-controls">
     <button
         type="button"
@@ -755,14 +752,6 @@
             <span id="v4SavedPhotoDetails"></span>
         </div>
 
-        <div id="v4AiCandidatePanel" class="v4-ai-candidate-panel" hidden>
-            <div class="v4-ai-candidate-heading">
-                <strong>🎯 AI候補</strong>
-                <small>紫はノック候補です。確認後、刺さり位置をタップします。</small>
-            </div>
-            <div id="v4AiCandidateList" class="v4-ai-candidate-list"></div>
-        </div>
-
         <div class="v4-arrow-profile-panel">
             <div class="v4-arrow-profile-header">
                 <div>
@@ -862,8 +851,8 @@
 <script src="js/v4-photo-engine.js?v=11"></script>
 <script src="js/v4-layout.js?v=29b4"></script>
 <script src="js/v4-target-engine.js?v=341"></script>
-<script src="js/v4-arrow-detector.js?v=36"></script>
+<script src="js/v4-arrow-detector.js?v=354a"></script>
 <script src="js/v4-photo-ui.js?v=341"></script>
-<script src="js/v4-camera.js?v=36"></script>
+<script src="js/v4-camera.js?v=40"></script>
 </body>
 </html>

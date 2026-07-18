@@ -67,12 +67,10 @@
         );
 
         createPinLayer(elements);
-        createArrowCandidateLayer(elements);
         createScorePanel(elements);
         createScoreSummary(elements);
         createScoreList(elements);
         createCalibrationControls(elements);
-        createArrowDetectionControls(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -778,6 +776,12 @@
             );
         }
 
+        window.addEventListener("baika:select-local-photo", function (event) {
+            const detail = event.detail || {};
+            if (!detail.blob) return;
+            loadPhotoBlob(detail.blob, detail.photoId, elements);
+        });
+
         if (elements.clearButton) {
             elements.clearButton.addEventListener(
                 "click",
@@ -1481,6 +1485,23 @@
                 }
             }
         );
+    }
+
+    function loadPhotoBlob(blob, photoId, elements) {
+        releasePhotoUrl();
+        clearPins();
+        closeScorePanel();
+        updateUndoButton(elements);
+        currentPhotoUrl = URL.createObjectURL(blob);
+        elements.preview.hidden = false;
+        elements.preview.src = currentPhotoUrl;
+        elements.preview.dataset.localPhotoId = String(photoId || "");
+        clearArrowCandidates();
+        elements.preview.addEventListener("load", function onLoad() {
+            elements.preview.removeEventListener("load", onLoad);
+            photoEngine.reset();
+            updatePhotoUI(elements, true);
+        });
     }
 
     function handlePhotoSelection(event) {

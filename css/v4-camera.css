@@ -697,3 +697,14 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
   #v4PhotoSelectedCount{grid-column:1 / 2}
   #v4DeleteSelectedPhotosButton{grid-column:2 / 3}
 }
+
+/* Step40: 写真表示を閲覧専用に簡素化 */
+.v4-photo-analysis-controls,
+.v4-photo-profile-panel,
+#v4ArrowProfileEditor,
+#v4AiCandidatePanel,
+#v4PhotoColorInstruction,
+#v4ResetArrowColorButton,
+#v4PhotoColorTapMarker,
+#v4SavedPhotoCandidateLayer { display:none !important; }
+.v4-photo-card-status.is-complete::before { content:"" !important; }
