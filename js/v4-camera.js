@@ -66,10 +66,6 @@
         if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
 
-        // PCはclick、iPhoneはtouchendから直接色取得する。
-        // touchstartでpreventDefaultするため、iPhoneでは合成clickが発生しない場合がある。
-        if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
-
         if (el.zoomIn) el.zoomIn.addEventListener("click", function () { setPreviewZoom(previewZoom.scale + 0.5); });
         if (el.zoomOut) el.zoomOut.addEventListener("click", function () { setPreviewZoom(previewZoom.scale - 0.5); });
         if (el.zoomReset) el.zoomReset.addEventListener("click", resetPreviewZoom);
@@ -311,45 +307,19 @@
     }
 
     async function openPhotoPreview(photo) {
-        let el = getElements();
-        el = getElements();
-        if (!el.previewModal || !photo || photo.id == null) return;
-        closePhotoPreview();
-        const loadToken = ++previewLoadToken;
-
-        try {
-            // 一覧が保持している古いオブジェクトではなく、IndexedDBから写真本体を毎回読み直す。
-            const freshPhoto = await getPhoto(photo.id);
-            if (!freshPhoto || !freshPhoto.blob || loadToken !== previewLoadToken) return;
-            currentPreviewPhoto = freshPhoto;
-            currentPhotoAnalysis = await getAnalysis(freshPhoto.id) || migrateLegacyAnalysis(freshPhoto);
-            currentPhotoPins = await getPins(freshPhoto.id) || migrateLegacyPins(freshPhoto);
-            if (loadToken !== previewLoadToken || currentPreviewPhoto !== freshPhoto) return;
-
-            el.savedTitle.textContent = "End " + (freshPhoto.endNumber || "-");
-            el.savedDetails.textContent = formatDateTime(freshPhoto.createdAt) + " ／ " + (freshPhoto.distance || "距離未設定") + " ／ " + (freshPhoto.status === "complete" ? "入力済み" : "未入力");
-            clearSavedCandidates();
-            resetPreviewZoom();
-            el.previewModal.hidden = false;
-            el.savedPreview.onload = function () {
-                if (loadToken !== previewLoadToken) return;
-                resetPreviewZoom();
-
-            };
-            el.savedPreview.onerror = function () {
-                if (loadToken !== previewLoadToken) return;
-                console.error("Saved preview image load failed");
-                el.analysisStatus.textContent = "写真を表示できませんでした。いったん一覧を閉じて、もう一度開いてください。";
-            };
-            // onloadを設定してからsrcを入れる。SafariのData URL即時読み込み対策。
-            el.savedPreview.src = await blobToDataUrl(freshPhoto.blob);
-            if (el.savedPreview.complete && el.savedPreview.naturalWidth > 0) {
-                el.savedPreview.onload();
-            }
-        } catch (error) {
-            console.error("Preview image open failed:", error);
-            if (el.analysisStatus) el.analysisStatus.textContent = "写真を開けませんでした。";
+        const el = getElements();
+        if (!photo || !el.previewModal || !el.savedPreview) return;
+        currentPreviewPhoto = photo;
+        if (currentPreviewUrl) URL.revokeObjectURL(currentPreviewUrl);
+        currentPreviewUrl = URL.createObjectURL(photo.blob);
+        el.savedPreview.src = currentPreviewUrl;
+        if (el.savedTitle) el.savedTitle.textContent = "End " + String(photo.endNumber || "-");
+        if (el.savedDetails) {
+            el.savedDetails.textContent = formatDateTime(photo.createdAt) + " / " + (photo.distance || "距離未設定") + " / " + (photo.status === "complete" ? "入力済み" : "未入力");
         }
+        resetPreviewZoom();
+        el.previewModal.hidden = false;
+        document.body.classList.add("v4-camera-open");
     }
 
     function closePhotoPreview() {

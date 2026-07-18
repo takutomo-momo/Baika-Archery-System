@@ -70,7 +70,6 @@
         createScorePanel(elements);
         createScoreSummary(elements);
         createScoreList(elements);
-        createCalibrationControls(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -706,6 +705,23 @@
                 return;
             }
 
+            const selectedPhotoId = Number(
+                elements.preview && elements.preview.dataset.localPhotoId
+            );
+            if (
+                Number.isFinite(selectedPhotoId) &&
+                selectedPhotoId > 0 &&
+                window.BaikaLocalPhotoStore &&
+                typeof window.BaikaLocalPhotoStore.markPhotoComplete === "function"
+            ) {
+                try {
+                    await window.BaikaLocalPhotoStore.markPhotoComplete(selectedPhotoId);
+                    await window.BaikaLocalPhotoStore.refreshCounts();
+                } catch (error) {
+                    console.warn("Photo status update failed:", error);
+                }
+            }
+
             clearPins();
             closeScorePanel();
 
@@ -758,11 +774,11 @@
         undoButton.textContent = "↩ 最後のピンを戻す";
         undoButton.disabled = true;
 
-        if (elements.clearButton) {
-            elements.clearButton.insertAdjacentElement(
-                "beforebegin",
-                undoButton
-            );
+        const quickActions = document.getElementById("v4PhotoQuickActions");
+        if (quickActions) {
+            quickActions.insertBefore(undoButton, elements.clearButton || null);
+        } else if (elements.clearButton) {
+            elements.clearButton.insertAdjacentElement("beforebegin", undoButton);
         }
 
         elements.undoButton = undoButton;

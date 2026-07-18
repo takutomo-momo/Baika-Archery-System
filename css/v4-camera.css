@@ -708,3 +708,26 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 #v4PhotoColorTapMarker,
 #v4SavedPhotoCandidateLayer { display:none !important; }
 .v4-photo-card-status.is-complete::before { content:"" !important; }
+
+
+/* Step41: 写真入力の修正操作を画像の直下へ集約 */
+.v4-photo-quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+.v4-photo-quick-actions > button {
+    min-height: 44px;
+    width: 100%;
+}
+#v4PhotoUndoLastPin {
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    color: #9a3412;
+    font-weight: 800;
+}
+#v4PhotoUndoLastPin:disabled { opacity: .45; }
+@media (max-width: 520px) {
+    .v4-photo-quick-actions { grid-template-columns: 1fr 1fr; }
+}
