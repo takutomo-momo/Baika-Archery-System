@@ -12,6 +12,7 @@
 
     const pins = [];
     let pinLayer = null;
+    let aimingCrosshair = null;
     let scorePanel = null;
     let scoreEditingPin = null;
     let scoreSummary = null;
@@ -67,6 +68,7 @@
         );
 
         createPinLayer(elements);
+        createAimingCrosshair(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -92,6 +94,61 @@
         pinLayer.style.zIndex = "5";
 
         elements.viewer.appendChild(pinLayer);
+    }
+
+
+    function createAimingCrosshair(elements) {
+        aimingCrosshair = document.createElement("div");
+        aimingCrosshair.setAttribute("aria-hidden", "true");
+
+        aimingCrosshair.style.position = "absolute";
+        aimingCrosshair.style.left = "50%";
+        aimingCrosshair.style.top = "50%";
+        aimingCrosshair.style.width = "46px";
+        aimingCrosshair.style.height = "46px";
+        aimingCrosshair.style.transform = "translate(-50%, -50%)";
+        aimingCrosshair.style.pointerEvents = "none";
+        aimingCrosshair.style.zIndex = "8";
+        aimingCrosshair.style.display = "none";
+        aimingCrosshair.style.filter =
+            "drop-shadow(0 0 2px rgba(255,255,255,0.95))";
+
+        const horizontal = document.createElement("span");
+        horizontal.style.position = "absolute";
+        horizontal.style.left = "0";
+        horizontal.style.top = "50%";
+        horizontal.style.width = "100%";
+        horizontal.style.height = "2px";
+        horizontal.style.transform = "translateY(-50%)";
+        horizontal.style.background = "#e11d48";
+
+        const vertical = document.createElement("span");
+        vertical.style.position = "absolute";
+        vertical.style.left = "50%";
+        vertical.style.top = "0";
+        vertical.style.width = "2px";
+        vertical.style.height = "100%";
+        vertical.style.transform = "translateX(-50%)";
+        vertical.style.background = "#e11d48";
+
+        const center = document.createElement("span");
+        center.style.position = "absolute";
+        center.style.left = "50%";
+        center.style.top = "50%";
+        center.style.width = "7px";
+        center.style.height = "7px";
+        center.style.border = "2px solid #e11d48";
+        center.style.borderRadius = "50%";
+        center.style.transform = "translate(-50%, -50%)";
+        center.style.background = "rgba(255,255,255,0.45)";
+
+        aimingCrosshair.append(horizontal, vertical, center);
+        elements.viewer.appendChild(aimingCrosshair);
+    }
+
+    function setAimingCrosshairVisible(visible) {
+        if (!aimingCrosshair) return;
+        aimingCrosshair.style.display = visible ? "block" : "none";
     }
 
     function createArrowCandidateLayer(elements) {
@@ -863,6 +920,10 @@
                     event.detail.scale
                 );
 
+                setAimingCrosshairVisible(
+                    Number(event.detail.scale) > 1.05
+                );
+
                 renderPins(elements);
                 renderArrowCandidates(elements);
             }
@@ -897,9 +958,17 @@
                     return;
                 }
 
+                const viewerRect =
+                    elements.viewer.getBoundingClientRect();
+                const aimPoint =
+                    photoEngine.screenToImagePoint(
+                        viewerRect.left + viewerRect.width / 2,
+                        viewerRect.top + viewerRect.height / 2
+                    );
+
                 const newPin = {
-                    x: Math.round(point.imageX),
-                    y: Math.round(point.imageY),
+                    x: Math.round(aimPoint.x),
+                    y: Math.round(aimPoint.y),
                     score: null
                 };
                 updateAutomaticPinScore(newPin);
