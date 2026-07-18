@@ -735,10 +735,18 @@
     <div class="v4-photo-preview-shell">
         <button type="button" id="v4ClosePhotoPreviewButton" class="v4-photo-preview-close" aria-label="写真を閉じる">×</button>
 
-        <div class="v4-photo-analysis-stage">
-            <img id="v4SavedPhotoPreview" alt="端末内に保存された的写真" draggable="false">
-            <div id="v4PhotoColorTapMarker" class="v4-photo-color-tap-marker" hidden aria-hidden="true"></div>
-            <svg id="v4SavedPhotoCandidateLayer" class="v4-photo-candidate-layer" aria-label="矢候補表示"></svg>
+        <div id="v4PhotoAnalysisStage" class="v4-photo-analysis-stage">
+            <div id="v4PhotoZoomContent" class="v4-photo-zoom-content">
+                <img id="v4SavedPhotoPreview" alt="端末内に保存された的写真" draggable="false">
+                <div id="v4PhotoColorTapMarker" class="v4-photo-color-tap-marker" hidden aria-hidden="true"></div>
+                <svg id="v4SavedPhotoCandidateLayer" class="v4-photo-candidate-layer" aria-label="矢候補表示"></svg>
+            </div>
+            <div class="v4-photo-zoom-controls" aria-label="写真の拡大操作">
+                <button type="button" id="v4PhotoZoomOutButton" aria-label="縮小">−</button>
+                <button type="button" id="v4PhotoZoomResetButton" aria-label="倍率を100パーセントへ戻す">100%</button>
+                <button type="button" id="v4PhotoZoomInButton" aria-label="拡大">＋</button>
+            </div>
+            <div class="v4-photo-zoom-hint">2本指で拡大・1本指で移動</div>
         </div>
 
         <div class="v4-photo-preview-meta">

@@ -243,3 +243,16 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 .v4-arrow-profile-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
 .v4-photo-color-tap-marker{width:14px;height:14px;border-width:2px;box-shadow:0 0 0 2px #7c3aed,0 2px 7px rgba(0,0,0,.7)}
 @media(max-width:640px){.v4-arrow-profile-panel{padding:10px}.v4-arrow-profile-header{align-items:flex-start}.v4-arrow-profile-slots{grid-template-columns:repeat(2,minmax(0,1fr))}.v4-arrow-profile-slot{font-size:11px}.v4-arrow-profile-actions{display:grid;grid-template-columns:1fr 1fr}.v4-arrow-profile-actions .v4-photo-color-reset{grid-column:1/-1}.v4-arrow-profile-save,.v4-arrow-profile-cancel{width:100%}}
+
+
+/* Step35-5a: 矢プロフィール登録用ズーム */
+.v4-photo-analysis-stage{overflow:hidden;touch-action:none;user-select:none;-webkit-user-select:none}
+.v4-photo-zoom-content{position:relative;display:inline-block;max-width:100%;max-height:100%;transform-origin:center center;will-change:transform}
+.v4-photo-zoom-content img{display:block;max-width:100%;max-height:100%;object-fit:contain;border-radius:12px;background:#111;-webkit-user-drag:none}
+.v4-photo-zoom-content .v4-photo-candidate-layer{position:absolute;inset:0;width:100%;height:100%}
+.v4-photo-zoom-controls{position:absolute;z-index:8;right:10px;bottom:10px;display:flex;gap:6px;padding:5px;border-radius:999px;background:rgba(15,23,42,.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+.v4-photo-zoom-controls button{min-width:42px;height:38px;border:1px solid rgba(255,255,255,.35);border-radius:999px;background:rgba(255,255,255,.95);color:#0f172a;font:inherit;font-size:17px;font-weight:900;touch-action:manipulation}
+.v4-photo-zoom-controls #v4PhotoZoomResetButton{min-width:58px;font-size:11px}
+.v4-photo-zoom-hint{position:absolute;z-index:7;left:10px;bottom:12px;padding:6px 9px;border-radius:999px;background:rgba(15,23,42,.72);color:#fff;font-size:10px;font-weight:800;pointer-events:none}
+.v4-photo-color-tap-marker{width:12px;height:12px;border:2px solid #fff;box-shadow:0 0 0 2px #7c3aed,0 2px 7px rgba(0,0,0,.75)}
+@media(max-width:640px){.v4-photo-zoom-controls{right:6px;bottom:6px}.v4-photo-zoom-hint{left:6px;bottom:8px}.v4-photo-zoom-controls button{min-width:40px;height:36px}}

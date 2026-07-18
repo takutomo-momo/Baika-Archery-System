@@ -27,6 +27,9 @@
     let profileDraft = null;
     let profileEditing = false;
     let profileStepIndex = 0;
+    let previewZoom = { scale: 1, x: 0, y: 0 };
+    let previewGesture = null;
+    let suppressPreviewTapUntil = 0;
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
@@ -46,6 +49,10 @@
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
         if (el.analyzeSaved) el.analyzeSaved.addEventListener("click", analyzeSavedPhoto);
         if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
+        if (el.zoomIn) el.zoomIn.addEventListener("click", function () { setPreviewZoom(previewZoom.scale + 0.5); });
+        if (el.zoomOut) el.zoomOut.addEventListener("click", function () { setPreviewZoom(previewZoom.scale - 0.5); });
+        if (el.zoomReset) el.zoomReset.addEventListener("click", resetPreviewZoom);
+        initializePreviewGestures(el);
         if (el.resetColor) el.resetColor.addEventListener("click", resetSelectedArrowColor);
         if (el.startProfile) el.startProfile.addEventListener("click", startArrowProfileEditing);
         if (el.cancelProfile) el.cancelProfile.addEventListener("click", cancelArrowProfileEditing);
@@ -198,8 +205,10 @@
             : "先に写真内のノック／羽根をタップしてください。";
         el.analyzeSaved.disabled = !selectedArrowColor;
         el.analyzeSaved.textContent = photo.aiStatus === "analyzed" ? "✨ 再解析する" : "✨ AI解析開始";
+        resetPreviewZoom();
         el.previewModal.hidden = false;
         el.savedPreview.onload = function () {
+            resetPreviewZoom();
             updateColorSelectionUI();
             if (currentPreviewPhoto && currentPreviewPhoto.aiStatus === "analyzed") {
                 renderSavedCandidates(currentPreviewPhoto.aiCandidates || []);
@@ -225,6 +234,90 @@
         profileDraft = null;
         profileEditing = false;
         profileStepIndex = 0;
+        resetPreviewZoom();
+    }
+
+    function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
+    function applyPreviewTransform() {
+        const el = getElements();
+        if (!el.zoomContent) return;
+        previewZoom.scale = clamp(previewZoom.scale, 1, 5);
+        if (previewZoom.scale === 1) {
+            previewZoom.x = 0;
+            previewZoom.y = 0;
+        }
+        el.zoomContent.style.transform = "translate3d(" + previewZoom.x + "px," + previewZoom.y + "px,0) scale(" + previewZoom.scale + ")";
+        if (el.zoomReset) el.zoomReset.textContent = Math.round(previewZoom.scale * 100) + "%";
+    }
+
+    function setPreviewZoom(nextScale, centerX, centerY) {
+        const el = getElements();
+        if (!el.analysisStage || !el.zoomContent) return;
+        const oldScale = previewZoom.scale;
+        const scale = clamp(nextScale, 1, 5);
+        if (scale === oldScale) return;
+        const rect = el.analysisStage.getBoundingClientRect();
+        const cx = Number.isFinite(centerX) ? centerX - rect.left - rect.width / 2 : 0;
+        const cy = Number.isFinite(centerY) ? centerY - rect.top - rect.height / 2 : 0;
+        const ratio = scale / oldScale;
+        previewZoom.x = cx - (cx - previewZoom.x) * ratio;
+        previewZoom.y = cy - (cy - previewZoom.y) * ratio;
+        previewZoom.scale = scale;
+        applyPreviewTransform();
+    }
+
+    function resetPreviewZoom() {
+        previewZoom = { scale: 1, x: 0, y: 0 };
+        applyPreviewTransform();
+    }
+
+    function touchDistance(a, b) {
+        return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    }
+
+    function touchCenter(a, b) {
+        return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+    }
+
+    function initializePreviewGestures(el) {
+        if (!el.analysisStage) return;
+        el.analysisStage.addEventListener("touchstart", function (event) {
+            if (event.target.closest && event.target.closest(".v4-photo-zoom-controls")) return;
+            if (event.touches.length === 2) {
+                const center = touchCenter(event.touches[0], event.touches[1]);
+                previewGesture = { type: "pinch", distance: touchDistance(event.touches[0], event.touches[1]), scale: previewZoom.scale, centerX: center.x, centerY: center.y };
+                event.preventDefault();
+            } else if (event.touches.length === 1 && previewZoom.scale > 1) {
+                previewGesture = { type: "pan", startX: event.touches[0].clientX, startY: event.touches[0].clientY, x: previewZoom.x, y: previewZoom.y, moved: false };
+                event.preventDefault();
+            }
+        }, { passive: false });
+        el.analysisStage.addEventListener("touchmove", function (event) {
+            if (!previewGesture) return;
+            if (previewGesture.type === "pinch" && event.touches.length === 2) {
+                const distance = touchDistance(event.touches[0], event.touches[1]);
+                const center = touchCenter(event.touches[0], event.touches[1]);
+                setPreviewZoom(previewGesture.scale * distance / Math.max(1, previewGesture.distance), center.x, center.y);
+                suppressPreviewTapUntil = Date.now() + 350;
+                event.preventDefault();
+            } else if (previewGesture.type === "pan" && event.touches.length === 1) {
+                const dx = event.touches[0].clientX - previewGesture.startX;
+                const dy = event.touches[0].clientY - previewGesture.startY;
+                previewZoom.x = previewGesture.x + dx;
+                previewZoom.y = previewGesture.y + dy;
+                if (Math.hypot(dx, dy) > 5) previewGesture.moved = true;
+                applyPreviewTransform();
+                suppressPreviewTapUntil = Date.now() + 350;
+                event.preventDefault();
+            }
+        }, { passive: false });
+        el.analysisStage.addEventListener("touchend", function () {
+            if (previewGesture && previewGesture.moved) suppressPreviewTapUntil = Date.now() + 350;
+            previewGesture = null;
+        }, { passive: true });
     }
 
     async function analyzeSavedPhoto() {
@@ -295,6 +388,7 @@
     }
 
     function selectArrowColorFromPhoto(event) {
+        if (Date.now() < suppressPreviewTapUntil) return;
         const el = getElements();
         if (!currentPreviewPhoto || !el.savedPreview || !el.savedPreview.naturalWidth) return;
 
@@ -615,16 +709,14 @@
             if (el.colorMarker) el.colorMarker.hidden = true;
             return;
         }
-        const imageRect = el.savedPreview.getBoundingClientRect();
-        const stageRect = el.savedPreview.parentElement.getBoundingClientRect();
         const normalizedX = Number(selectedColorPoint.normalizedX);
         const normalizedY = Number(selectedColorPoint.normalizedY);
         if (!Number.isFinite(normalizedX) || !Number.isFinite(normalizedY)) {
             el.colorMarker.hidden = true;
             return;
         }
-        el.colorMarker.style.left = (imageRect.left - stageRect.left + imageRect.width * normalizedX) + "px";
-        el.colorMarker.style.top = (imageRect.top - stageRect.top + imageRect.height * normalizedY) + "px";
+        el.colorMarker.style.left = (el.savedPreview.offsetLeft + el.savedPreview.clientWidth * normalizedX) + "px";
+        el.colorMarker.style.top = (el.savedPreview.offsetTop + el.savedPreview.clientHeight * normalizedY) + "px";
         el.colorMarker.hidden = false;
     }
 
@@ -965,6 +1057,11 @@
             listPending: document.getElementById("v4PhotoListPending"),
             previewModal: document.getElementById("v4PhotoPreviewModal"),
             closePreview: document.getElementById("v4ClosePhotoPreviewButton"),
+            analysisStage: document.getElementById("v4PhotoAnalysisStage"),
+            zoomContent: document.getElementById("v4PhotoZoomContent"),
+            zoomIn: document.getElementById("v4PhotoZoomInButton"),
+            zoomOut: document.getElementById("v4PhotoZoomOutButton"),
+            zoomReset: document.getElementById("v4PhotoZoomResetButton"),
             savedPreview: document.getElementById("v4SavedPhotoPreview"),
             savedTitle: document.getElementById("v4SavedPhotoTitle"),
             savedDetails: document.getElementById("v4SavedPhotoDetails"),
