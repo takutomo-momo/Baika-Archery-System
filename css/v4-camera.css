@@ -408,3 +408,12 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
   border:3px solid #fff;
   box-shadow:0 0 0 3px #7c3aed,0 2px 9px rgba(0,0,0,.8);
 }
+
+/* Step35-5d: iPhoneタップ登録とマーカー表示の修正 */
+.v4-photo-color-tap-marker{
+  z-index:10;
+  display:block;
+}
+.v4-photo-color-tap-marker[hidden]{
+  display:none;
+}

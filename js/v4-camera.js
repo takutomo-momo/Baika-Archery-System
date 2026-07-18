@@ -48,6 +48,8 @@
         if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
         if (el.analyzeSaved) el.analyzeSaved.addEventListener("click", analyzeSavedPhoto);
+        // PCはclick、iPhoneはtouchendから直接色取得する。
+        // touchstartでpreventDefaultするため、iPhoneでは合成clickが発生しない場合がある。
         if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
         if (el.zoomIn) el.zoomIn.addEventListener("click", function () { setPreviewZoom(previewZoom.scale + 0.5); });
         if (el.zoomOut) el.zoomOut.addEventListener("click", function () { setPreviewZoom(previewZoom.scale - 0.5); });
@@ -300,23 +302,45 @@
             if (previewGesture.type === "pinch" && event.touches.length === 2) {
                 const distance = touchDistance(event.touches[0], event.touches[1]);
                 const center = touchCenter(event.touches[0], event.touches[1]);
+                previewGesture.moved = true;
                 setPreviewZoom(previewGesture.scale * distance / Math.max(1, previewGesture.distance), center.x, center.y);
                 suppressPreviewTapUntil = Date.now() + 350;
                 event.preventDefault();
             } else if (previewGesture.type === "pan" && event.touches.length === 1) {
                 const dx = event.touches[0].clientX - previewGesture.startX;
                 const dy = event.touches[0].clientY - previewGesture.startY;
-                previewZoom.x = previewGesture.x + dx;
-                previewZoom.y = previewGesture.y + dy;
-                if (Math.hypot(dx, dy) > 5) previewGesture.moved = true;
-                applyPreviewTransform();
-                suppressPreviewTapUntil = Date.now() + 350;
+                const distance = Math.hypot(dx, dy);
+                if (distance > 5) {
+                    previewGesture.moved = true;
+                    previewZoom.x = previewGesture.x + dx;
+                    previewZoom.y = previewGesture.y + dy;
+                    applyPreviewTransform();
+                    suppressPreviewTapUntil = Date.now() + 350;
+                }
                 event.preventDefault();
             }
         }, { passive: false });
-        el.analysisStage.addEventListener("touchend", function () {
-            if (previewGesture && previewGesture.moved) suppressPreviewTapUntil = Date.now() + 350;
+        el.analysisStage.addEventListener("touchend", function (event) {
+            const gesture = previewGesture;
             previewGesture = null;
+            if (!gesture) return;
+
+            if (gesture.moved || gesture.type === "pinch") {
+                suppressPreviewTapUntil = Date.now() + 350;
+                return;
+            }
+
+            // iPhone SafariではtouchstartのpreventDefaultによりclickが出ないため、
+            // 移動していない1本指操作をここで明示的に「タップ」として処理する。
+            const touch = event.changedTouches && event.changedTouches[0];
+            if (gesture.type === "pan" && touch) {
+                selectArrowColorFromPhoto({
+                    clientX: touch.clientX,
+                    clientY: touch.clientY,
+                    fromTouch: true
+                });
+                suppressPreviewTapUntil = Date.now() + 350;
+            }
         }, { passive: true });
     }
 
@@ -387,14 +411,35 @@
         });
     }
 
+    function getContainedImageRect(image, useViewportCoordinates) {
+        const naturalWidth = image.naturalWidth || 1;
+        const naturalHeight = image.naturalHeight || 1;
+        const box = useViewportCoordinates
+            ? image.getBoundingClientRect()
+            : { left: image.offsetLeft, top: image.offsetTop, width: image.clientWidth, height: image.clientHeight };
+        const scale = Math.min(box.width / naturalWidth, box.height / naturalHeight);
+        const width = naturalWidth * scale;
+        const height = naturalHeight * scale;
+        return {
+            left: box.left + (box.width - width) / 2,
+            top: box.top + (box.height - height) / 2,
+            width: width,
+            height: height
+        };
+    }
+
     function selectArrowColorFromPhoto(event) {
-        if (Date.now() < suppressPreviewTapUntil) return;
+        if (!event.fromTouch && Date.now() < suppressPreviewTapUntil) return;
         const el = getElements();
         if (!currentPreviewPhoto || !el.savedPreview || !el.savedPreview.naturalWidth) return;
 
-        const rect = el.savedPreview.getBoundingClientRect();
-        const localX = Math.max(0, Math.min(rect.width, event.clientX - rect.left));
-        const localY = Math.max(0, Math.min(rect.height, event.clientY - rect.top));
+        // object-fit:contain の余白を除いた、実際に写真が描画されている範囲を使う。
+        const rect = getContainedImageRect(el.savedPreview, true);
+        const rawX = event.clientX - rect.left;
+        const rawY = event.clientY - rect.top;
+        if (rawX < 0 || rawY < 0 || rawX > rect.width || rawY > rect.height) return;
+        const localX = Math.max(0, Math.min(rect.width, rawX));
+        const localY = Math.max(0, Math.min(rect.height, rawY));
         const imageX = Math.max(0, Math.min(el.savedPreview.naturalWidth - 1, Math.round(localX / rect.width * el.savedPreview.naturalWidth)));
         const imageY = Math.max(0, Math.min(el.savedPreview.naturalHeight - 1, Math.round(localY / rect.height * el.savedPreview.naturalHeight)));
 
@@ -716,8 +761,11 @@
             el.colorMarker.hidden = true;
             return;
         }
-        el.colorMarker.style.left = (el.savedPreview.offsetLeft + el.savedPreview.clientWidth * normalizedX) + "px";
-        el.colorMarker.style.top = (el.savedPreview.offsetTop + el.savedPreview.clientHeight * normalizedY) + "px";
+        // マーカーはzoomContent内のローカル座標で配置する。
+        // object-fit:containによる上下左右の余白も考慮する。
+        const rect = getContainedImageRect(el.savedPreview, false);
+        el.colorMarker.style.left = (rect.left + rect.width * normalizedX) + "px";
+        el.colorMarker.style.top = (rect.top + rect.height * normalizedY) + "px";
         el.colorMarker.hidden = false;
     }
 
