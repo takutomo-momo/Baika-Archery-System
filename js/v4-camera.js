@@ -167,7 +167,7 @@
             Array.from(selectedPhotoIds).forEach(function (id) {
                 if (!existingIds.has(Number(id))) selectedPhotoIds.delete(id);
             });
-            const pending = photos.filter(function (photo) { return photo.status !== "complete"; }).length;
+            const pending = photos.filter(function (photo) { return getPhotoStatus(photo) !== "complete"; }).length;
             el.listTotal.textContent = String(photos.length);
             el.listPending.textContent = String(pending);
             el.listEmpty.hidden = photos.length !== 0;
@@ -181,7 +181,7 @@
                 const card = document.createElement("article");
                 card.className = "v4-photo-card v4-photo-manage-card" + (selectedPhotoIds.has(photoId) ? " is-selected" : "");
                 card.dataset.photoId = String(photoId);
-                const complete = photo.status === "complete";
+                const complete = getPhotoStatus(photo) === "complete";
                 card.innerHTML = '<label class="v4-photo-select-box" title="削除する写真を選択">'
                     + '<input type="checkbox" class="v4-photo-select-input" ' + (selectedPhotoIds.has(photoId) ? "checked" : "") + '><span>選択</span></label>'
                     + '<button type="button" class="v4-photo-open-button">'
@@ -237,7 +237,7 @@
             document.getElementById("v4SelectCompletedPhotosButton").addEventListener("click", async function () {
                 const photos = await getAllPhotos();
                 selectedPhotoIds.clear();
-                photos.filter(function (photo) { return photo.status === "complete"; }).forEach(function (photo) { selectedPhotoIds.add(Number(photo.id)); });
+                photos.filter(function (photo) { return getPhotoStatus(photo) === "complete"; }).forEach(function (photo) { selectedPhotoIds.add(Number(photo.id)); });
                 photoSelectionMode = true;
                 await renderPhotoList();
             });
@@ -289,15 +289,43 @@
         await renderPhotoList();
     }
 
+    const PHOTO_STATUS_STORAGE_KEY = "baikaPhotoStatusV1";
+
+    function readPhotoStatusMap() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(PHOTO_STATUS_STORAGE_KEY) || "{}");
+            return parsed && typeof parsed === "object" ? parsed : {};
+        } catch (error) {
+            console.warn("Photo status read failed:", error);
+            return {};
+        }
+    }
+
+    function writePhotoStatusMap(map) {
+        try {
+            localStorage.setItem(PHOTO_STATUS_STORAGE_KEY, JSON.stringify(map));
+        } catch (error) {
+            console.warn("Photo status save failed:", error);
+        }
+    }
+
+    function getPhotoStatus(photo) {
+        if (!photo || photo.id == null) return "pending";
+        const map = readPhotoStatusMap();
+        const saved = map[String(photo.id)];
+        if (saved === "complete" || saved === "pending") return saved;
+        return photo.status === "complete" ? "complete" : "pending";
+    }
+
     async function setPhotoComplete(photoId, complete) {
-        const photo = await getPhoto(Number(photoId));
-        if (!photo) return;
-        photo.status = complete ? "complete" : "pending";
-        photo.inputCompletedAt = complete ? new Date().toISOString() : null;
-        await putPhoto(photo);
+        const id = Number(photoId);
+        if (!Number.isFinite(id) || id <= 0) return;
+        const map = readPhotoStatusMap();
+        map[String(id)] = complete ? "complete" : "pending";
+        writePhotoStatusMap(map);
         await refreshCounts();
-        // 写真表示中に一覧を再描画すると、Object URLが破棄されて
-        // iPhone Safariで画像が「？」になるため、一覧は次回開いた時に更新する。
+        // 写真本体のBlobは更新しない。
+        // iPhone Safariで状態変更後に画像が「？」になる現象を防ぐ。
     }
 
     function blobToDataUrl(blob) {
@@ -318,7 +346,7 @@
         el.savedPreview.src = currentPreviewUrl;
         if (el.savedTitle) el.savedTitle.textContent = "End " + String(photo.endNumber || "-");
         if (el.savedDetails) {
-            el.savedDetails.textContent = formatDateTime(photo.createdAt) + " / " + (photo.distance || "距離未設定") + " / " + (photo.status === "complete" ? "入力済み" : "未入力");
+            el.savedDetails.textContent = formatDateTime(photo.createdAt) + " / " + (photo.distance || "距離未設定") + " / " + (getPhotoStatus(photo) === "complete" ? "入力済み" : "未入力");
         }
         resetPreviewZoom();
         el.previewModal.hidden = false;
