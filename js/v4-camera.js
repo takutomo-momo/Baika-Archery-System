@@ -606,7 +606,8 @@
         if (nextIndex < PROFILE_PARTS.length) {
             profileStepIndex = nextIndex;
             selectedArrowColor = null;
-            selectedColorPoint = null;
+            // 最後にタップした位置は、次の部位へ進んだ後も丸で表示する。
+            // 次のタップ時に新しい位置へ更新される。
         }
         const el = getElements();
         if (el.analysisStatus) {

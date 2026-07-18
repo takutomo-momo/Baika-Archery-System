@@ -399,3 +399,12 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
   .v4-photo-analysis-controls{grid-template-columns:minmax(110px,.42fr) 1fr;gap:4px}
   .v4-photo-analysis-status{text-align:left;font-size:9px}
 }
+
+
+/* Step35-5c: タップ位置マーカーを見やすく維持 */
+.v4-photo-color-tap-marker{
+  width:24px;
+  height:24px;
+  border:3px solid #fff;
+  box-shadow:0 0 0 3px #7c3aed,0 2px 9px rgba(0,0,0,.8);
+}
