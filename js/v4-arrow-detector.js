@@ -2,178 +2,40 @@
 
 /*
  * Baika Archery System Ver4
- * Step35-4a Arrow Candidate Detector
- * 写真上で選択したノック／羽根色に近い領域を検出する。
- * この段階では候補表示のみで、自動登録は行わない。
+ * Step36 Arrow Candidate Detector
+ * 登録済みのノック＋羽色を組み合わせ、候補ごとの一致率を返す。
  */
 (function () {
     function createWorkCanvas(image, maxSide) {
         const naturalWidth = Number(image.naturalWidth || image.width);
         const naturalHeight = Number(image.naturalHeight || image.height);
         if (!naturalWidth || !naturalHeight) throw new Error("画像サイズを取得できません。");
-
         const scale = Math.min(1, maxSide / Math.max(naturalWidth, naturalHeight));
         const width = Math.max(1, Math.round(naturalWidth * scale));
         const height = Math.max(1, Math.round(naturalHeight * scale));
         const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = width; canvas.height = height;
         const context = canvas.getContext("2d", { willReadFrequently: true });
         if (!context) throw new Error("Canvasを初期化できません。");
         context.drawImage(image, 0, 0, width, height);
-        return { context, width, height, scale, naturalWidth, naturalHeight };
+        return { context, width, height, scale };
     }
-
-    function rgbToHsv(r, g, b) {
-        r /= 255; g /= 255; b /= 255;
-        const max = Math.max(r, g, b);
-        const min = Math.min(r, g, b);
-        const delta = max - min;
-        let h = 0;
-        if (delta !== 0) {
-            if (max === r) h = 60 * (((g - b) / delta) % 6);
-            else if (max === g) h = 60 * (((b - r) / delta) + 2);
-            else h = 60 * (((r - g) / delta) + 4);
-        }
-        if (h < 0) h += 360;
-        return { h, s: max === 0 ? 0 : delta / max, v: max };
-    }
-
-    function hueDistance(a, b) {
-        const d = Math.abs(a - b);
-        return Math.min(d, 360 - d);
-    }
-
-    function buildColorMask(imageData, targetColor, tolerance) {
-        const width = imageData.width;
-        const height = imageData.height;
-        const data = imageData.data;
-        const mask = new Uint8Array(width * height);
-        const target = rgbToHsv(targetColor.r, targetColor.g, targetColor.b);
-        const hueTolerance = Number(tolerance && tolerance.hue) || 24;
-        const saturationTolerance = Number(tolerance && tolerance.saturation) || 0.34;
-        const valueTolerance = Number(tolerance && tolerance.value) || 0.38;
-        const rgbTolerance = Number(tolerance && tolerance.rgb) || 105;
-
-        for (let index = 0; index < width * height; index += 1) {
-            const offset = index * 4;
-            const r = data[offset];
-            const g = data[offset + 1];
-            const b = data[offset + 2];
-            const hsv = rgbToHsv(r, g, b);
-            const rgbDistance = Math.hypot(r - targetColor.r, g - targetColor.g, b - targetColor.b);
-
-            let match;
-            if (target.s < 0.18) {
-                // 白・灰・黒系は色相が不安定なのでRGBと明るさを中心に比較する。
-                match = rgbDistance <= rgbTolerance && Math.abs(hsv.v - target.v) <= 0.30;
-            } else {
-                match = hueDistance(hsv.h, target.h) <= hueTolerance
-                    && Math.abs(hsv.s - target.s) <= saturationTolerance
-                    && Math.abs(hsv.v - target.v) <= valueTolerance
-                    && rgbDistance <= rgbTolerance * 1.45;
-            }
-            if (match) mask[index] = 1;
-        }
-        return mask;
-    }
-
-    function findComponents(mask, width, height) {
-        const visited = new Uint8Array(mask.length);
-        const components = [];
-        const directions = [[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];
-        const stack = [];
-
-        for (let y = 0; y < height; y += 1) {
-            for (let x = 0; x < width; x += 1) {
-                const start = y * width + x;
-                if (!mask[start] || visited[start]) continue;
-                let area = 0, sumX = 0, sumY = 0, minX = x, maxX = x, minY = y, maxY = y;
-                stack.length = 0;
-                stack.push([x, y]);
-                visited[start] = 1;
-                while (stack.length) {
-                    const point = stack.pop();
-                    const cx = point[0], cy = point[1];
-                    area += 1; sumX += cx; sumY += cy;
-                    minX = Math.min(minX, cx); maxX = Math.max(maxX, cx);
-                    minY = Math.min(minY, cy); maxY = Math.max(maxY, cy);
-                    directions.forEach(function (d) {
-                        const nx = cx + d[0], ny = cy + d[1];
-                        if (nx < 0 || ny < 0 || nx >= width || ny >= height) return;
-                        const ni = ny * width + nx;
-                        if (!mask[ni] || visited[ni]) return;
-                        visited[ni] = 1;
-                        stack.push([nx, ny]);
-                    });
-                }
-                components.push({
-                    area,
-                    centerX: sumX / area,
-                    centerY: sumY / area,
-                    minX, maxX, minY, maxY,
-                    width: maxX - minX + 1,
-                    height: maxY - minY + 1
-                });
-            }
-        }
-        return components;
-    }
-
-    function mergeNearby(components, distance) {
-        const remaining = components.slice();
-        const merged = [];
-        while (remaining.length) {
-            const seed = remaining.shift();
-            const group = [seed];
-            for (let i = remaining.length - 1; i >= 0; i -= 1) {
-                const item = remaining[i];
-                if (Math.hypot(item.centerX - seed.centerX, item.centerY - seed.centerY) <= distance) {
-                    group.push(item);
-                    remaining.splice(i, 1);
-                }
-            }
-            const area = group.reduce(function (sum, item) { return sum + item.area; }, 0);
-            merged.push({
-                area,
-                centerX: group.reduce(function (sum, item) { return sum + item.centerX * item.area; }, 0) / area,
-                centerY: group.reduce(function (sum, item) { return sum + item.centerY * item.area; }, 0) / area
-            });
-        }
-        return merged;
-    }
-
+    function rgbToHsv(r,g,b){r/=255;g/=255;b/=255;const max=Math.max(r,g,b),min=Math.min(r,g,b),d=max-min;let h=0;if(d){if(max===r)h=60*(((g-b)/d)%6);else if(max===g)h=60*(((b-r)/d)+2);else h=60*(((r-g)/d)+4);}if(h<0)h+=360;return{h,s:max===0?0:d/max,v:max};}
+    function hueDistance(a,b){const d=Math.abs(a-b);return Math.min(d,360-d);}
+    function colorMatches(r,g,b,target){const hsv=rgbToHsv(r,g,b),t=rgbToHsv(target.r,target.g,target.b);const rgb=Math.hypot(r-target.r,g-target.g,b-target.b);if(t.s<.18)return rgb<=105&&Math.abs(hsv.v-t.v)<=.30;return hueDistance(hsv.h,t.h)<=24&&Math.abs(hsv.s-t.s)<=.34&&Math.abs(hsv.v-t.v)<=.38&&rgb<=152;}
+    function buildMask(imageData,target){const mask=new Uint8Array(imageData.width*imageData.height),d=imageData.data;for(let i=0;i<mask.length;i++){const o=i*4;if(colorMatches(d[o],d[o+1],d[o+2],target))mask[i]=1;}return mask;}
+    function components(mask,w,h){const seen=new Uint8Array(mask.length),out=[],stack=[],dirs=[[-1,-1],[0,-1],[1,-1],[-1,0],[1,0],[-1,1],[0,1],[1,1]];for(let y=0;y<h;y++)for(let x=0;x<w;x++){const st=y*w+x;if(!mask[st]||seen[st])continue;let area=0,sx=0,sy=0,minX=x,maxX=x,minY=y,maxY=y;stack.length=0;stack.push([x,y]);seen[st]=1;while(stack.length){const [cx,cy]=stack.pop();area++;sx+=cx;sy+=cy;minX=Math.min(minX,cx);maxX=Math.max(maxX,cx);minY=Math.min(minY,cy);maxY=Math.max(maxY,cy);for(const [dx,dy] of dirs){const nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=w||ny>=h)continue;const ni=ny*w+nx;if(mask[ni]&&!seen[ni]){seen[ni]=1;stack.push([nx,ny]);}}}out.push({area,x:sx/area,y:sy/area,width:maxX-minX+1,height:maxY-minY+1});}return out;}
     function detect(image, options) {
-        const settings = Object.assign({ maxSide: 900, maxCandidates: 12, targetColor: null }, options || {});
-        if (!settings.targetColor) throw new Error("検出するノック色が選択されていません。");
-        const work = createWorkCanvas(image, settings.maxSide);
-        const imageData = work.context.getImageData(0, 0, work.width, work.height);
-        const mask = buildColorMask(imageData, settings.targetColor, settings.colorTolerance);
-        const raw = findComponents(mask, work.width, work.height);
-        const imageArea = work.width * work.height;
-        const minimumArea = Math.max(3, Math.round(imageArea * 0.000004));
-        const filtered = raw.filter(function (component) {
-            return component.area >= minimumArea
-                && component.area <= imageArea * 0.006
-                && component.width <= work.width * 0.16
-                && component.height <= work.height * 0.16;
-        });
-        const merged = mergeNearby(filtered, Math.max(7, work.width * 0.012));
-        return merged
-            .sort(function (a, b) { return b.area - a.area; })
-            .slice(0, settings.maxCandidates)
-            .map(function (candidate, index) {
-                return {
-                    id: index + 1,
-                    x: candidate.centerX / work.scale,
-                    y: candidate.centerY / work.scale,
-                    confidence: Math.min(0.99, 0.45 + Math.log10(candidate.area + 1) * 0.18),
-                    area: candidate.area,
-                    impactX: candidate.centerX / work.scale,
-                    impactY: candidate.centerY / work.scale
-                };
-            });
+        const settings=Object.assign({maxSide:900,maxCandidates:12,targetColor:null,profileColors:null},options||{});
+        const colors=(settings.profileColors||[]).filter(Boolean);
+        if(!colors.length&&settings.targetColor)colors.push({part:"nock",color:settings.targetColor});
+        if(!colors.length)throw new Error("矢プロフィールの色が登録されていません。");
+        const work=createWorkCanvas(image,settings.maxSide),data=work.context.getImageData(0,0,work.width,work.height),imageArea=work.width*work.height;
+        const points=[];
+        colors.forEach(function(item,colorIndex){const mask=buildMask(data,item.color||item);components(mask,work.width,work.height).filter(c=>c.area>=Math.max(3,Math.round(imageArea*.000004))&&c.area<=imageArea*.006&&c.width<=work.width*.16&&c.height<=work.height*.16).forEach(c=>points.push({x:c.x,y:c.y,area:c.area,colorIndex,part:item.part||("color"+colorIndex)}));});
+        const clusters=[];const mergeDistance=Math.max(9,work.width*.025);
+        points.sort((a,b)=>b.area-a.area).forEach(function(p){let cluster=clusters.find(c=>Math.hypot(c.x-p.x,c.y-p.y)<=mergeDistance);if(!cluster){cluster={x:p.x,y:p.y,totalArea:0,points:[],parts:{}};clusters.push(cluster);}cluster.points.push(p);cluster.totalArea+=p.area;cluster.parts[p.part]=true;const total=cluster.points.reduce((s,q)=>s+q.area,0);cluster.x=cluster.points.reduce((s,q)=>s+q.x*q.area,0)/total;cluster.y=cluster.points.reduce((s,q)=>s+q.y*q.area,0)/total;});
+        return clusters.map(function(c){const matched=Object.keys(c.parts);let score=matched.length/colors.length;const hasNock=!!c.parts.nock;score=Math.min(.99,.28+score*.58+(hasNock?.13:0)+Math.min(.08,Math.log10(c.totalArea+1)*.025));return{x:c.x/work.scale,y:c.y/work.scale,impactX:c.x/work.scale,impactY:c.y/work.scale,confidence:score,matchedParts:matched,area:c.totalArea};}).filter(c=>c.confidence>=.42).sort((a,b)=>b.confidence-a.confidence).slice(0,settings.maxCandidates).map((c,i)=>Object.assign({id:i+1},c));
     }
-
-    window.BaikaArrowCandidateDetector = { detect };
+    window.BaikaArrowCandidateDetector={detect};
 })();

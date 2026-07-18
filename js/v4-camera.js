@@ -31,6 +31,7 @@
     let previewGesture = null;
     let suppressPreviewTapUntil = 0;
     let directTapState = null;
+    let selectedAiCandidateId = null;
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
@@ -62,6 +63,7 @@
         if (el.cancelProfile) el.cancelProfile.addEventListener("click", cancelArrowProfileEditing);
         if (el.saveProfile) el.saveProfile.addEventListener("click", saveArrowProfile);
         if (el.profileSlots) el.profileSlots.addEventListener("click", selectProfilePart);
+        if (el.candidateList) el.candidateList.addEventListener("click", selectAiCandidate);
 
         el.modal.addEventListener("click", function (event) {
             if (event.target === el.modal) closeCamera();
@@ -412,16 +414,22 @@
         analysisInProgress = true;
         el.analyzeSaved.disabled = true;
         el.analyzeSaved.textContent = "解析中…";
-        el.analysisStatus.textContent = "選択した色に近いノック／羽根を探しています…";
+        el.analysisStatus.textContent = "登録したノックと羽の配色から矢候補を探しています…";
         clearSavedCandidates();
 
         try {
             await waitForImage(el.savedPreview);
             await nextPaint();
+            const profileColors = PROFILE_PARTS.map(function (part) {
+                const item = arrowProfile && arrowProfile[part];
+                const color = normalizeColor(item && item.color);
+                return color ? { part: part, color: color } : null;
+            }).filter(Boolean);
             const candidates = window.BaikaArrowCandidateDetector.detect(el.savedPreview, {
                 maxSide: 900,
                 maxCandidates: 12,
-                targetColor: selectedArrowColor
+                targetColor: selectedArrowColor,
+                profileColors: profileColors
             });
             renderSavedCandidates(candidates);
 
@@ -433,7 +441,7 @@
             await putPhoto(currentPreviewPhoto);
 
             if (candidates.length > 0) {
-                el.analysisStatus.textContent = "解析完了：矢候補を " + candidates.length + " 件表示しました。";
+                el.analysisStatus.textContent = "解析完了：一致率の高い順に " + candidates.length + " 件表示しました。候補をタップすると確認ピンを配置できます。";
             } else {
                 el.analysisStatus.textContent = "解析完了：選択した色の矢候補は見つかりませんでした。色の選択位置を変えてお試しください。";
             }
@@ -854,33 +862,62 @@
         if (!layer || !image || !image.naturalWidth || !image.naturalHeight) return;
         layer.setAttribute("viewBox", "0 0 " + image.naturalWidth + " " + image.naturalHeight);
         layer.innerHTML = "";
+        selectedAiCandidateId = currentPreviewPhoto && currentPreviewPhoto.aiSelectedCandidate
+            ? Number(currentPreviewPhoto.aiSelectedCandidate.id) : null;
 
         candidates.forEach(function (candidate, index) {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            group.setAttribute("class", "v4-saved-candidate");
+            const selected = Number(candidate.id) === selectedAiCandidateId;
+            group.setAttribute("class", "v4-saved-candidate" + (selected ? " is-selected" : ""));
+            group.setAttribute("data-candidate-id", candidate.id);
             const radius = Math.max(14, Math.min(image.naturalWidth, image.naturalHeight) * 0.018);
-
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", candidate.x);
-            circle.setAttribute("cy", candidate.y);
-            circle.setAttribute("r", radius);
-
+            circle.setAttribute("cx", candidate.x); circle.setAttribute("cy", candidate.y); circle.setAttribute("r", selected ? radius * 1.18 : radius);
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-            text.setAttribute("x", candidate.x);
-            text.setAttribute("y", candidate.y + radius * 0.28);
-            text.setAttribute("text-anchor", "middle");
-            text.setAttribute("font-size", radius * 0.95);
-            text.textContent = String(index + 1);
-
-            group.appendChild(circle);
-            group.appendChild(text);
-            layer.appendChild(group);
+            text.setAttribute("x", candidate.x); text.setAttribute("y", candidate.y + radius * 0.28);
+            text.setAttribute("text-anchor", "middle"); text.setAttribute("font-size", radius * 0.95);
+            text.textContent = selected ? "✓" : String(index + 1);
+            group.appendChild(circle); group.appendChild(text); layer.appendChild(group);
         });
+
+        if (el.candidatePanel && el.candidateList) {
+            el.candidatePanel.hidden = candidates.length === 0;
+            el.candidateList.innerHTML = candidates.map(function (candidate, index) {
+                const percent = Math.max(0, Math.min(99, Math.round((candidate.confidence || 0) * 100)));
+                const matched = (candidate.matchedParts || []).map(function (part) { return PROFILE_LABELS[part] || part; }).join("・");
+                const selected = Number(candidate.id) === selectedAiCandidateId;
+                return '<button type="button" class="v4-ai-candidate-button' + (selected ? ' is-selected' : '') + '" data-ai-candidate-id="' + candidate.id + '">' +
+                    '<span class="v4-ai-candidate-number">' + (selected ? '✓' : (index + 1)) + '</span>' +
+                    '<span class="v4-ai-candidate-info"><strong>一致率 ' + percent + '%</strong><small>' + (matched || '配色候補') + '</small></span>' +
+                    '<span class="v4-ai-candidate-action">' + (selected ? '配置済み' : 'ピン配置') + '</span></button>';
+            }).join("");
+        }
+    }
+
+    async function selectAiCandidate(event) {
+        const button = event.target.closest("[data-ai-candidate-id]");
+        if (!button || !currentPreviewPhoto || !Array.isArray(currentPreviewPhoto.aiCandidates)) return;
+        const id = Number(button.getAttribute("data-ai-candidate-id"));
+        const candidate = currentPreviewPhoto.aiCandidates.find(function (item) { return Number(item.id) === id; });
+        if (!candidate) return;
+        selectedAiCandidateId = id;
+        currentPreviewPhoto.aiSelectedCandidate = {
+            id: id, x: candidate.x, y: candidate.y,
+            confidence: candidate.confidence,
+            selectedAt: new Date().toISOString()
+        };
+        try { await putPhoto(currentPreviewPhoto); } catch (error) { console.warn("AI candidate selection save failed:", error); }
+        renderSavedCandidates(currentPreviewPhoto.aiCandidates);
+        const el = getElements();
+        if (el.analysisStatus) el.analysisStatus.textContent = "候補" + id + "に確認ピンを配置しました。別の候補を押すと移動できます。";
     }
 
     function clearSavedCandidates() {
-        const layer = document.getElementById("v4SavedPhotoCandidateLayer");
-        if (layer) layer.innerHTML = "";
+        const el = getElements();
+        if (el.candidateLayer) el.candidateLayer.innerHTML = "";
+        if (el.candidateList) el.candidateList.innerHTML = "";
+        if (el.candidatePanel) el.candidatePanel.hidden = true;
+        selectedAiCandidateId = null;
     }
 
     function revokeListObjectUrls() {
@@ -1181,7 +1218,9 @@
             profileEditor: document.getElementById("v4ArrowProfileEditor"),
             profileSlots: document.getElementById("v4ArrowProfileSlots"),
             profileMember: document.getElementById("v4ArrowProfileMember"),
-            profileStepLabel: document.getElementById("v4ArrowProfileStepLabel")
+            profileStepLabel: document.getElementById("v4ArrowProfileStepLabel"),
+            candidatePanel: document.getElementById("v4AiCandidatePanel"),
+            candidateList: document.getElementById("v4AiCandidateList")
         };
     }
 
