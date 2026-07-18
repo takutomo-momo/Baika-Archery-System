@@ -19,6 +19,7 @@
     let messageTimer = null;
     let listObjectUrls = [];
     let previewObjectUrl = null;
+    let previewLoadToken = 0;
     let currentPreviewPhoto = null;
     let analysisInProgress = false;
     let selectedArrowColor = null;
@@ -32,6 +33,7 @@
     let suppressPreviewTapUntil = 0;
     let directTapState = null;
     let selectedAiCandidateId = null;
+    let pendingImpactCandidateId = null;
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
@@ -185,13 +187,28 @@
         }
     }
 
-    function openPhotoPreview(photo) {
+    function blobToDataUrl(blob) {
+        return new Promise(function (resolve, reject) {
+            const reader = new FileReader();
+            reader.onload = function () { resolve(String(reader.result || "")); };
+            reader.onerror = function () { reject(reader.error || new Error("FileReader failed")); };
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    async function openPhotoPreview(photo) {
         const el = getElements();
         if (!el.previewModal || !photo || !photo.blob) return;
         closePhotoPreview();
+        const loadToken = ++previewLoadToken;
         currentPreviewPhoto = photo;
-        previewObjectUrl = URL.createObjectURL(photo.blob);
-        el.savedPreview.src = previewObjectUrl;
+        try {
+            el.savedPreview.src = await blobToDataUrl(photo.blob);
+        } catch (error) {
+            console.error("Preview image conversion failed:", error);
+            return;
+        }
+        if (loadToken !== previewLoadToken || currentPreviewPhoto !== photo) return;
         el.savedTitle.textContent = "End " + (photo.endNumber || "-");
         el.savedDetails.textContent = formatDateTime(photo.createdAt) + " ／ " + (photo.distance || "距離未設定") + " ／ " + (photo.status === "complete" ? "入力済み" : "未入力");
         arrowProfile = loadArrowProfile(photo.memberName);
@@ -232,6 +249,7 @@
         clearSavedCandidates();
         if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
         previewObjectUrl = null;
+        previewLoadToken += 1;
         currentPreviewPhoto = null;
         analysisInProgress = false;
         selectedArrowColor = null;
@@ -441,7 +459,7 @@
             await putPhoto(currentPreviewPhoto);
 
             if (candidates.length > 0) {
-                el.analysisStatus.textContent = "解析完了：一致率の高い順に " + candidates.length + " 件表示しました。候補をタップすると確認ピンを配置できます。";
+                el.analysisStatus.textContent = "解析完了：一致率の高い順に " + candidates.length + " 件表示しました。候補を確認後、写真上の刺さり位置をタップして得点ピンを置けます。";
             } else {
                 el.analysisStatus.textContent = "解析完了：選択した色の矢候補は見つかりませんでした。色の選択位置を変えてお試しください。";
             }
@@ -493,6 +511,10 @@
     function selectArrowColorFromPhoto(event) {
         if (!event.fromTouch && Date.now() < suppressPreviewTapUntil) return;
         const el = getElements();
+        if (pendingImpactCandidateId !== null && currentPreviewPhoto) {
+            placeImpactPinFromPhotoTap(event);
+            return;
+        }
         if (!currentPreviewPhoto || !el.savedPreview || !el.savedPreview.naturalWidth) return;
 
         // object-fit:contain の余白を除いた、実際に写真が描画されている範囲を使う。
@@ -857,6 +879,11 @@
         catch (error) { return null; }
     }
 
+    function getConfirmedCandidateIds() {
+        if (!currentPreviewPhoto || !Array.isArray(currentPreviewPhoto.aiConfirmedCandidates)) return [];
+        return currentPreviewPhoto.aiConfirmedCandidates.map(function (item) { return Number(item.id); });
+    }
+
     function renderSavedCandidates(candidates) {
         const el = getElements();
         const layer = el.candidateLayer;
@@ -864,21 +891,33 @@
         if (!layer || !image || !image.naturalWidth || !image.naturalHeight) return;
         layer.setAttribute("viewBox", "0 0 " + image.naturalWidth + " " + image.naturalHeight);
         layer.innerHTML = "";
-        selectedAiCandidateId = currentPreviewPhoto && currentPreviewPhoto.aiSelectedCandidate
-            ? Number(currentPreviewPhoto.aiSelectedCandidate.id) : null;
+        const confirmedIds = getConfirmedCandidateIds();
+        const impactPins = currentPreviewPhoto && Array.isArray(currentPreviewPhoto.aiImpactPins) ? currentPreviewPhoto.aiImpactPins : [];
 
         candidates.forEach(function (candidate, index) {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
-            const selected = Number(candidate.id) === selectedAiCandidateId;
-            group.setAttribute("class", "v4-saved-candidate" + (selected ? " is-selected" : ""));
-            group.setAttribute("data-candidate-id", candidate.id);
+            const confirmed = confirmedIds.indexOf(Number(candidate.id)) >= 0;
+            group.setAttribute("class", "v4-saved-candidate" + (confirmed ? " is-selected" : ""));
             const radius = Math.max(14, Math.min(image.naturalWidth, image.naturalHeight) * 0.018);
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", candidate.x); circle.setAttribute("cy", candidate.y); circle.setAttribute("r", selected ? radius * 1.18 : radius);
+            circle.setAttribute("cx", candidate.x); circle.setAttribute("cy", candidate.y); circle.setAttribute("r", confirmed ? radius * 1.18 : radius);
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
             text.setAttribute("x", candidate.x); text.setAttribute("y", candidate.y + radius * 0.28);
             text.setAttribute("text-anchor", "middle"); text.setAttribute("font-size", radius * 0.95);
-            text.textContent = selected ? "✓" : String(index + 1);
+            text.textContent = confirmed ? "✓" : String(index + 1);
+            group.appendChild(circle); group.appendChild(text); layer.appendChild(group);
+        });
+
+        impactPins.forEach(function (pin, index) {
+            const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            group.setAttribute("class", "v4-impact-pin");
+            const radius = Math.max(16, Math.min(image.naturalWidth, image.naturalHeight) * 0.020);
+            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            circle.setAttribute("cx", pin.x); circle.setAttribute("cy", pin.y); circle.setAttribute("r", radius);
+            const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("x", pin.x); text.setAttribute("y", pin.y + radius * 0.30);
+            text.setAttribute("text-anchor", "middle"); text.setAttribute("font-size", radius * 0.95);
+            text.textContent = String(index + 1);
             group.appendChild(circle); group.appendChild(text); layer.appendChild(group);
         });
 
@@ -887,11 +926,12 @@
             el.candidateList.innerHTML = candidates.map(function (candidate, index) {
                 const percent = Math.max(0, Math.min(99, Math.round((candidate.confidence || 0) * 100)));
                 const matched = (candidate.matchedParts || []).map(function (part) { return PROFILE_LABELS[part] || part; }).join("・");
-                const selected = Number(candidate.id) === selectedAiCandidateId;
-                return '<button type="button" class="v4-ai-candidate-button' + (selected ? ' is-selected' : '') + '" data-ai-candidate-id="' + candidate.id + '">' +
-                    '<span class="v4-ai-candidate-number">' + (selected ? '✓' : (index + 1)) + '</span>' +
+                const confirmed = confirmedIds.indexOf(Number(candidate.id)) >= 0;
+                const hasImpact = impactPins.some(function (pin) { return Number(pin.candidateId) === Number(candidate.id); });
+                return '<button type="button" class="v4-ai-candidate-button' + (confirmed ? ' is-selected' : '') + '" data-ai-candidate-id="' + candidate.id + '">' +
+                    '<span class="v4-ai-candidate-number">' + (confirmed ? '✓' : (index + 1)) + '</span>' +
                     '<span class="v4-ai-candidate-info"><strong>一致率 ' + percent + '%</strong><small>' + (matched || '配色候補') + '</small></span>' +
-                    '<span class="v4-ai-candidate-action">' + (selected ? '配置済み' : 'ピン配置') + '</span></button>';
+                    '<span class="v4-ai-candidate-action">' + (hasImpact ? '得点位置済み' : (confirmed ? '刺さり位置を指定' : '矢候補を確認')) + '</span></button>';
             }).join("");
         }
     }
@@ -902,16 +942,34 @@
         const id = Number(button.getAttribute("data-ai-candidate-id"));
         const candidate = currentPreviewPhoto.aiCandidates.find(function (item) { return Number(item.id) === id; });
         if (!candidate) return;
-        selectedAiCandidateId = id;
-        currentPreviewPhoto.aiSelectedCandidate = {
-            id: id, x: candidate.x, y: candidate.y,
-            confidence: candidate.confidence,
-            selectedAt: new Date().toISOString()
-        };
-        try { await putPhoto(currentPreviewPhoto); } catch (error) { console.warn("AI candidate selection save failed:", error); }
+        if (!Array.isArray(currentPreviewPhoto.aiConfirmedCandidates)) currentPreviewPhoto.aiConfirmedCandidates = [];
+        const exists = currentPreviewPhoto.aiConfirmedCandidates.some(function (item) { return Number(item.id) === id; });
+        if (!exists) currentPreviewPhoto.aiConfirmedCandidates.push({ id: id, x: candidate.x, y: candidate.y, confidence: candidate.confidence, confirmedAt: new Date().toISOString() });
+        pendingImpactCandidateId = id;
+        try { await putPhoto(currentPreviewPhoto); } catch (error) { console.warn("AI candidate confirmation save failed:", error); }
         renderSavedCandidates(currentPreviewPhoto.aiCandidates);
         const el = getElements();
-        if (el.analysisStatus) el.analysisStatus.textContent = "候補" + id + "に確認ピンを配置しました。別の候補を押すと移動できます。";
+        if (el.analysisStatus) el.analysisStatus.textContent = "紫の印はノック候補です。候補" + id + "の矢が的へ刺さっている位置を写真上でタップしてください。";
+    }
+
+    async function placeImpactPinFromPhotoTap(event) {
+        const el = getElements();
+        if (!currentPreviewPhoto || pendingImpactCandidateId === null || !el.savedPreview) return;
+        const rect = getContainedImageRect(el.savedPreview, true);
+        const rawX = event.clientX - rect.left;
+        const rawY = event.clientY - rect.top;
+        if (rawX < 0 || rawY < 0 || rawX > rect.width || rawY > rect.height) return;
+        const x = Math.max(0, Math.min(el.savedPreview.naturalWidth - 1, Math.round(rawX / rect.width * el.savedPreview.naturalWidth)));
+        const y = Math.max(0, Math.min(el.savedPreview.naturalHeight - 1, Math.round(rawY / rect.height * el.savedPreview.naturalHeight)));
+        if (!Array.isArray(currentPreviewPhoto.aiImpactPins)) currentPreviewPhoto.aiImpactPins = [];
+        const existing = currentPreviewPhoto.aiImpactPins.find(function (pin) { return Number(pin.candidateId) === Number(pendingImpactCandidateId); });
+        if (existing) { existing.x = x; existing.y = y; existing.updatedAt = new Date().toISOString(); }
+        else currentPreviewPhoto.aiImpactPins.push({ candidateId: pendingImpactCandidateId, x: x, y: y, createdAt: new Date().toISOString() });
+        const completedId = pendingImpactCandidateId;
+        pendingImpactCandidateId = null;
+        try { await putPhoto(currentPreviewPhoto); } catch (error) { console.warn("Impact pin save failed:", error); }
+        renderSavedCandidates(currentPreviewPhoto.aiCandidates || []);
+        if (el.analysisStatus) el.analysisStatus.textContent = "候補" + completedId + "の刺さり位置に緑の得点ピンを置きました。続けて別の候補を確認できます。";
     }
 
     function clearSavedCandidates() {
@@ -920,6 +978,7 @@
         if (el.candidateList) el.candidateList.innerHTML = "";
         if (el.candidatePanel) el.candidatePanel.hidden = true;
         selectedAiCandidateId = null;
+        pendingImpactCandidateId = null;
     }
 
     function revokeListObjectUrls() {

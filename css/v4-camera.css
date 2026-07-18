@@ -485,3 +485,11 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 @media(min-width:700px){
   .v4-ai-candidate-list{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* Step36b: 紫=AIが検出したノック候補、緑=ユーザーが指定した刺さり位置 */
+.v4-saved-candidate circle{fill:rgba(124,58,237,.20);stroke:#7c3aed}
+.v4-saved-candidate text{stroke:#5b21b6}
+.v4-saved-candidate.is-selected circle{fill:rgba(124,58,237,.32);stroke:#7c3aed;stroke-width:8}
+.v4-saved-candidate.is-selected text{stroke:#5b21b6}
+.v4-impact-pin circle{fill:rgba(34,197,94,.42);stroke:#16a34a;stroke-width:8;vector-effect:non-scaling-stroke;filter:drop-shadow(0 2px 3px rgba(0,0,0,.75))}
+.v4-impact-pin text{fill:#fff;font-weight:900;paint-order:stroke;stroke:#166534;stroke-width:5;stroke-linejoin:round;vector-effect:non-scaling-stroke}
