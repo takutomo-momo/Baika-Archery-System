@@ -872,6 +872,21 @@
             "baika-photo-singletap",
             function (event) {
                 const point = event.detail;
+                const state = photoEngine.getState();
+
+                /*
+                 * 的入力と同じ2段階操作にする。
+                 * 1回目: タップ位置を中心に拡大
+                 * 2回目: ピンを入力して100%へ戻す
+                 */
+                if (state.scale <= 1.05) {
+                    photoEngine.zoomAt(
+                        3,
+                        point.clientX,
+                        point.clientY
+                    );
+                    return;
+                }
 
                 if (
                     handleCalibrationPoint(
@@ -897,6 +912,8 @@
                 updateScoreList(elements);
                 updateApplyToEndButton();
                 syncGroupingFromPhoto();
+
+                photoEngine.reset();
             }
         );
     }
