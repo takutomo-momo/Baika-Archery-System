@@ -446,7 +446,9 @@
                 el.analysisStatus.textContent = "解析完了：選択した色の矢候補は見つかりませんでした。色の選択位置を変えてお試しください。";
             }
             el.analyzeSaved.textContent = "✨ 再解析する";
-            if (el.listModal && !el.listModal.hidden) await renderPhotoList();
+            // プレビュー表示中に一覧を再描画すると、iPhone Safariで
+            // Object URLが無効化され、写真が「？」表示になることがある。
+            // 一覧はプレビューを閉じた後に更新する。
         } catch (error) {
             console.error("Saved photo analysis failed:", error);
             el.analysisStatus.textContent = "解析に失敗しました。もう一度お試しください。";
@@ -1165,7 +1167,9 @@
             const count = await countPhotos();
             el.localCount.textContent = String(count);
             el.totalCount.textContent = String(count);
-            if (el.listModal && !el.listModal.hidden) await renderPhotoList();
+            // プレビュー表示中に一覧を再描画すると、iPhone Safariで
+            // Object URLが無効化され、写真が「？」表示になることがある。
+            // 一覧はプレビューを閉じた後に更新する。
         } catch (error) {
             console.error("Photo count failed:", error);
         }
