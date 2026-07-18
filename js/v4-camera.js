@@ -7,8 +7,10 @@
  */
 (function () {
     const DB_NAME = "baika-archery-local";
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     const STORE_NAME = "targetPhotos";
+    const ANALYSIS_STORE_NAME = "targetPhotoAnalysis";
+    const PINS_STORE_NAME = "targetPhotoPins";
 
     let stream = null;
     let sessionCount = 0;
@@ -21,6 +23,8 @@
     let previewObjectUrl = null;
     let previewLoadToken = 0;
     let currentPreviewPhoto = null;
+    let currentPhotoAnalysis = null;
+    let currentPhotoPins = null;
     let analysisInProgress = false;
     let selectedArrowColor = null;
     let selectedColorPoint = null;
@@ -154,6 +158,8 @@
         el.listGrid.innerHTML = "";
         try {
             const photos = await getAllPhotos();
+            const analyses = await getAllAnalyses();
+            const analysisByPhotoId = new Map(analyses.map(function (item) { return [Number(item.photoId), item]; }));
             photos.sort(function (a, b) { return String(b.createdAt || "").localeCompare(String(a.createdAt || "")); });
             const pending = photos.filter(function (photo) { return photo.status !== "complete"; }).length;
             el.listTotal.textContent = String(photos.length);
@@ -169,8 +175,9 @@
                 card.className = "v4-photo-card";
                 const statusText = photo.status === "complete" ? "入力済み" : "未入力";
                 const statusClass = photo.status === "complete" ? " is-complete" : "";
-                const analysisText = photo.aiStatus === "analyzed" ? "AI解析済み" : "未解析";
-                const analysisClass = photo.aiStatus === "analyzed" ? " is-analyzed" : "";
+                const savedAnalysis = analysisByPhotoId.get(Number(photo.id));
+                const analysisText = savedAnalysis && savedAnalysis.status === "analyzed" ? "AI解析済み" : "未解析";
+                const analysisClass = savedAnalysis && savedAnalysis.status === "analyzed" ? " is-analyzed" : "";
                 card.innerHTML = '<img class="v4-photo-card-image" alt="End ' + escapeHtml(photo.endNumber) + ' の的写真">'
                     + '<div class="v4-photo-card-body">'
                     + '<div class="v4-photo-card-title"><span>📷 End ' + escapeHtml(photo.endNumber) + '</span><span class="v4-photo-card-status' + statusClass + '">' + statusText + '</span></div>'
@@ -198,59 +205,81 @@
 
     async function openPhotoPreview(photo) {
         const el = getElements();
-        if (!el.previewModal || !photo || !photo.blob) return;
+        if (!el.previewModal || !photo || photo.id == null) return;
         closePhotoPreview();
         const loadToken = ++previewLoadToken;
-        currentPreviewPhoto = photo;
+
         try {
-            el.savedPreview.src = await blobToDataUrl(photo.blob);
-        } catch (error) {
-            console.error("Preview image conversion failed:", error);
-            return;
-        }
-        if (loadToken !== previewLoadToken || currentPreviewPhoto !== photo) return;
-        el.savedTitle.textContent = "End " + (photo.endNumber || "-");
-        el.savedDetails.textContent = formatDateTime(photo.createdAt) + " ／ " + (photo.distance || "距離未設定") + " ／ " + (photo.status === "complete" ? "入力済み" : "未入力");
-        arrowProfile = loadArrowProfile(photo.memberName);
-        profileDraft = cloneArrowProfile(arrowProfile);
-        profileEditing = false;
-        profileStepIndex = 0;
-        selectedArrowColor = normalizeColor(photo.selectedArrowColor)
-            || normalizeColor(arrowProfile && arrowProfile.nock && arrowProfile.nock.color)
-            || loadMemberArrowColor(photo.memberName);
-        selectedColorPoint = photo.selectedColorPoint || null;
-        updateArrowProfileUI();
-        updateColorSelectionUI();
-        el.analysisStatus.textContent = selectedArrowColor
-            ? (photo.aiStatus === "analyzed"
-                ? "前回の解析結果：矢候補 " + ((photo.aiCandidates || []).length) + "件。色を変更すると再解析できます。"
-                : "選択した色で解析できます。")
-            : "先に写真内のノック／羽根をタップしてください。";
-        el.analyzeSaved.disabled = !selectedArrowColor;
-        el.analyzeSaved.textContent = photo.aiStatus === "analyzed" ? "✨ 再解析する" : "✨ AI解析開始";
-        resetPreviewZoom();
-        el.previewModal.hidden = false;
-        el.savedPreview.onload = function () {
-            resetPreviewZoom();
+            // 一覧が保持している古いオブジェクトではなく、IndexedDBから写真本体を毎回読み直す。
+            const freshPhoto = await getPhoto(photo.id);
+            if (!freshPhoto || !freshPhoto.blob || loadToken !== previewLoadToken) return;
+            currentPreviewPhoto = freshPhoto;
+            currentPhotoAnalysis = await getAnalysis(freshPhoto.id) || migrateLegacyAnalysis(freshPhoto);
+            currentPhotoPins = await getPins(freshPhoto.id) || migrateLegacyPins(freshPhoto);
+            if (loadToken !== previewLoadToken || currentPreviewPhoto !== freshPhoto) return;
+
+            el.savedTitle.textContent = "End " + (freshPhoto.endNumber || "-");
+            el.savedDetails.textContent = formatDateTime(freshPhoto.createdAt) + " ／ " + (freshPhoto.distance || "距離未設定") + " ／ " + (freshPhoto.status === "complete" ? "入力済み" : "未入力");
+            arrowProfile = loadArrowProfile(freshPhoto.memberName);
+            profileDraft = cloneArrowProfile(arrowProfile);
+            profileEditing = false;
+            profileStepIndex = 0;
+            selectedArrowColor = normalizeColor(currentPhotoAnalysis && currentPhotoAnalysis.selectedArrowColor)
+                || normalizeColor(arrowProfile && arrowProfile.nock && arrowProfile.nock.color)
+                || loadMemberArrowColor(freshPhoto.memberName);
+            selectedColorPoint = currentPhotoAnalysis && currentPhotoAnalysis.selectedColorPoint || null;
+            updateArrowProfileUI();
             updateColorSelectionUI();
-            if (currentPreviewPhoto && currentPreviewPhoto.aiStatus === "analyzed") {
-                renderSavedCandidates(currentPreviewPhoto.aiCandidates || []);
+
+            const analyzed = currentPhotoAnalysis && currentPhotoAnalysis.status === "analyzed";
+            const candidates = analyzed && Array.isArray(currentPhotoAnalysis.candidates) ? currentPhotoAnalysis.candidates : [];
+            el.analysisStatus.textContent = selectedArrowColor
+                ? (analyzed ? "前回の解析結果：矢候補 " + candidates.length + "件。再解析もできます。" : "選択した色で解析できます。")
+                : "先に写真内のノック／羽根をタップしてください。";
+            el.analyzeSaved.disabled = !selectedArrowColor;
+            el.analyzeSaved.textContent = analyzed ? "✨ 再解析する" : "✨ AI解析開始";
+
+            resetPreviewZoom();
+            el.previewModal.hidden = false;
+            el.savedPreview.onload = function () {
+                if (loadToken !== previewLoadToken) return;
+                resetPreviewZoom();
+                updateColorSelectionUI();
+                if (currentPhotoAnalysis && currentPhotoAnalysis.status === "analyzed") {
+                    renderSavedCandidates(currentPhotoAnalysis.candidates || []);
+                }
+            };
+            el.savedPreview.onerror = function () {
+                if (loadToken !== previewLoadToken) return;
+                console.error("Saved preview image load failed");
+                el.analysisStatus.textContent = "写真を表示できませんでした。いったん一覧を閉じて、もう一度開いてください。";
+            };
+            // onloadを設定してからsrcを入れる。SafariのData URL即時読み込み対策。
+            el.savedPreview.src = await blobToDataUrl(freshPhoto.blob);
+            if (el.savedPreview.complete && el.savedPreview.naturalWidth > 0) {
+                el.savedPreview.onload();
             }
-        };
+        } catch (error) {
+            console.error("Preview image open failed:", error);
+            if (el.analysisStatus) el.analysisStatus.textContent = "写真を開けませんでした。";
+        }
     }
 
     function closePhotoPreview() {
         const el = getElements();
+        previewLoadToken += 1;
         if (el.previewModal) el.previewModal.hidden = true;
         if (el.savedPreview) {
             el.savedPreview.onload = null;
+            el.savedPreview.onerror = null;
             el.savedPreview.removeAttribute("src");
         }
         clearSavedCandidates();
         if (previewObjectUrl) URL.revokeObjectURL(previewObjectUrl);
         previewObjectUrl = null;
-        previewLoadToken += 1;
         currentPreviewPhoto = null;
+        currentPhotoAnalysis = null;
+        currentPhotoPins = null;
         analysisInProgress = false;
         selectedArrowColor = null;
         selectedColorPoint = null;
@@ -451,12 +480,17 @@
             });
             renderSavedCandidates(candidates);
 
-            currentPreviewPhoto.aiCandidates = candidates;
-            currentPreviewPhoto.selectedArrowColor = selectedArrowColor;
-            currentPreviewPhoto.selectedColorPoint = selectedColorPoint;
-            currentPreviewPhoto.aiStatus = "analyzed";
-            currentPreviewPhoto.analyzedAt = new Date().toISOString();
-            await putPhoto(currentPreviewPhoto);
+            currentPhotoAnalysis = {
+                photoId: currentPreviewPhoto.id,
+                status: "analyzed",
+                candidates: candidates,
+                confirmedCandidates: [],
+                selectedArrowColor: selectedArrowColor,
+                selectedColorPoint: selectedColorPoint,
+                analyzedAt: new Date().toISOString()
+            };
+            currentPhotoPins = currentPhotoPins || { photoId: currentPreviewPhoto.id, impactPins: [] };
+            await putAnalysis(currentPhotoAnalysis);
 
             if (candidates.length > 0) {
                 el.analysisStatus.textContent = "解析完了：一致率の高い順に " + candidates.length + " 件表示しました。候補を確認後、写真上の刺さり位置をタップして得点ピンを置けます。";
@@ -616,16 +650,17 @@
                 return;
             }
 
-            currentPreviewPhoto.selectedArrowColor = selectedArrowColor;
-            currentPreviewPhoto.selectedColorPoint = selectedColorPoint;
+            currentPhotoAnalysis = currentPhotoAnalysis || { photoId: currentPreviewPhoto.id, status: "idle", candidates: [], confirmedCandidates: [] };
+            currentPhotoAnalysis.selectedArrowColor = selectedArrowColor;
+            currentPhotoAnalysis.selectedColorPoint = selectedColorPoint;
             saveMemberArrowColor(currentPreviewPhoto.memberName, selectedArrowColor);
-            putPhoto(currentPreviewPhoto).catch(function (error) {
+            putAnalysis(currentPhotoAnalysis).catch(function (error) {
                 console.error("Selected arrow color save failed:", error);
             });
             clearSavedCandidates();
             updateColorSelectionUI();
             el.analysisStatus.textContent = "色を選択しました。「AI解析開始」を押してください。";
-            el.analyzeSaved.textContent = currentPreviewPhoto.aiStatus === "analyzed" ? "✨ 再解析する" : "✨ AI解析開始";
+            el.analyzeSaved.textContent = currentPhotoAnalysis && currentPhotoAnalysis.status === "analyzed" ? "✨ 再解析する" : "✨ AI解析開始";
         } catch (error) {
             console.error("Color sampling failed:", error);
             el.analysisStatus.textContent = "色を取得できませんでした。写真内をもう一度タップしてください。";
@@ -645,10 +680,10 @@
         }
         selectedArrowColor = null;
         selectedColorPoint = null;
-        if (currentPreviewPhoto) {
-            delete currentPreviewPhoto.selectedArrowColor;
-            delete currentPreviewPhoto.selectedColorPoint;
-            putPhoto(currentPreviewPhoto).catch(function (error) {
+        if (currentPreviewPhoto && currentPhotoAnalysis) {
+            delete currentPhotoAnalysis.selectedArrowColor;
+            delete currentPhotoAnalysis.selectedColorPoint;
+            putAnalysis(currentPhotoAnalysis).catch(function (error) {
                 console.error("Selected arrow color reset failed:", error);
             });
         }
@@ -767,11 +802,11 @@
             selectedArrowColor = normalizeColor(arrowProfile.nock.color);
             selectedColorPoint = arrowProfile.nock.point || null;
             saveMemberArrowColor(memberName, selectedArrowColor);
-            currentPreviewPhoto.arrowProfile = arrowProfile;
-            currentPreviewPhoto.selectedArrowColor = selectedArrowColor;
-            currentPreviewPhoto.selectedColorPoint = selectedColorPoint;
-            putPhoto(currentPreviewPhoto).catch(function (error) {
-                console.error("Arrow profile photo save failed:", error);
+            currentPhotoAnalysis = currentPhotoAnalysis || { photoId: currentPreviewPhoto.id, status: "idle", candidates: [], confirmedCandidates: [] };
+            currentPhotoAnalysis.selectedArrowColor = selectedArrowColor;
+            currentPhotoAnalysis.selectedColorPoint = selectedColorPoint;
+            putAnalysis(currentPhotoAnalysis).catch(function (error) {
+                console.error("Arrow profile analysis save failed:", error);
             });
             updateArrowProfileUI();
             updateColorSelectionUI();
@@ -880,8 +915,8 @@
     }
 
     function getConfirmedCandidateIds() {
-        if (!currentPreviewPhoto || !Array.isArray(currentPreviewPhoto.aiConfirmedCandidates)) return [];
-        return currentPreviewPhoto.aiConfirmedCandidates.map(function (item) { return Number(item.id); });
+        if (!currentPhotoAnalysis || !Array.isArray(currentPhotoAnalysis.confirmedCandidates)) return [];
+        return currentPhotoAnalysis.confirmedCandidates.map(function (item) { return Number(item.id); });
     }
 
     function renderSavedCandidates(candidates) {
@@ -892,7 +927,7 @@
         layer.setAttribute("viewBox", "0 0 " + image.naturalWidth + " " + image.naturalHeight);
         layer.innerHTML = "";
         const confirmedIds = getConfirmedCandidateIds();
-        const impactPins = currentPreviewPhoto && Array.isArray(currentPreviewPhoto.aiImpactPins) ? currentPreviewPhoto.aiImpactPins : [];
+        const impactPins = currentPhotoPins && Array.isArray(currentPhotoPins.impactPins) ? currentPhotoPins.impactPins : [];
 
         candidates.forEach(function (candidate, index) {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -938,16 +973,16 @@
 
     async function selectAiCandidate(event) {
         const button = event.target.closest("[data-ai-candidate-id]");
-        if (!button || !currentPreviewPhoto || !Array.isArray(currentPreviewPhoto.aiCandidates)) return;
+        if (!button || !currentPreviewPhoto || !currentPhotoAnalysis || !Array.isArray(currentPhotoAnalysis.candidates)) return;
         const id = Number(button.getAttribute("data-ai-candidate-id"));
-        const candidate = currentPreviewPhoto.aiCandidates.find(function (item) { return Number(item.id) === id; });
+        const candidate = currentPhotoAnalysis.candidates.find(function (item) { return Number(item.id) === id; });
         if (!candidate) return;
-        if (!Array.isArray(currentPreviewPhoto.aiConfirmedCandidates)) currentPreviewPhoto.aiConfirmedCandidates = [];
-        const exists = currentPreviewPhoto.aiConfirmedCandidates.some(function (item) { return Number(item.id) === id; });
-        if (!exists) currentPreviewPhoto.aiConfirmedCandidates.push({ id: id, x: candidate.x, y: candidate.y, confidence: candidate.confidence, confirmedAt: new Date().toISOString() });
+        if (!Array.isArray(currentPhotoAnalysis.confirmedCandidates)) currentPhotoAnalysis.confirmedCandidates = [];
+        const exists = currentPhotoAnalysis.confirmedCandidates.some(function (item) { return Number(item.id) === id; });
+        if (!exists) currentPhotoAnalysis.confirmedCandidates.push({ id: id, x: candidate.x, y: candidate.y, confidence: candidate.confidence, confirmedAt: new Date().toISOString() });
         pendingImpactCandidateId = id;
-        try { await putPhoto(currentPreviewPhoto); } catch (error) { console.warn("AI candidate confirmation save failed:", error); }
-        renderSavedCandidates(currentPreviewPhoto.aiCandidates);
+        try { await putAnalysis(currentPhotoAnalysis); } catch (error) { console.warn("AI candidate confirmation save failed:", error); }
+        renderSavedCandidates(currentPhotoAnalysis.candidates);
         const el = getElements();
         if (el.analysisStatus) el.analysisStatus.textContent = "紫の印はノック候補です。候補" + id + "の矢が的へ刺さっている位置を写真上でタップしてください。";
     }
@@ -961,14 +996,15 @@
         if (rawX < 0 || rawY < 0 || rawX > rect.width || rawY > rect.height) return;
         const x = Math.max(0, Math.min(el.savedPreview.naturalWidth - 1, Math.round(rawX / rect.width * el.savedPreview.naturalWidth)));
         const y = Math.max(0, Math.min(el.savedPreview.naturalHeight - 1, Math.round(rawY / rect.height * el.savedPreview.naturalHeight)));
-        if (!Array.isArray(currentPreviewPhoto.aiImpactPins)) currentPreviewPhoto.aiImpactPins = [];
-        const existing = currentPreviewPhoto.aiImpactPins.find(function (pin) { return Number(pin.candidateId) === Number(pendingImpactCandidateId); });
+        if (!currentPhotoPins) currentPhotoPins = { photoId: currentPreviewPhoto.id, impactPins: [] };
+        if (!Array.isArray(currentPhotoPins.impactPins)) currentPhotoPins.impactPins = [];
+        const existing = currentPhotoPins.impactPins.find(function (pin) { return Number(pin.candidateId) === Number(pendingImpactCandidateId); });
         if (existing) { existing.x = x; existing.y = y; existing.updatedAt = new Date().toISOString(); }
-        else currentPreviewPhoto.aiImpactPins.push({ candidateId: pendingImpactCandidateId, x: x, y: y, createdAt: new Date().toISOString() });
+        else currentPhotoPins.impactPins.push({ candidateId: pendingImpactCandidateId, x: x, y: y, createdAt: new Date().toISOString() });
         const completedId = pendingImpactCandidateId;
         pendingImpactCandidateId = null;
-        try { await putPhoto(currentPreviewPhoto); } catch (error) { console.warn("Impact pin save failed:", error); }
-        renderSavedCandidates(currentPreviewPhoto.aiCandidates || []);
+        try { await putPins(currentPhotoPins); } catch (error) { console.warn("Impact pin save failed:", error); }
+        renderSavedCandidates(currentPhotoAnalysis && currentPhotoAnalysis.candidates || []);
         if (el.analysisStatus) el.analysisStatus.textContent = "候補" + completedId + "の刺さり位置に緑の得点ピンを置きました。続けて別の候補を確認できます。";
     }
 
@@ -1168,11 +1204,76 @@
                     store.createIndex("createdAt", "createdAt", { unique: false });
                     store.createIndex("status", "status", { unique: false });
                 }
+                if (!db.objectStoreNames.contains(ANALYSIS_STORE_NAME)) {
+                    db.createObjectStore(ANALYSIS_STORE_NAME, { keyPath: "photoId" });
+                }
+                if (!db.objectStoreNames.contains(PINS_STORE_NAME)) {
+                    db.createObjectStore(PINS_STORE_NAME, { keyPath: "photoId" });
+                }
             };
             request.onsuccess = function () { resolve(request.result); };
             request.onerror = function () { reject(request.error); };
         });
         return databasePromise;
+    }
+
+    async function getPhoto(id) {
+        const db = await openDatabase();
+        return requestResult(db.transaction(STORE_NAME, "readonly").objectStore(STORE_NAME).get(id));
+    }
+
+    async function getAnalysis(photoId) {
+        const db = await openDatabase();
+        return requestResult(db.transaction(ANALYSIS_STORE_NAME, "readonly").objectStore(ANALYSIS_STORE_NAME).get(photoId));
+    }
+
+    async function putAnalysis(record) {
+        const db = await openDatabase();
+        return requestResult(db.transaction(ANALYSIS_STORE_NAME, "readwrite").objectStore(ANALYSIS_STORE_NAME).put(record));
+    }
+
+    async function getAllAnalyses() {
+        const db = await openDatabase();
+        return requestResult(db.transaction(ANALYSIS_STORE_NAME, "readonly").objectStore(ANALYSIS_STORE_NAME).getAll()).then(function (items) { return items || []; });
+    }
+
+    async function getPins(photoId) {
+        const db = await openDatabase();
+        return requestResult(db.transaction(PINS_STORE_NAME, "readonly").objectStore(PINS_STORE_NAME).get(photoId));
+    }
+
+    async function putPins(record) {
+        const db = await openDatabase();
+        return requestResult(db.transaction(PINS_STORE_NAME, "readwrite").objectStore(PINS_STORE_NAME).put(record));
+    }
+
+    function requestResult(request) {
+        return new Promise(function (resolve, reject) {
+            request.onsuccess = function () { resolve(request.result); };
+            request.onerror = function () { reject(request.error); };
+        });
+    }
+
+    function migrateLegacyAnalysis(photo) {
+        if (!photo || photo.aiStatus !== "analyzed") return null;
+        const record = {
+            photoId: photo.id,
+            status: "analyzed",
+            candidates: Array.isArray(photo.aiCandidates) ? photo.aiCandidates : [],
+            confirmedCandidates: Array.isArray(photo.aiConfirmedCandidates) ? photo.aiConfirmedCandidates : [],
+            selectedArrowColor: photo.selectedArrowColor || null,
+            selectedColorPoint: photo.selectedColorPoint || null,
+            analyzedAt: photo.analyzedAt || new Date().toISOString()
+        };
+        putAnalysis(record).catch(function (error) { console.warn("Legacy analysis migration failed:", error); });
+        return record;
+    }
+
+    function migrateLegacyPins(photo) {
+        if (!photo || !Array.isArray(photo.aiImpactPins)) return { photoId: photo && photo.id, impactPins: [] };
+        const record = { photoId: photo.id, impactPins: photo.aiImpactPins };
+        putPins(record).catch(function (error) { console.warn("Legacy pins migration failed:", error); });
+        return record;
     }
 
     async function addPhoto(record) {
@@ -1196,9 +1297,13 @@
     async function deletePhoto(id) {
         const db = await openDatabase();
         return new Promise(function (resolve, reject) {
-            const request = db.transaction(STORE_NAME, "readwrite").objectStore(STORE_NAME).delete(id);
-            request.onsuccess = function () { resolve(); };
-            request.onerror = function () { reject(request.error); };
+            const tx = db.transaction([STORE_NAME, ANALYSIS_STORE_NAME, PINS_STORE_NAME], "readwrite");
+            tx.objectStore(STORE_NAME).delete(id);
+            tx.objectStore(ANALYSIS_STORE_NAME).delete(id);
+            tx.objectStore(PINS_STORE_NAME).delete(id);
+            tx.oncomplete = function () { resolve(); };
+            tx.onerror = function () { reject(tx.error); };
+            tx.onabort = function () { reject(tx.error); };
         });
     }
 
