@@ -62,7 +62,7 @@
         el.finish.addEventListener("click", closeCamera);
         el.capture.addEventListener("click", capturePhoto);
         el.deleteLast.addEventListener("click", deleteLastCapture);
-        if (el.openList) el.openList.addEventListener("click", openPhotoList);
+        if (el.openList) el.openList.addEventListener("click", function () { openPhotoList(true); });
         if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
 
