@@ -296,9 +296,8 @@
         photo.inputCompletedAt = complete ? new Date().toISOString() : null;
         await putPhoto(photo);
         await refreshCounts();
-        if (el.listModal && !el.listModal.hidden) {
-            await renderPhotoList();
-        }
+        // 写真表示中に一覧を再描画すると、Object URLが破棄されて
+        // iPhone Safariで画像が「？」になるため、一覧は次回開いた時に更新する。
     }
 
     function blobToDataUrl(blob) {

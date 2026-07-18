@@ -949,15 +949,8 @@ async function registerPhotoPracticeEnd(photoPins) {
         return false;
     }
 
-    if (
-        photoPins.length === 0 ||
-        photoPins.some(function (pin) {
-            return !pin || pin.score == null;
-        })
-    ) {
-        window.alert(
-            "1本以上のピンを追加し、すべての得点を設定してください。"
-        );
+    if (photoPins.length === 0) {
+        window.alert("1本以上のピンを追加してください。");
         return false;
     }
 
@@ -1040,7 +1033,7 @@ async function registerPhotoPracticeEnd(photoPins) {
     const arrows =
         photoPins.map(function (pin) {
             const label =
-                String(pin.score).toUpperCase();
+                String(pin.score == null ? "M" : pin.score).toUpperCase();
 
             let numericScore = 0;
 

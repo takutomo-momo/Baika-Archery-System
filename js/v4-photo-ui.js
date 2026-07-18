@@ -67,7 +67,6 @@
         );
 
         createPinLayer(elements);
-        createScorePanel(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -673,15 +672,12 @@
             elements.preview && elements.preview.dataset.localPhotoId
         );
 
-        const readyPins =
-            pins.filter(function (pin) {
-                return pin.score !== null;
-            });
-
-        if (pins.length === 0 || readyPins.length !== pins.length) {
-            window.alert("1本以上のピンを追加し、すべての得点を設定してください。");
+        if (pins.length === 0) {
+            window.alert("1本以上のピンを追加してください。");
             return;
         }
+
+        pins.forEach(updateAutomaticPinScore);
 
         if (
             typeof window.registerPhotoPracticeEnd
@@ -746,16 +742,7 @@
             return;
         }
 
-        const readyPins =
-            pins.filter(function (pin) {
-                return pin.score !== null;
-            });
-
-        applyToEndButton.disabled =
-            !(
-                pins.length >= 1 &&
-                readyPins.length === pins.length
-            );
+        applyToEndButton.disabled = pins.length < 1;
     }
 
     function createUndoButton(elements) {
@@ -895,11 +882,13 @@
                     return;
                 }
 
-                pins.push({
+                const newPin = {
                     x: Math.round(point.imageX),
                     y: Math.round(point.imageY),
                     score: null
-                });
+                };
+                updateAutomaticPinScore(newPin);
+                pins.push(newPin);
 
                 console.table(pins);
                 renderPins(elements);
@@ -910,6 +899,34 @@
                 syncGroupingFromPhoto();
             }
         );
+    }
+
+    function updateAutomaticPinScore(pin) {
+        if (!pin || !photoEngine) return pin;
+
+        const state = photoEngine.getState();
+        const naturalWidth = Number(state.naturalWidth || 0);
+        const naturalHeight = Number(state.naturalHeight || 0);
+        if (!naturalWidth || !naturalHeight) return pin;
+
+        const targetX = Number(pin.x) / naturalWidth * 300;
+        const targetY = Number(pin.y) / naturalHeight * 300;
+        const distance = Math.hypot(targetX - 150, targetY - 150);
+
+        if (distance > 150) pin.score = "M";
+        else if (distance <= 7.5) pin.score = "X";
+        else if (distance <= 15) pin.score = "10";
+        else if (distance <= 30) pin.score = "9";
+        else if (distance <= 45) pin.score = "8";
+        else if (distance <= 60) pin.score = "7";
+        else if (distance <= 75) pin.score = "6";
+        else if (distance <= 90) pin.score = "5";
+        else if (distance <= 105) pin.score = "4";
+        else if (distance <= 120) pin.score = "3";
+        else if (distance <= 135) pin.score = "2";
+        else pin.score = "1";
+
+        return pin;
     }
 
     function renderPins(elements) {
@@ -936,10 +953,7 @@
             const dot =
                 document.createElement("div");
 
-            dot.textContent =
-                pin.score === null
-                    ? String(index + 1)
-                    : `${index + 1}:${pin.score}`;
+            dot.textContent = String(index + 1);
 
             dot.style.position = "absolute";
             dot.style.display = "grid";
@@ -1418,6 +1432,7 @@
                  * 写真側で現在動かしている番号だけを
                  * 入力用・グルーピングへ再反映する。
                  */
+                updateAutomaticPinScore(pin);
                 pin.photoPositionChanged = true;
 
                 const screenPoint =
@@ -1467,13 +1482,10 @@
             dot.style.opacity = "1";
 
             if (!moved) {
-                editPinScore(
-                    pin,
-                    elements
-                );
                 return;
             }
 
+            updateAutomaticPinScore(pin);
             pin.photoPositionChanged = true;
             renderPins(elements);
             syncGroupingFromPhoto();
