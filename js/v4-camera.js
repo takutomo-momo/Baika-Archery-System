@@ -30,6 +30,7 @@
     let previewZoom = { scale: 1, x: 0, y: 0 };
     let previewGesture = null;
     let suppressPreviewTapUntil = 0;
+    let directTapState = null;
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
@@ -51,6 +52,7 @@
         // PCはclick、iPhoneはtouchendから直接色取得する。
         // touchstartでpreventDefaultするため、iPhoneでは合成clickが発生しない場合がある。
         if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
+        initializeDirectPhotoTap(el);
         if (el.zoomIn) el.zoomIn.addEventListener("click", function () { setPreviewZoom(previewZoom.scale + 0.5); });
         if (el.zoomOut) el.zoomOut.addEventListener("click", function () { setPreviewZoom(previewZoom.scale - 0.5); });
         if (el.zoomReset) el.zoomReset.addEventListener("click", resetPreviewZoom);
@@ -282,6 +284,56 @@
 
     function touchCenter(a, b) {
         return { x: (a.clientX + b.clientX) / 2, y: (a.clientY + b.clientY) / 2 };
+    }
+
+
+    // Step35-5e: 写真の上に専用の透明タップ面を置き、
+    // iPhone Safariでも「配色を変更」中の短いタップを確実に取得する。
+    function initializeDirectPhotoTap(el) {
+        if (!el.tapSurface) return;
+
+        el.tapSurface.addEventListener("touchstart", function (event) {
+            if (event.touches.length !== 1) {
+                directTapState = null;
+                return;
+            }
+            const touch = event.touches[0];
+            directTapState = {
+                startX: touch.clientX,
+                startY: touch.clientY,
+                moved: false,
+                startedAt: Date.now()
+            };
+        }, { passive: true });
+
+        el.tapSurface.addEventListener("touchmove", function (event) {
+            if (!directTapState || event.touches.length !== 1) return;
+            const touch = event.touches[0];
+            if (Math.hypot(touch.clientX - directTapState.startX, touch.clientY - directTapState.startY) > 8) {
+                directTapState.moved = true;
+            }
+        }, { passive: true });
+
+        el.tapSurface.addEventListener("touchend", function (event) {
+            const state = directTapState;
+            directTapState = null;
+            const touch = event.changedTouches && event.changedTouches[0];
+            if (!state || !touch || state.moved || Date.now() - state.startedAt > 800) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            selectArrowColorFromPhoto({
+                clientX: touch.clientX,
+                clientY: touch.clientY,
+                fromTouch: true
+            });
+            suppressPreviewTapUntil = Date.now() + 450;
+        }, { passive: false });
+
+        el.tapSurface.addEventListener("click", function (event) {
+            if (Date.now() < suppressPreviewTapUntil) return;
+            selectArrowColorFromPhoto(event);
+        });
     }
 
     function initializePreviewGestures(el) {
@@ -610,6 +662,7 @@
         profileStepIndex = 0;
         selectedArrowColor = null;
         selectedColorPoint = null;
+        directTapState = null;
         clearSavedCandidates();
         updateArrowProfileUI();
         updateColorSelectionUI();
@@ -1117,6 +1170,7 @@
             analyzeSaved: document.getElementById("v4AnalyzeSavedPhotoButton"),
             analysisStatus: document.getElementById("v4SavedPhotoAnalysisStatus"),
             candidateLayer: document.getElementById("v4SavedPhotoCandidateLayer"),
+            tapSurface: document.getElementById("v4PhotoTapSurface"),
             colorMarker: document.getElementById("v4PhotoColorTapMarker"),
             colorSwatch: document.getElementById("v4SelectedArrowColor"),
             colorInstruction: document.getElementById("v4PhotoColorInstruction"),

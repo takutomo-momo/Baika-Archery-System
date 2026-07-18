@@ -417,3 +417,21 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 .v4-photo-color-tap-marker[hidden]{
   display:none;
 }
+
+
+/* Step35-5e: iPhone Safari用の専用タップ面 */
+.v4-photo-tap-surface{
+  position:absolute;
+  inset:0;
+  z-index:9;
+  background:transparent;
+  touch-action:none;
+  cursor:crosshair;
+}
+.v4-photo-color-tap-marker{
+  z-index:11;
+  pointer-events:none;
+}
+.v4-photo-zoom-content .v4-photo-candidate-layer{
+  pointer-events:none;
+}
