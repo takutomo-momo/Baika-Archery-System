@@ -561,3 +561,32 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
   .v4-ai-candidate-heading small{display:none}
   .v4-ai-carousel-actions{grid-template-columns:1fr 104px}
 }
+
+/* Step38.1: AI候補12本上限＋手動ピン追加 */
+.v4-photo-analysis-controls-persistent,
+.v4-photo-analysis-controls{
+  grid-template-columns:auto auto minmax(0,1fr) !important;
+}
+.v4-photo-manual-pin-button{
+  min-height:40px;
+  border:1px solid rgba(255,255,255,.36);
+  border-radius:10px;
+  padding:8px 12px;
+  background:rgba(255,255,255,.13);
+  color:#fff;
+  font:inherit;
+  font-size:12px;
+  font-weight:900;
+  white-space:nowrap;
+}
+.v4-photo-manual-pin-button:active{transform:translateY(1px)}
+@media(max-width:640px){
+  .v4-photo-analysis-controls-persistent,
+  .v4-photo-analysis-controls{
+    grid-template-columns:1fr 1fr !important;
+    padding:7px 52px 7px 7px;
+  }
+  #v4AnalyzeSavedPhotoButton,
+  #v4ManualAddImpactPinButton{width:100% !important;min-width:0}
+  .v4-photo-analysis-status{grid-column:1 / -1}
+}

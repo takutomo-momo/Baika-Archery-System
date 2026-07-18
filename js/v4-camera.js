@@ -11,6 +11,8 @@
     const STORE_NAME = "targetPhotos";
     const ANALYSIS_STORE_NAME = "targetPhotoAnalysis";
     const PINS_STORE_NAME = "targetPhotoPins";
+    const MAX_AI_CANDIDATES = 12;
+    const MAX_TOTAL_PINS = 12;
 
     let stream = null;
     let sessionCount = 0;
@@ -61,6 +63,7 @@
         if (el.closeList) el.closeList.addEventListener("click", closePhotoList);
         if (el.closePreview) el.closePreview.addEventListener("click", closePhotoPreview);
         if (el.analyzeSaved) el.analyzeSaved.addEventListener("click", analyzeSavedPhoto);
+        if (el.manualAddPin) el.manualAddPin.addEventListener("click", startManualImpactPin);
         // PCはclick、iPhoneはtouchendから直接色取得する。
         // touchstartでpreventDefaultするため、iPhoneでは合成clickが発生しない場合がある。
         if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
@@ -483,7 +486,7 @@
             }).filter(Boolean);
             const candidates = window.BaikaArrowCandidateDetector.detect(el.savedPreview, {
                 maxSide: 900,
-                maxCandidates: 60,
+                maxCandidates: MAX_AI_CANDIDATES,
                 targetColor: selectedArrowColor,
                 profileColors: profileColors
             });
@@ -504,7 +507,7 @@
             await putAnalysis(currentPhotoAnalysis);
 
             if (candidates.length > 0) {
-                el.analysisStatus.textContent = "解析完了：一致率の高い順に " + candidates.length + " 件表示しました。候補を確認後、写真上の刺さり位置をタップして得点ピンを置けます。";
+                el.analysisStatus.textContent = "解析完了：AI候補を最大12本まで表示します。現在 " + candidates.length + " 件です。見逃しは「＋手動追加」で補えます。";
             } else {
                 el.analysisStatus.textContent = "解析完了：選択した色の矢候補は見つかりませんでした。色の選択位置を変えてお試しください。";
             }
@@ -993,6 +996,8 @@
             const confirmed = confirmedIds.indexOf(Number(currentCandidate.id)) >= 0;
             const hasImpact = impactPins.some(function (pin) { return Number(pin.candidateId) === Number(currentCandidate.id); });
             const confirmedCount = visibleCandidates.filter(function (candidate) { return confirmedIds.indexOf(Number(candidate.id)) >= 0; }).length;
+            const manualCount = impactPins.filter(function (pin) { return Number(pin.candidateId) < 0; }).length;
+            const totalPinCount = impactPins.length;
             el.candidateList.innerHTML =
                 '<div class="v4-ai-carousel-nav">' +
                     '<button type="button" data-ai-action="prev" aria-label="前の候補">‹</button>' +
@@ -1007,7 +1012,7 @@
                     '<button type="button" class="v4-ai-primary-action" data-ai-action="place" data-ai-candidate-id="' + currentCandidate.id + '">' + (hasImpact ? '刺さり位置を変更' : 'この矢の刺さり位置を指定') + '</button>' +
                     '<button type="button" data-ai-action="exclude" data-ai-candidate-id="' + currentCandidate.id + '">候補から除外</button>' +
                 '</div>' +
-                '<div class="v4-ai-carousel-footer"><span>確認済み ' + confirmedCount + ' / ' + visibleCandidates.length + '</span>' +
+                '<div class="v4-ai-carousel-footer"><span>AI確認 ' + confirmedCount + ' / ' + visibleCandidates.length + '・手動 ' + manualCount + '・合計 ' + totalPinCount + ' / 12</span>' +
                     '<button type="button" data-ai-action="toggle-pins">' + (showAllImpactPins ? '現在のピンだけ表示' : '全ピン表示') + '</button></div>';
         }
     }
@@ -1067,6 +1072,22 @@
             : "紫の印はノック候補です。この矢が的へ刺さっている位置を写真上でタップしてください。";
     }
 
+    function startManualImpactPin() {
+        const el = getElements();
+        if (!currentPreviewPhoto) return;
+        if (!currentPhotoPins) currentPhotoPins = { photoId: currentPreviewPhoto.id, impactPins: [] };
+        if (!Array.isArray(currentPhotoPins.impactPins)) currentPhotoPins.impactPins = [];
+        if (currentPhotoPins.impactPins.length >= MAX_TOTAL_PINS) {
+            if (el.analysisStatus) el.analysisStatus.textContent = "ピンは最大12本です。不要なピンを長押しで削除してから追加してください。";
+            return;
+        }
+        const manualIds = currentPhotoPins.impactPins.map(function (pin) { return Number(pin.candidateId); }).filter(function (id) { return id < 0; });
+        const nextManualNumber = manualIds.length ? Math.min.apply(null, manualIds) - 1 : -1;
+        pendingImpactCandidateId = nextManualNumber;
+        showAllImpactPins = true;
+        if (el.analysisStatus) el.analysisStatus.textContent = "手動追加：矢が的へ刺さっている位置を写真上でタップしてください。";
+    }
+
     async function placeImpactPinFromPhotoTap(event) {
         const el = getElements();
         if (!currentPreviewPhoto || pendingImpactCandidateId === null || !el.savedPreview) return;
@@ -1079,13 +1100,23 @@
         if (!currentPhotoPins) currentPhotoPins = { photoId: currentPreviewPhoto.id, impactPins: [] };
         if (!Array.isArray(currentPhotoPins.impactPins)) currentPhotoPins.impactPins = [];
         const existing = currentPhotoPins.impactPins.find(function (pin) { return Number(pin.candidateId) === Number(pendingImpactCandidateId); });
-        if (existing) { existing.x = x; existing.y = y; existing.updatedAt = new Date().toISOString(); }
-        else currentPhotoPins.impactPins.push({ candidateId: pendingImpactCandidateId, x: x, y: y, createdAt: new Date().toISOString() });
+        if (existing) {
+            existing.x = x; existing.y = y; existing.updatedAt = new Date().toISOString();
+        } else {
+            if (currentPhotoPins.impactPins.length >= MAX_TOTAL_PINS) {
+                pendingImpactCandidateId = null;
+                if (el.analysisStatus) el.analysisStatus.textContent = "ピンは最大12本です。不要なピンを長押しで削除してから追加してください。";
+                return;
+            }
+            currentPhotoPins.impactPins.push({ candidateId: pendingImpactCandidateId, x: x, y: y, source: pendingImpactCandidateId < 0 ? "manual" : "ai", createdAt: new Date().toISOString() });
+        }
         const completedId = pendingImpactCandidateId;
         pendingImpactCandidateId = null;
         try { await putPins(currentPhotoPins); } catch (error) { console.warn("Impact pin save failed:", error); }
         renderSavedCandidates(currentPhotoAnalysis && currentPhotoAnalysis.candidates || []);
-        if (el.analysisStatus) el.analysisStatus.textContent = "候補" + completedId + "の刺さり位置に緑の得点ピンを置きました。続けて別の候補を確認できます。";
+        if (el.analysisStatus) el.analysisStatus.textContent = completedId < 0
+            ? "手動で緑のピンを追加しました。合計 " + currentPhotoPins.impactPins.length + " / 12 本です。"
+            : "AI候補の刺さり位置に緑のピンを置きました。合計 " + currentPhotoPins.impactPins.length + " / 12 本です。";
     }
 
 
@@ -1109,6 +1140,17 @@
             button.className = "v4-photo-analyze-button";
             button.textContent = "✨ AI解析開始";
             controls.insertBefore(button, controls.firstChild);
+        }
+
+        if (!document.getElementById("v4ManualAddImpactPinButton")) {
+            const manualButton = document.createElement("button");
+            manualButton.type = "button";
+            manualButton.id = "v4ManualAddImpactPinButton";
+            manualButton.className = "v4-photo-manual-pin-button";
+            manualButton.textContent = "＋ 手動追加";
+            const analyzeButton = document.getElementById("v4AnalyzeSavedPhotoButton");
+            if (analyzeButton && analyzeButton.nextSibling) controls.insertBefore(manualButton, analyzeButton.nextSibling);
+            else controls.appendChild(manualButton);
         }
 
         if (!document.getElementById("v4SavedPhotoAnalysisStatus")) {
@@ -1584,6 +1626,7 @@
             savedTitle: document.getElementById("v4SavedPhotoTitle"),
             savedDetails: document.getElementById("v4SavedPhotoDetails"),
             analyzeSaved: document.getElementById("v4AnalyzeSavedPhotoButton"),
+            manualAddPin: document.getElementById("v4ManualAddImpactPinButton"),
             analysisStatus: document.getElementById("v4SavedPhotoAnalysisStatus"),
             candidateLayer: document.getElementById("v4SavedPhotoCandidateLayer"),
             tapSurface: document.getElementById("v4PhotoTapSurface"),
