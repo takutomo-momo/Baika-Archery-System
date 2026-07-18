@@ -2,7 +2,7 @@
 
 /*
  * Baika Archery System Ver4
- * Step35-4: 撮影済み写真のAI解析開始画面
+ * Step35-5: ノック＋羽3枚の矢プロフィール登録
  * 写真はIndexedDB（端末内）だけに保存し、クラウド送信しない。
  */
 (function () {
@@ -23,6 +23,12 @@
     let analysisInProgress = false;
     let selectedArrowColor = null;
     let selectedColorPoint = null;
+    let arrowProfile = null;
+    let profileDraft = null;
+    let profileEditing = false;
+    let profileStepIndex = 0;
+    const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
+    const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
     document.addEventListener("DOMContentLoaded", initializeCameraMode);
 
@@ -41,6 +47,10 @@
         if (el.analyzeSaved) el.analyzeSaved.addEventListener("click", analyzeSavedPhoto);
         if (el.savedPreview) el.savedPreview.addEventListener("click", selectArrowColorFromPhoto);
         if (el.resetColor) el.resetColor.addEventListener("click", resetSelectedArrowColor);
+        if (el.startProfile) el.startProfile.addEventListener("click", startArrowProfileEditing);
+        if (el.cancelProfile) el.cancelProfile.addEventListener("click", cancelArrowProfileEditing);
+        if (el.saveProfile) el.saveProfile.addEventListener("click", saveArrowProfile);
+        if (el.profileSlots) el.profileSlots.addEventListener("click", selectProfilePart);
 
         el.modal.addEventListener("click", function (event) {
             if (event.target === el.modal) closeCamera();
@@ -171,8 +181,15 @@
         el.savedPreview.src = previewObjectUrl;
         el.savedTitle.textContent = "End " + (photo.endNumber || "-");
         el.savedDetails.textContent = formatDateTime(photo.createdAt) + " ／ " + (photo.distance || "距離未設定") + " ／ " + (photo.status === "complete" ? "入力済み" : "未入力");
-        selectedArrowColor = normalizeColor(photo.selectedArrowColor) || loadMemberArrowColor(photo.memberName);
+        arrowProfile = loadArrowProfile(photo.memberName);
+        profileDraft = cloneArrowProfile(arrowProfile);
+        profileEditing = false;
+        profileStepIndex = 0;
+        selectedArrowColor = normalizeColor(photo.selectedArrowColor)
+            || normalizeColor(arrowProfile && arrowProfile.nock && arrowProfile.nock.color)
+            || loadMemberArrowColor(photo.memberName);
         selectedColorPoint = photo.selectedColorPoint || null;
+        updateArrowProfileUI();
         updateColorSelectionUI();
         el.analysisStatus.textContent = selectedArrowColor
             ? (photo.aiStatus === "analyzed"
@@ -204,6 +221,10 @@
         analysisInProgress = false;
         selectedArrowColor = null;
         selectedColorPoint = null;
+        arrowProfile = null;
+        profileDraft = null;
+        profileEditing = false;
+        profileStepIndex = 0;
     }
 
     async function analyzeSavedPhoto() {
@@ -364,6 +385,14 @@
                 normalizedY: imageY / el.savedPreview.naturalHeight
             };
 
+            if (profileEditing) {
+                applyColorToProfileDraft(selectedArrowColor, selectedColorPoint);
+                clearSavedCandidates();
+                updateArrowProfileUI();
+                updateColorSelectionUI();
+                return;
+            }
+
             currentPreviewPhoto.selectedArrowColor = selectedArrowColor;
             currentPreviewPhoto.selectedColorPoint = selectedColorPoint;
             saveMemberArrowColor(currentPreviewPhoto.memberName, selectedArrowColor);
@@ -382,6 +411,15 @@
 
     function resetSelectedArrowColor() {
         const el = getElements();
+        if (profileEditing) {
+            const part = PROFILE_PARTS[profileStepIndex];
+            if (profileDraft && part) profileDraft[part] = null;
+            selectedArrowColor = null;
+            selectedColorPoint = null;
+            updateArrowProfileUI();
+            updateColorSelectionUI();
+            return;
+        }
         selectedArrowColor = null;
         selectedColorPoint = null;
         if (currentPreviewPhoto) {
@@ -396,6 +434,162 @@
         if (el.analysisStatus) el.analysisStatus.textContent = "写真内のノックまたは羽根を1回タップしてください。";
     }
 
+    function profileStorageKey(memberName) {
+        const name = String(memberName || "guest").trim() || "guest";
+        return "baika-arrow-profile:" + encodeURIComponent(name);
+    }
+
+    function cloneArrowProfile(profile) {
+        if (!profile) return { nock: null, vane1: null, vane2: null, vane3: null };
+        try { return JSON.parse(JSON.stringify(profile)); }
+        catch (error) { return { nock: null, vane1: null, vane2: null, vane3: null }; }
+    }
+
+    function loadArrowProfile(memberName) {
+        try {
+            const raw = localStorage.getItem(profileStorageKey(memberName));
+            if (!raw) return { nock: null, vane1: null, vane2: null, vane3: null };
+            const parsed = JSON.parse(raw);
+            return {
+                nock: parsed.nock || null,
+                vane1: parsed.vane1 || null,
+                vane2: parsed.vane2 || null,
+                vane3: parsed.vane3 || null,
+                memberName: parsed.memberName || memberName || "",
+                updatedAt: parsed.updatedAt || ""
+            };
+        } catch (error) {
+            console.error("Arrow profile load failed:", error);
+            return { nock: null, vane1: null, vane2: null, vane3: null };
+        }
+    }
+
+    function startArrowProfileEditing() {
+        if (!currentPreviewPhoto) return;
+        profileDraft = cloneArrowProfile(arrowProfile);
+        profileEditing = true;
+        profileStepIndex = 0;
+        selectedArrowColor = null;
+        selectedColorPoint = null;
+        clearSavedCandidates();
+        updateArrowProfileUI();
+        updateColorSelectionUI();
+        const el = getElements();
+        if (el.analysisStatus) el.analysisStatus.textContent = "矢プロフィール登録中です。ノックから順にタップしてください。";
+    }
+
+    function cancelArrowProfileEditing() {
+        profileEditing = false;
+        profileDraft = cloneArrowProfile(arrowProfile);
+        profileStepIndex = 0;
+        selectedArrowColor = normalizeColor(arrowProfile && arrowProfile.nock && arrowProfile.nock.color)
+            || (currentPreviewPhoto && normalizeColor(currentPreviewPhoto.selectedArrowColor));
+        selectedColorPoint = null;
+        updateArrowProfileUI();
+        updateColorSelectionUI();
+    }
+
+    function selectProfilePart(event) {
+        const button = event.target.closest("[data-profile-part]");
+        if (!button || !profileEditing) return;
+        const part = button.getAttribute("data-profile-part");
+        const index = PROFILE_PARTS.indexOf(part);
+        if (index < 0) return;
+        profileStepIndex = index;
+        const item = profileDraft && profileDraft[part];
+        selectedArrowColor = normalizeColor(item && item.color);
+        selectedColorPoint = item && item.point ? item.point : null;
+        updateArrowProfileUI();
+        updateColorSelectionUI();
+    }
+
+    function applyColorToProfileDraft(color, point) {
+        if (!profileDraft) profileDraft = cloneArrowProfile(null);
+        const part = PROFILE_PARTS[profileStepIndex];
+        if (!part) return;
+        profileDraft[part] = { color: normalizeColor(color), point: point };
+        const nextIndex = profileStepIndex + 1;
+        if (nextIndex < PROFILE_PARTS.length) {
+            profileStepIndex = nextIndex;
+            selectedArrowColor = null;
+            selectedColorPoint = null;
+        }
+        const el = getElements();
+        if (el.analysisStatus) {
+            el.analysisStatus.textContent = nextIndex < PROFILE_PARTS.length
+                ? PROFILE_LABELS[part] + "を取得しました。次は" + PROFILE_LABELS[PROFILE_PARTS[nextIndex]] + "をタップしてください。"
+                : "4色を取得しました。「プロフィール保存」を押してください。";
+        }
+    }
+
+    function isProfileComplete(profile) {
+        return PROFILE_PARTS.every(function (part) {
+            return profile && profile[part] && normalizeColor(profile[part].color);
+        });
+    }
+
+    function saveArrowProfile() {
+        const el = getElements();
+        if (!currentPreviewPhoto || !isProfileComplete(profileDraft)) return;
+        const memberName = currentPreviewPhoto.memberName || readPracticeSettings().memberName || "未ログイン";
+        profileDraft.memberName = memberName;
+        profileDraft.updatedAt = new Date().toISOString();
+        try {
+            localStorage.setItem(profileStorageKey(memberName), JSON.stringify(profileDraft));
+            arrowProfile = cloneArrowProfile(profileDraft);
+            profileEditing = false;
+            profileStepIndex = 0;
+            selectedArrowColor = normalizeColor(arrowProfile.nock.color);
+            selectedColorPoint = arrowProfile.nock.point || null;
+            saveMemberArrowColor(memberName, selectedArrowColor);
+            currentPreviewPhoto.arrowProfile = arrowProfile;
+            currentPreviewPhoto.selectedArrowColor = selectedArrowColor;
+            currentPreviewPhoto.selectedColorPoint = selectedColorPoint;
+            putPhoto(currentPreviewPhoto).catch(function (error) {
+                console.error("Arrow profile photo save failed:", error);
+            });
+            updateArrowProfileUI();
+            updateColorSelectionUI();
+            if (el.analysisStatus) el.analysisStatus.textContent = "矢プロフィールを端末内に保存しました。現在のAI解析はノック色を基準に開始します。";
+        } catch (error) {
+            console.error("Arrow profile save failed:", error);
+            window.alert("矢プロフィールを保存できませんでした。");
+        }
+    }
+
+    function updateArrowProfileUI() {
+        const el = getElements();
+        if (!el.profileSlots) return;
+        const source = profileEditing ? profileDraft : arrowProfile;
+        const memberName = currentPreviewPhoto && currentPreviewPhoto.memberName ? currentPreviewPhoto.memberName : "現在の部員";
+        if (el.profileMember) {
+            el.profileMember.textContent = memberName + "さんの配色" + (isProfileComplete(source) ? "（登録済み）" : "（未登録）");
+        }
+        el.profileSlots.querySelectorAll("[data-profile-part]").forEach(function (button) {
+            const part = button.getAttribute("data-profile-part");
+            const item = source && source[part];
+            const color = normalizeColor(item && item.color);
+            const swatch = button.querySelector(".v4-arrow-profile-slot-swatch");
+            button.classList.toggle("is-active", profileEditing && PROFILE_PARTS[profileStepIndex] === part);
+            button.classList.toggle("is-set", Boolean(color));
+            if (swatch) {
+                if (color) swatch.style.background = "rgb(" + color.r + ", " + color.g + ", " + color.b + ")";
+                else swatch.style.removeProperty("background");
+            }
+        });
+        if (el.profileEditor) el.profileEditor.hidden = !profileEditing;
+        if (el.startProfile) el.startProfile.textContent = isProfileComplete(arrowProfile) ? "配色を変更" : "配色を登録";
+        if (el.profileStepLabel && profileEditing) {
+            el.profileStepLabel.textContent = PROFILE_LABELS[PROFILE_PARTS[profileStepIndex]] + "の中央をタップ";
+        }
+        if (el.saveProfile) el.saveProfile.disabled = !isProfileComplete(profileDraft);
+        if (el.analyzeSaved) {
+            const usableNock = normalizeColor(arrowProfile && arrowProfile.nock && arrowProfile.nock.color);
+            if (!profileEditing && usableNock && !selectedArrowColor) selectedArrowColor = usableNock;
+            el.analyzeSaved.disabled = profileEditing || analysisInProgress || !selectedArrowColor;
+        }
+    }
+
     function updateColorSelectionUI() {
         const el = getElements();
         if (!el.colorSwatch || !el.colorInstruction || !el.analyzeSaved) return;
@@ -403,14 +597,15 @@
             const cssColor = "rgb(" + selectedArrowColor.r + ", " + selectedArrowColor.g + ", " + selectedArrowColor.b + ")";
             el.colorSwatch.style.setProperty("--v4-selected-arrow-color", cssColor);
             el.colorSwatch.classList.add("is-selected");
-            el.colorInstruction.textContent = "選択色：" + cssColor + "（写真をタップすると変更）";
+            el.colorInstruction.textContent = profileEditing ? "取得色：" + cssColor : "選択色：" + cssColor + "（写真をタップすると変更）";
             el.analyzeSaved.disabled = analysisInProgress;
         } else {
             el.colorSwatch.classList.remove("is-selected");
             el.colorSwatch.style.removeProperty("--v4-selected-arrow-color");
-            el.colorInstruction.textContent = "写真内のノックまたは羽根を1回タップしてください。";
+            el.colorInstruction.textContent = profileEditing ? PROFILE_LABELS[PROFILE_PARTS[profileStepIndex]] + "の中央をタップしてください。" : "写真内のノックまたは羽根を1回タップしてください。";
             el.analyzeSaved.disabled = true;
         }
+        if (profileEditing) el.analyzeSaved.disabled = true;
         renderColorTapMarker();
     }
 
@@ -779,7 +974,14 @@
             colorMarker: document.getElementById("v4PhotoColorTapMarker"),
             colorSwatch: document.getElementById("v4SelectedArrowColor"),
             colorInstruction: document.getElementById("v4PhotoColorInstruction"),
-            resetColor: document.getElementById("v4ResetArrowColorButton")
+            resetColor: document.getElementById("v4ResetArrowColorButton"),
+            startProfile: document.getElementById("v4StartArrowProfileButton"),
+            cancelProfile: document.getElementById("v4CancelArrowProfileButton"),
+            saveProfile: document.getElementById("v4SaveArrowProfileButton"),
+            profileEditor: document.getElementById("v4ArrowProfileEditor"),
+            profileSlots: document.getElementById("v4ArrowProfileSlots"),
+            profileMember: document.getElementById("v4ArrowProfileMember"),
+            profileStepLabel: document.getElementById("v4ArrowProfileStepLabel")
         };
     }
 

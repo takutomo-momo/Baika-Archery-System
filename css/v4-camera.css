@@ -226,3 +226,20 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 .v4-photo-color-swatch.is-selected{background:var(--v4-selected-arrow-color);box-shadow:0 0 0 2px #7c3aed}
 .v4-photo-color-reset{min-height:38px;border:1px solid #cbd5e1;border-radius:10px;padding:7px 11px;background:#f8fafc;color:#475569;font:inherit;font-size:11px;font-weight:850;white-space:nowrap;cursor:pointer}
 @media(max-width:640px){.v4-photo-color-controls{align-items:stretch}.v4-photo-color-reset{flex:0 0 auto}.v4-photo-color-guide small{font-size:10px}}
+
+
+/* Step35-5: ノック＋羽3枚の矢プロフィール */
+.v4-arrow-profile-panel{width:min(100%,720px);display:grid;gap:10px;padding:12px;border-radius:16px;background:rgba(255,255,255,.97);color:#0f172a;box-shadow:0 8px 24px rgba(0,0,0,.22)}
+.v4-arrow-profile-header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.v4-arrow-profile-header>div{display:grid;gap:2px}.v4-arrow-profile-header strong{font-size:14px}.v4-arrow-profile-header small{font-size:10px;color:#64748b}
+.v4-arrow-profile-start,.v4-arrow-profile-save,.v4-arrow-profile-cancel{min-height:38px;border:0;border-radius:10px;padding:8px 12px;font:inherit;font-size:11px;font-weight:900;cursor:pointer;white-space:nowrap}
+.v4-arrow-profile-start{background:#ede9fe;color:#6d28d9}.v4-arrow-profile-save{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}.v4-arrow-profile-save:disabled{opacity:.45;cursor:not-allowed}.v4-arrow-profile-cancel{background:#e2e8f0;color:#475569}
+.v4-arrow-profile-slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.v4-arrow-profile-slot{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:42px;border:2px solid #e2e8f0;border-radius:11px;padding:6px;background:#f8fafc;color:#475569;font:inherit;font-size:10px;font-weight:900;cursor:default}
+.v4-arrow-profile-slot.is-active{border-color:#7c3aed;background:#f5f3ff;color:#5b21b6;box-shadow:0 0 0 2px rgba(124,58,237,.12)}
+.v4-arrow-profile-slot-swatch{flex:0 0 20px;width:20px;height:20px;border:2px solid #fff;border-radius:50%;background:conic-gradient(#ef4444,#f59e0b,#22c55e,#3b82f6,#a855f7,#ef4444);box-shadow:0 0 0 1px #cbd5e1}
+.v4-arrow-profile-slot.is-set .v4-arrow-profile-slot-swatch{box-shadow:0 0 0 2px #22c55e}
+.v4-arrow-profile-editor{display:grid;gap:10px;padding-top:10px;border-top:1px solid #e2e8f0}.v4-arrow-profile-editor[hidden]{display:none}
+.v4-arrow-profile-actions{display:flex;justify-content:flex-end;gap:7px;flex-wrap:wrap}
+.v4-photo-color-tap-marker{width:14px;height:14px;border-width:2px;box-shadow:0 0 0 2px #7c3aed,0 2px 7px rgba(0,0,0,.7)}
+@media(max-width:640px){.v4-arrow-profile-panel{padding:10px}.v4-arrow-profile-header{align-items:flex-start}.v4-arrow-profile-slots{grid-template-columns:repeat(2,minmax(0,1fr))}.v4-arrow-profile-slot{font-size:11px}.v4-arrow-profile-actions{display:grid;grid-template-columns:1fr 1fr}.v4-arrow-profile-actions .v4-photo-color-reset{grid-column:1/-1}.v4-arrow-profile-save,.v4-arrow-profile-cancel{width:100%}}

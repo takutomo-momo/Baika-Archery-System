@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/v4.css?v=3021">
     <link rel="stylesheet" href="css/v4-landscape.css?v=3022">
+    <link rel="stylesheet" href="css/v4-camera.css?v=355">
  </head>
 
 <body class="v4-body">
@@ -745,15 +746,44 @@
             <span id="v4SavedPhotoDetails"></span>
         </div>
 
-        <div class="v4-photo-color-controls">
-            <div class="v4-photo-color-guide">
-                <span id="v4SelectedArrowColor" class="v4-photo-color-swatch" aria-label="選択したノック色"></span>
+        <div class="v4-arrow-profile-panel">
+            <div class="v4-arrow-profile-header">
                 <div>
-                    <strong>ノック／羽根の色を選択</strong>
-                    <small id="v4PhotoColorInstruction">写真内のノックまたは羽根を1回タップしてください。</small>
+                    <strong>🏹 矢プロフィール</strong>
+                    <small id="v4ArrowProfileMember">部員の配色を端末内に保存します。</small>
+                </div>
+                <button type="button" id="v4StartArrowProfileButton" class="v4-arrow-profile-start">配色を登録・変更</button>
+            </div>
+
+            <div id="v4ArrowProfileSlots" class="v4-arrow-profile-slots" aria-label="矢プロフィールの配色">
+                <button type="button" class="v4-arrow-profile-slot" data-profile-part="nock">
+                    <span class="v4-arrow-profile-slot-swatch"></span><span>ノック</span>
+                </button>
+                <button type="button" class="v4-arrow-profile-slot" data-profile-part="vane1">
+                    <span class="v4-arrow-profile-slot-swatch"></span><span>羽①</span>
+                </button>
+                <button type="button" class="v4-arrow-profile-slot" data-profile-part="vane2">
+                    <span class="v4-arrow-profile-slot-swatch"></span><span>羽②</span>
+                </button>
+                <button type="button" class="v4-arrow-profile-slot" data-profile-part="vane3">
+                    <span class="v4-arrow-profile-slot-swatch"></span><span>羽③</span>
+                </button>
+            </div>
+
+            <div id="v4ArrowProfileEditor" class="v4-arrow-profile-editor" hidden>
+                <div class="v4-photo-color-guide">
+                    <span id="v4SelectedArrowColor" class="v4-photo-color-swatch" aria-label="現在選択中の色"></span>
+                    <div>
+                        <strong id="v4ArrowProfileStepLabel">ノックの中央をタップ</strong>
+                        <small id="v4PhotoColorInstruction">ノック、羽①、羽②、羽③の順に写真をタップします。</small>
+                    </div>
+                </div>
+                <div class="v4-arrow-profile-actions">
+                    <button type="button" id="v4ResetArrowColorButton" class="v4-photo-color-reset">この色を選び直す</button>
+                    <button type="button" id="v4CancelArrowProfileButton" class="v4-arrow-profile-cancel">中止</button>
+                    <button type="button" id="v4SaveArrowProfileButton" class="v4-arrow-profile-save" disabled>プロフィール保存</button>
                 </div>
             </div>
-            <button type="button" id="v4ResetArrowColorButton" class="v4-photo-color-reset">色を選び直す</button>
         </div>
 
         <div class="v4-photo-analysis-controls">
@@ -817,6 +847,6 @@
 <script src="js/v4-target-engine.js?v=341"></script>
 <script src="js/v4-arrow-detector.js?v=354a"></script>
 <script src="js/v4-photo-ui.js?v=341"></script>
-<script src="js/v4-camera.js?v=354a"></script>
+<script src="js/v4-camera.js?v=355"></script>
 </body>
 </html>
