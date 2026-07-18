@@ -38,13 +38,16 @@
     let directTapState = null;
     let selectedAiCandidateId = null;
     let pendingImpactCandidateId = null;
+    let impactDrag = null;
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
     document.addEventListener("DOMContentLoaded", initializeCameraMode);
 
     function initializeCameraMode() {
-        const el = getElements();
+        let el = getElements();
+        ensureAnalysisControls(el);
+        el = getElements();
         if (!el.open || !el.modal || !el.video) return;
 
         el.open.addEventListener("click", openCamera);
@@ -70,6 +73,7 @@
         if (el.saveProfile) el.saveProfile.addEventListener("click", saveArrowProfile);
         if (el.profileSlots) el.profileSlots.addEventListener("click", selectProfilePart);
         if (el.candidateList) el.candidateList.addEventListener("click", selectAiCandidate);
+        initializeImpactPinEditing(el);
 
         el.modal.addEventListener("click", function (event) {
             if (event.target === el.modal) closeCamera();
@@ -204,7 +208,9 @@
     }
 
     async function openPhotoPreview(photo) {
-        const el = getElements();
+        let el = getElements();
+        ensureAnalysisControls(el);
+        el = getElements();
         if (!el.previewModal || !photo || photo.id == null) return;
         closePhotoPreview();
         const loadToken = ++previewLoadToken;
@@ -236,6 +242,7 @@
             el.analysisStatus.textContent = selectedArrowColor
                 ? (analyzed ? "前回の解析結果：矢候補 " + candidates.length + "件。再解析もできます。" : "選択した色で解析できます。")
                 : "先に写真内のノック／羽根をタップしてください。";
+            el.analyzeSaved.hidden = false;
             el.analyzeSaved.disabled = !selectedArrowColor;
             el.analyzeSaved.textContent = analyzed ? "✨ 再解析する" : "✨ AI解析開始";
 
@@ -946,6 +953,9 @@
         impactPins.forEach(function (pin, index) {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             group.setAttribute("class", "v4-impact-pin");
+            group.setAttribute("data-impact-candidate-id", String(pin.candidateId));
+            group.setAttribute("role", "button");
+            group.setAttribute("aria-label", "得点ピン" + (index + 1) + "。ドラッグで移動、長押しで削除");
             const radius = Math.max(16, Math.min(image.naturalWidth, image.naturalHeight) * 0.020);
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             circle.setAttribute("cx", pin.x); circle.setAttribute("cy", pin.y); circle.setAttribute("r", radius);
@@ -984,7 +994,10 @@
         try { await putAnalysis(currentPhotoAnalysis); } catch (error) { console.warn("AI candidate confirmation save failed:", error); }
         renderSavedCandidates(currentPhotoAnalysis.candidates);
         const el = getElements();
-        if (el.analysisStatus) el.analysisStatus.textContent = "紫の印はノック候補です。候補" + id + "の矢が的へ刺さっている位置を写真上でタップしてください。";
+        const hasPin = currentPhotoPins && Array.isArray(currentPhotoPins.impactPins) && currentPhotoPins.impactPins.some(function (pin) { return Number(pin.candidateId) === id; });
+        if (el.analysisStatus) el.analysisStatus.textContent = hasPin
+            ? "候補" + id + "の得点位置を変更できます。写真上の新しい位置をタップするか、緑ピンをドラッグしてください。"
+            : "紫の印はノック候補です。候補" + id + "の矢が的へ刺さっている位置を写真上でタップしてください。";
     }
 
     async function placeImpactPinFromPhotoTap(event) {
@@ -1006,6 +1019,133 @@
         try { await putPins(currentPhotoPins); } catch (error) { console.warn("Impact pin save failed:", error); }
         renderSavedCandidates(currentPhotoAnalysis && currentPhotoAnalysis.candidates || []);
         if (el.analysisStatus) el.analysisStatus.textContent = "候補" + completedId + "の刺さり位置に緑の得点ピンを置きました。続けて別の候補を確認できます。";
+    }
+
+
+    function ensureAnalysisControls(el) {
+        const shell = document.querySelector("#v4PhotoPreviewModal .v4-photo-preview-shell");
+        if (!shell) return;
+
+        let controls = shell.querySelector(".v4-photo-analysis-controls");
+        if (!controls) {
+            controls = document.createElement("div");
+            controls.className = "v4-photo-analysis-controls v4-photo-analysis-controls-persistent";
+            shell.appendChild(controls);
+        }
+
+        if (!document.getElementById("v4AnalyzeSavedPhotoButton")) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.id = "v4AnalyzeSavedPhotoButton";
+            button.className = "v4-photo-analyze-button";
+            button.textContent = "✨ AI解析開始";
+            controls.insertBefore(button, controls.firstChild);
+        }
+
+        if (!document.getElementById("v4SavedPhotoAnalysisStatus")) {
+            const status = document.createElement("div");
+            status.id = "v4SavedPhotoAnalysisStatus";
+            status.className = "v4-photo-analysis-status";
+            status.setAttribute("aria-live", "polite");
+            status.textContent = "写真を開くとAI解析を開始できます。";
+            controls.appendChild(status);
+        }
+    }
+
+    function initializeImpactPinEditing(el) {
+        if (!el.candidateLayer || el.candidateLayer.dataset.pinEditingReady === "1") return;
+        el.candidateLayer.dataset.pinEditingReady = "1";
+
+        el.candidateLayer.addEventListener("pointerdown", function (event) {
+            const group = event.target.closest && event.target.closest("[data-impact-candidate-id]");
+            if (!group || !currentPreviewPhoto || !currentPhotoPins) return;
+            const candidateId = Number(group.getAttribute("data-impact-candidate-id"));
+            const pin = (currentPhotoPins.impactPins || []).find(function (item) { return Number(item.candidateId) === candidateId; });
+            if (!pin) return;
+
+            event.preventDefault();
+            event.stopPropagation();
+            try { group.setPointerCapture(event.pointerId); } catch (ignore) {}
+            impactDrag = {
+                pointerId: event.pointerId,
+                candidateId: candidateId,
+                startX: event.clientX,
+                startY: event.clientY,
+                moved: false,
+                deleteTimer: window.setTimeout(function () {
+                    if (!impactDrag || impactDrag.moved || impactDrag.candidateId !== candidateId) return;
+                    deleteImpactPin(candidateId);
+                    impactDrag = null;
+                }, 700)
+            };
+        });
+
+        el.candidateLayer.addEventListener("pointermove", function (event) {
+            if (!impactDrag || impactDrag.pointerId !== event.pointerId) return;
+            const distance = Math.hypot(event.clientX - impactDrag.startX, event.clientY - impactDrag.startY);
+            if (distance > 5) {
+                impactDrag.moved = true;
+                window.clearTimeout(impactDrag.deleteTimer);
+            }
+            if (!impactDrag.moved) return;
+            event.preventDefault();
+            updateImpactPinFromClientPoint(impactDrag.candidateId, event.clientX, event.clientY, false);
+        });
+
+        function finish(event) {
+            if (!impactDrag || impactDrag.pointerId !== event.pointerId) return;
+            const drag = impactDrag;
+            impactDrag = null;
+            window.clearTimeout(drag.deleteTimer);
+            if (drag.moved) {
+                event.preventDefault();
+                updateImpactPinFromClientPoint(drag.candidateId, event.clientX, event.clientY, true);
+            }
+        }
+        el.candidateLayer.addEventListener("pointerup", finish);
+        el.candidateLayer.addEventListener("pointercancel", finish);
+        el.candidateLayer.addEventListener("contextmenu", function (event) {
+            if (event.target.closest && event.target.closest("[data-impact-candidate-id]")) event.preventDefault();
+        });
+    }
+
+    function getNaturalPointFromClient(clientX, clientY) {
+        const el = getElements();
+        if (!el.savedPreview || !el.savedPreview.naturalWidth) return null;
+        const rect = getContainedImageRect(el.savedPreview, true);
+        const rawX = clientX - rect.left;
+        const rawY = clientY - rect.top;
+        if (rawX < 0 || rawY < 0 || rawX > rect.width || rawY > rect.height) return null;
+        return {
+            x: Math.max(0, Math.min(el.savedPreview.naturalWidth - 1, Math.round(rawX / rect.width * el.savedPreview.naturalWidth))),
+            y: Math.max(0, Math.min(el.savedPreview.naturalHeight - 1, Math.round(rawY / rect.height * el.savedPreview.naturalHeight)))
+        };
+    }
+
+    async function updateImpactPinFromClientPoint(candidateId, clientX, clientY, save) {
+        const point = getNaturalPointFromClient(clientX, clientY);
+        if (!point || !currentPhotoPins || !Array.isArray(currentPhotoPins.impactPins)) return;
+        const pin = currentPhotoPins.impactPins.find(function (item) { return Number(item.candidateId) === Number(candidateId); });
+        if (!pin) return;
+        pin.x = point.x;
+        pin.y = point.y;
+        pin.updatedAt = new Date().toISOString();
+        renderSavedCandidates(currentPhotoAnalysis && currentPhotoAnalysis.candidates || []);
+        if (save) {
+            try { await putPins(currentPhotoPins); } catch (error) { console.warn("Impact pin move save failed:", error); }
+            const el = getElements();
+            if (el.analysisStatus) el.analysisStatus.textContent = "緑の得点ピンを移動しました。何度でも変更できます。長押しすると削除できます。";
+        }
+    }
+
+    async function deleteImpactPin(candidateId) {
+        if (!currentPhotoPins || !Array.isArray(currentPhotoPins.impactPins)) return;
+        currentPhotoPins.impactPins = currentPhotoPins.impactPins.filter(function (pin) { return Number(pin.candidateId) !== Number(candidateId); });
+        pendingImpactCandidateId = candidateId;
+        try { await putPins(currentPhotoPins); } catch (error) { console.warn("Impact pin delete save failed:", error); }
+        renderSavedCandidates(currentPhotoAnalysis && currentPhotoAnalysis.candidates || []);
+        const el = getElements();
+        if (el.analysisStatus) el.analysisStatus.textContent = "得点ピンを削除しました。同じ候補の刺さり位置を写真上でタップすると置き直せます。";
     }
 
     function clearSavedCandidates() {
