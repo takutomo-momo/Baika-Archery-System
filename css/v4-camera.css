@@ -256,3 +256,146 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 .v4-photo-zoom-hint{position:absolute;z-index:7;left:10px;bottom:12px;padding:6px 9px;border-radius:999px;background:rgba(15,23,42,.72);color:#fff;font-size:10px;font-weight:800;pointer-events:none}
 .v4-photo-color-tap-marker{width:12px;height:12px;border:2px solid #fff;box-shadow:0 0 0 2px #7c3aed,0 2px 7px rgba(0,0,0,.75)}
 @media(max-width:640px){.v4-photo-zoom-controls{right:6px;bottom:6px}.v4-photo-zoom-hint{left:6px;bottom:8px}.v4-photo-zoom-controls button{min-width:40px;height:36px}}
+
+
+/* Step35-5b: 写真優先・コンパクト登録UI */
+.v4-photo-preview-modal{
+  padding:max(4px,env(safe-area-inset-top)) max(4px,env(safe-area-inset-right)) max(4px,env(safe-area-inset-bottom)) max(4px,env(safe-area-inset-left));
+}
+.v4-photo-preview-shell{
+  width:min(100%,1100px);
+  height:100%;
+  gap:6px;
+  justify-content:flex-start;
+  overflow:hidden;
+}
+.v4-photo-analysis-stage{
+  flex:1 1 auto;
+  width:100%;
+  min-height:240px;
+  max-height:none;
+  border-radius:14px;
+  background:#050505;
+}
+.v4-photo-zoom-content{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  height:100%;
+  max-width:none;
+  max-height:none;
+}
+.v4-photo-zoom-content img{
+  width:100%;
+  height:100%;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+.v4-photo-preview-meta{
+  flex:0 0 auto;
+  min-height:22px;
+  gap:8px;
+  font-size:11px;
+  line-height:1.2;
+}
+.v4-photo-preview-meta strong{font-size:13px}
+.v4-arrow-profile-panel{
+  flex:0 0 auto;
+  width:100%;
+  max-width:1100px;
+  gap:6px;
+  padding:7px 9px;
+  border-radius:12px;
+}
+.v4-arrow-profile-header{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.v4-arrow-profile-header>div{
+  min-width:0;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:1;
+}
+.v4-arrow-profile-header strong{font-size:12px;white-space:nowrap}
+.v4-arrow-profile-header small{
+  font-size:10px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.v4-arrow-profile-start{
+  min-height:32px;
+  padding:5px 9px;
+  font-size:10px;
+  white-space:nowrap;
+}
+.v4-arrow-profile-slots{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:5px;
+}
+.v4-arrow-profile-slot{
+  min-height:34px;
+  padding:4px 5px;
+  border-radius:9px;
+  font-size:10px;
+  gap:4px;
+}
+.v4-arrow-profile-slot-swatch{
+  width:18px;
+  height:18px;
+}
+.v4-arrow-profile-editor{
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:6px;
+  padding-top:6px;
+}
+.v4-photo-color-guide{min-width:0;gap:7px}
+.v4-photo-color-guide strong{font-size:11px}
+.v4-photo-color-guide small{font-size:9px;line-height:1.2}
+.v4-photo-color-swatch{width:24px;height:24px;flex:0 0 24px}
+.v4-arrow-profile-actions{gap:5px;flex-wrap:nowrap}
+.v4-arrow-profile-actions button{
+  min-height:30px;
+  padding:4px 7px;
+  font-size:9px;
+  white-space:nowrap;
+}
+.v4-photo-analysis-controls{
+  flex:0 0 auto;
+  width:100%;
+  max-width:1100px;
+  gap:6px;
+}
+.v4-photo-analyze-button{min-height:34px;padding:6px 10px;font-size:11px}
+.v4-photo-analysis-status{min-height:34px;padding:6px 9px;font-size:10px}
+.v4-photo-zoom-hint{font-size:9px}
+
+@media(max-width:640px){
+  .v4-photo-preview-shell{padding-top:42px;gap:4px}
+  .v4-photo-analysis-stage{
+    flex:1 1 auto;
+    width:100%;
+    height:auto;
+    min-height:42vh;
+    max-height:none;
+  }
+  .v4-arrow-profile-panel{padding:6px;gap:5px}
+  .v4-arrow-profile-header>div{display:block}
+  .v4-arrow-profile-header small{display:block;margin-top:1px}
+  .v4-arrow-profile-slots{grid-template-columns:repeat(4,minmax(0,1fr));gap:3px}
+  .v4-arrow-profile-slot{min-height:32px;padding:3px 2px;font-size:9px;justify-content:center}
+  .v4-arrow-profile-slot-swatch{width:16px;height:16px}
+  .v4-arrow-profile-editor{grid-template-columns:1fr;gap:4px}
+  .v4-arrow-profile-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px}
+  .v4-arrow-profile-actions .v4-photo-color-reset{grid-column:auto}
+  .v4-arrow-profile-save,.v4-arrow-profile-cancel{width:auto}
+  .v4-arrow-profile-actions button{font-size:8px;padding:3px 2px}
+  .v4-photo-analysis-controls{grid-template-columns:minmax(110px,.42fr) 1fr;gap:4px}
+  .v4-photo-analysis-status{text-align:left;font-size:9px}
+}

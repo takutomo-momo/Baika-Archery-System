@@ -290,7 +290,7 @@
                 const center = touchCenter(event.touches[0], event.touches[1]);
                 previewGesture = { type: "pinch", distance: touchDistance(event.touches[0], event.touches[1]), scale: previewZoom.scale, centerX: center.x, centerY: center.y };
                 event.preventDefault();
-            } else if (event.touches.length === 1 && previewZoom.scale > 1) {
+            } else if (event.touches.length === 1) {
                 previewGesture = { type: "pan", startX: event.touches[0].clientX, startY: event.touches[0].clientY, x: previewZoom.x, y: previewZoom.y, moved: false };
                 event.preventDefault();
             }
