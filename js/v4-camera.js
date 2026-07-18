@@ -195,8 +195,9 @@
                     + '</div>';
                 card.querySelector("img").src = url;
                 card.querySelector(".v4-photo-open-button").addEventListener("click", function () {
-                    if (photoPickerMode) { selectPhotoForTargetInput(photoId); }
-                    else { openPhotoPreview(photo); }
+                    // 写真一覧を統合したため、写真カードのタップは常に
+                    // 入力画面への写真選択として処理する。
+                    selectPhotoForTargetInput(photoId);
                 });
                 card.querySelector(".v4-photo-select-input").addEventListener("change", function (event) {
                     if (event.target.checked) selectedPhotoIds.add(photoId); else selectedPhotoIds.delete(photoId);
