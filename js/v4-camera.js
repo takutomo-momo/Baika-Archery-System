@@ -295,6 +295,10 @@
         photo.status = complete ? "complete" : "pending";
         photo.inputCompletedAt = complete ? new Date().toISOString() : null;
         await putPhoto(photo);
+        await refreshCounts();
+        if (el.listModal && !el.listModal.hidden) {
+            await renderPhotoList();
+        }
     }
 
     function blobToDataUrl(blob) {

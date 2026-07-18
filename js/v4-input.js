@@ -942,7 +942,7 @@ currentArrows.push({
 }
 
 /**
- * 写真入力の6本をGoogleスプレッドシートへ登録する
+ * 写真入力の1本以上をGoogleスプレッドシートへ登録する
  */
 async function registerPhotoPracticeEnd(photoPins) {
     if (!Array.isArray(photoPins)) {
@@ -950,13 +950,13 @@ async function registerPhotoPracticeEnd(photoPins) {
     }
 
     if (
-        photoPins.length !== 6 ||
+        photoPins.length === 0 ||
         photoPins.some(function (pin) {
             return !pin || pin.score == null;
         })
     ) {
         window.alert(
-            "6本すべての得点を設定してください。"
+            "1本以上のピンを追加し、すべての得点を設定してください。"
         );
         return false;
     }
@@ -1073,12 +1073,12 @@ async function registerPhotoPracticeEnd(photoPins) {
         date: practiceDate,
         memberName: memberName,
         distance: distance,
-        a1: sorted[0].val,
-        a2: sorted[1].val,
-        a3: sorted[2].val,
-        a4: sorted[3].val,
-        a5: sorted[4].val,
-        a6: sorted[5].val,
+        a1: sorted[0] ? sorted[0].val : "",
+        a2: sorted[1] ? sorted[1].val : "",
+        a3: sorted[2] ? sorted[2].val : "",
+        a4: sorted[3] ? sorted[3].val : "",
+        a5: sorted[4] ? sorted[4].val : "",
+        a6: sorted[5] ? sorted[5].val : "",
         total: sorted.reduce(
             function (sum, arrow) {
                 return sum + arrow.score;

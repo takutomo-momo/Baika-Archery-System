@@ -68,8 +68,6 @@
 
         createPinLayer(elements);
         createScorePanel(elements);
-        createScoreSummary(elements);
-        createScoreList(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
@@ -670,15 +668,18 @@
     }
 
     async function registerPhotoPins() {
+        const elements = getPhotoElements();
+        const selectedPhotoId = Number(
+            elements.preview && elements.preview.dataset.localPhotoId
+        );
+
         const readyPins =
             pins.filter(function (pin) {
                 return pin.score !== null;
             });
 
-        if (
-            pins.length !== 6 ||
-            readyPins.length !== 6
-        ) {
+        if (pins.length === 0 || readyPins.length !== pins.length) {
+            window.alert("1本以上のピンを追加し、すべての得点を設定してください。");
             return;
         }
 
@@ -725,15 +726,12 @@
             clearPins();
             closeScorePanel();
 
-            const elements =
-                getPhotoElements();
-
             updateUndoButton(elements);
             updateScoreList(elements);
             updateApplyToEndButton();
 
             window.alert(
-                "写真の6本を登録しました。"
+                "写真の記録を登録しました。"
             );
         } finally {
             applyToEndButton.textContent =
@@ -755,8 +753,8 @@
 
         applyToEndButton.disabled =
             !(
-                pins.length === 6 &&
-                readyPins.length === 6
+                pins.length >= 1 &&
+                readyPins.length === pins.length
             );
     }
 
