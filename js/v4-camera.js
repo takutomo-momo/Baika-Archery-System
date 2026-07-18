@@ -43,6 +43,8 @@
     let impactDrag = null;
     let currentAiCandidateIndex = 0;
     let showAllImpactPins = true;
+    let photoSelectionMode = false;
+    const selectedPhotoIds = new Set();
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
@@ -51,6 +53,7 @@
     function initializeCameraMode() {
         let el = getElements();
         ensureAnalysisControls(el);
+        ensurePhotoManagementControls();
         el = getElements();
         if (!el.open || !el.modal || !el.video) return;
 
@@ -150,6 +153,7 @@
         if (!el.listModal) return;
         el.listModal.hidden = false;
         document.body.classList.add("v4-camera-open");
+        ensurePhotoManagementControls();
         await renderPhotoList();
     }
 
@@ -167,40 +171,141 @@
         el.listGrid.innerHTML = "";
         try {
             const photos = await getAllPhotos();
-            const analyses = await getAllAnalyses();
-            const analysisByPhotoId = new Map(analyses.map(function (item) { return [Number(item.photoId), item]; }));
             photos.sort(function (a, b) { return String(b.createdAt || "").localeCompare(String(a.createdAt || "")); });
+            const existingIds = new Set(photos.map(function (photo) { return Number(photo.id); }));
+            Array.from(selectedPhotoIds).forEach(function (id) {
+                if (!existingIds.has(Number(id))) selectedPhotoIds.delete(id);
+            });
             const pending = photos.filter(function (photo) { return photo.status !== "complete"; }).length;
             el.listTotal.textContent = String(photos.length);
             el.listPending.textContent = String(pending);
             el.listEmpty.hidden = photos.length !== 0;
             el.listGrid.hidden = photos.length === 0;
+            updatePhotoSelectionToolbar(photos);
 
             photos.forEach(function (photo) {
+                const photoId = Number(photo.id);
                 const url = URL.createObjectURL(photo.blob);
                 listObjectUrls.push(url);
-                const card = document.createElement("button");
-                card.type = "button";
-                card.className = "v4-photo-card";
-                const statusText = photo.status === "complete" ? "入力済み" : "未入力";
-                const statusClass = photo.status === "complete" ? " is-complete" : "";
-                const savedAnalysis = analysisByPhotoId.get(Number(photo.id));
-                const analysisText = savedAnalysis && savedAnalysis.status === "analyzed" ? "AI解析済み" : "未解析";
-                const analysisClass = savedAnalysis && savedAnalysis.status === "analyzed" ? " is-analyzed" : "";
-                card.innerHTML = '<img class="v4-photo-card-image" alt="End ' + escapeHtml(photo.endNumber) + ' の的写真">'
+                const card = document.createElement("article");
+                card.className = "v4-photo-card v4-photo-manage-card" + (selectedPhotoIds.has(photoId) ? " is-selected" : "");
+                card.dataset.photoId = String(photoId);
+                const complete = photo.status === "complete";
+                card.innerHTML = '<label class="v4-photo-select-box" title="削除する写真を選択">'
+                    + '<input type="checkbox" class="v4-photo-select-input" ' + (selectedPhotoIds.has(photoId) ? "checked" : "") + '><span>選択</span></label>'
+                    + '<button type="button" class="v4-photo-open-button">'
+                    + '<img class="v4-photo-card-image" alt="End ' + escapeHtml(photo.endNumber) + ' の的写真">'
                     + '<div class="v4-photo-card-body">'
-                    + '<div class="v4-photo-card-title"><span>📷 End ' + escapeHtml(photo.endNumber) + '</span><span class="v4-photo-card-status' + statusClass + '">' + statusText + '</span></div>'
-                    + '<div class="v4-photo-card-badges"><span class="v4-photo-card-analysis' + analysisClass + '">' + analysisText + '</span></div>'
+                    + '<div class="v4-photo-card-title"><span>📷 End ' + escapeHtml(photo.endNumber) + '</span><span class="v4-photo-card-status' + (complete ? " is-complete" : "") + '">' + (complete ? "✓ 入力済み" : "未入力") + '</span></div>'
                     + '<div class="v4-photo-card-meta"><span>🕒 ' + formatDateTime(photo.createdAt) + '</span><span>🎯 ' + escapeHtml(photo.distance || "距離未設定") + '</span></div>'
+                    + '</div></button>'
+                    + '<div class="v4-photo-card-actions">'
+                    + '<label class="v4-photo-complete-toggle"><input type="checkbox" class="v4-photo-complete-input" ' + (complete ? "checked" : "") + '><span>入力済み</span></label>'
+                    + '<button type="button" class="v4-photo-delete-button">削除</button>'
                     + '</div>';
                 card.querySelector("img").src = url;
-                card.addEventListener("click", function () { openPhotoPreview(photo); });
+                card.querySelector(".v4-photo-open-button").addEventListener("click", function () { openPhotoPreview(photo); });
+                card.querySelector(".v4-photo-select-input").addEventListener("change", function (event) {
+                    if (event.target.checked) selectedPhotoIds.add(photoId); else selectedPhotoIds.delete(photoId);
+                    card.classList.toggle("is-selected", event.target.checked);
+                    updatePhotoSelectionToolbar(photos);
+                });
+                card.querySelector(".v4-photo-complete-input").addEventListener("change", async function (event) {
+                    await setPhotoComplete(photoId, event.target.checked);
+                    await renderPhotoList();
+                });
+                card.querySelector(".v4-photo-delete-button").addEventListener("click", async function () {
+                    if (!window.confirm("この写真を削除しますか？\n登録済みの得点・グルーピング記録は削除されません。")) return;
+                    await deletePhoto(photoId);
+                    selectedPhotoIds.delete(photoId);
+                    await refreshCounts();
+                    await renderPhotoList();
+                });
                 el.listGrid.appendChild(card);
             });
         } catch (error) {
             console.error("Photo list failed:", error);
             window.alert("撮影済み一覧を読み込めませんでした。");
         }
+    }
+
+    function ensurePhotoManagementControls() {
+        const listGrid = document.getElementById("v4PhotoListGrid");
+        if (listGrid && !document.getElementById("v4PhotoSelectionToolbar")) {
+            const toolbar = document.createElement("div");
+            toolbar.id = "v4PhotoSelectionToolbar";
+            toolbar.className = "v4-photo-selection-toolbar";
+            toolbar.innerHTML = '<button type="button" id="v4PhotoSelectionModeButton">複数選択</button>'
+                + '<button type="button" id="v4SelectCompletedPhotosButton">入力済みを選択</button>'
+                + '<span id="v4PhotoSelectedCount">0枚選択中</span>'
+                + '<button type="button" id="v4DeleteSelectedPhotosButton" class="is-danger" disabled>選択した写真を削除</button>';
+            listGrid.parentNode.insertBefore(toolbar, listGrid);
+            document.getElementById("v4PhotoSelectionModeButton").addEventListener("click", function () {
+                photoSelectionMode = !photoSelectionMode;
+                if (!photoSelectionMode) selectedPhotoIds.clear();
+                renderPhotoList();
+            });
+            document.getElementById("v4SelectCompletedPhotosButton").addEventListener("click", async function () {
+                const photos = await getAllPhotos();
+                selectedPhotoIds.clear();
+                photos.filter(function (photo) { return photo.status === "complete"; }).forEach(function (photo) { selectedPhotoIds.add(Number(photo.id)); });
+                photoSelectionMode = true;
+                await renderPhotoList();
+            });
+            document.getElementById("v4DeleteSelectedPhotosButton").addEventListener("click", deleteSelectedPhotos);
+        }
+
+        const previewShell = document.querySelector(".v4-photo-preview-shell");
+        if (previewShell && !document.getElementById("v4DeletePreviewPhotoButton")) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.id = "v4DeletePreviewPhotoButton";
+            button.className = "v4-preview-delete-photo-button";
+            button.textContent = "写真を削除";
+            button.addEventListener("click", async function () {
+                if (!currentPreviewPhoto || currentPreviewPhoto.id == null) return;
+                if (!window.confirm("この写真を削除しますか？\n登録済みの得点・グルーピング記録は削除されません。")) return;
+                const id = Number(currentPreviewPhoto.id);
+                await deletePhoto(id);
+                selectedPhotoIds.delete(id);
+                closePhotoPreview();
+                await refreshCounts();
+                await renderPhotoList();
+            });
+            previewShell.appendChild(button);
+        }
+    }
+
+    function updatePhotoSelectionToolbar(photos) {
+        const toolbar = document.getElementById("v4PhotoSelectionToolbar");
+        if (!toolbar) return;
+        toolbar.classList.toggle("is-selection-mode", photoSelectionMode);
+        const modeButton = document.getElementById("v4PhotoSelectionModeButton");
+        const count = document.getElementById("v4PhotoSelectedCount");
+        const deleteButton = document.getElementById("v4DeleteSelectedPhotosButton");
+        if (modeButton) modeButton.textContent = photoSelectionMode ? "選択を終了" : "複数選択";
+        if (count) count.textContent = selectedPhotoIds.size + "枚選択中";
+        if (deleteButton) deleteButton.disabled = selectedPhotoIds.size === 0;
+        document.body.classList.toggle("v4-photo-selection-active", photoSelectionMode);
+    }
+
+    async function deleteSelectedPhotos() {
+        const ids = Array.from(selectedPhotoIds);
+        if (!ids.length) return;
+        if (!window.confirm("選択した" + ids.length + "枚の写真を削除しますか？\n登録済みの得点・グルーピング記録は削除されません。")) return;
+        for (const id of ids) await deletePhoto(Number(id));
+        selectedPhotoIds.clear();
+        photoSelectionMode = false;
+        await refreshCounts();
+        await renderPhotoList();
+    }
+
+    async function setPhotoComplete(photoId, complete) {
+        const photo = await getPhoto(Number(photoId));
+        if (!photo) return;
+        photo.status = complete ? "complete" : "pending";
+        photo.inputCompletedAt = complete ? new Date().toISOString() : null;
+        await putPhoto(photo);
     }
 
     function blobToDataUrl(blob) {
@@ -1650,6 +1755,9 @@
         databaseName: DB_NAME,
         storeName: STORE_NAME,
         refreshCounts: refreshCounts,
-        getAllPhotos: getAllPhotos
+        getAllPhotos: getAllPhotos,
+        markPhotoComplete: function (photoId) { return setPhotoComplete(photoId, true); },
+        markPhotoPending: function (photoId) { return setPhotoComplete(photoId, false); },
+        deletePhoto: deletePhoto
     };
 })();
