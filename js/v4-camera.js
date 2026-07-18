@@ -39,6 +39,8 @@
     let selectedAiCandidateId = null;
     let pendingImpactCandidateId = null;
     let impactDrag = null;
+    let currentAiCandidateIndex = 0;
+    let showAllImpactPins = true;
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
 
@@ -481,10 +483,12 @@
             }).filter(Boolean);
             const candidates = window.BaikaArrowCandidateDetector.detect(el.savedPreview, {
                 maxSide: 900,
-                maxCandidates: 12,
+                maxCandidates: 60,
                 targetColor: selectedArrowColor,
                 profileColors: profileColors
             });
+            currentAiCandidateIndex = 0;
+            showAllImpactPins = true;
             renderSavedCandidates(candidates);
 
             currentPhotoAnalysis = {
@@ -930,19 +934,30 @@
         const el = getElements();
         const layer = el.candidateLayer;
         const image = el.savedPreview;
+        candidates = Array.isArray(candidates) ? candidates : [];
         if (!layer || !image || !image.naturalWidth || !image.naturalHeight) return;
+
+        const excludedIds = currentPhotoAnalysis && Array.isArray(currentPhotoAnalysis.excludedCandidateIds)
+            ? currentPhotoAnalysis.excludedCandidateIds.map(Number) : [];
+        const visibleCandidates = candidates.filter(function (candidate) {
+            return excludedIds.indexOf(Number(candidate.id)) < 0;
+        });
+        if (currentAiCandidateIndex >= visibleCandidates.length) currentAiCandidateIndex = Math.max(0, visibleCandidates.length - 1);
+        const currentCandidate = visibleCandidates[currentAiCandidateIndex] || null;
+
         layer.setAttribute("viewBox", "0 0 " + image.naturalWidth + " " + image.naturalHeight);
         layer.innerHTML = "";
         const confirmedIds = getConfirmedCandidateIds();
         const impactPins = currentPhotoPins && Array.isArray(currentPhotoPins.impactPins) ? currentPhotoPins.impactPins : [];
 
-        candidates.forEach(function (candidate, index) {
+        visibleCandidates.forEach(function (candidate, index) {
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             const confirmed = confirmedIds.indexOf(Number(candidate.id)) >= 0;
-            group.setAttribute("class", "v4-saved-candidate" + (confirmed ? " is-selected" : ""));
+            const current = currentCandidate && Number(currentCandidate.id) === Number(candidate.id);
+            group.setAttribute("class", "v4-saved-candidate" + (confirmed ? " is-selected" : "") + (current ? " is-current" : ""));
             const radius = Math.max(14, Math.min(image.naturalWidth, image.naturalHeight) * 0.018);
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-            circle.setAttribute("cx", candidate.x); circle.setAttribute("cy", candidate.y); circle.setAttribute("r", confirmed ? radius * 1.18 : radius);
+            circle.setAttribute("cx", candidate.x); circle.setAttribute("cy", candidate.y); circle.setAttribute("r", current ? radius * 1.28 : radius);
             const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
             text.setAttribute("x", candidate.x); text.setAttribute("y", candidate.y + radius * 0.28);
             text.setAttribute("text-anchor", "middle"); text.setAttribute("font-size", radius * 0.95);
@@ -951,11 +966,12 @@
         });
 
         impactPins.forEach(function (pin, index) {
+            if (!showAllImpactPins && currentCandidate && Number(pin.candidateId) !== Number(currentCandidate.id)) return;
             const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
             group.setAttribute("class", "v4-impact-pin");
             group.setAttribute("data-impact-candidate-id", String(pin.candidateId));
             group.setAttribute("role", "button");
-            group.setAttribute("aria-label", "得点ピン" + (index + 1) + "。ドラッグで移動、長押しで削除");
+            group.setAttribute("aria-label", "着弾ピン" + (index + 1) + "。ドラッグで移動、長押しで削除");
             const radius = Math.max(16, Math.min(image.naturalWidth, image.naturalHeight) * 0.020);
             const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
             circle.setAttribute("cx", pin.x); circle.setAttribute("cy", pin.y); circle.setAttribute("r", radius);
@@ -967,26 +983,77 @@
         });
 
         if (el.candidatePanel && el.candidateList) {
-            el.candidatePanel.hidden = candidates.length === 0;
-            el.candidateList.innerHTML = candidates.map(function (candidate, index) {
-                const percent = Math.max(0, Math.min(99, Math.round((candidate.confidence || 0) * 100)));
-                const matched = (candidate.matchedParts || []).map(function (part) { return PROFILE_LABELS[part] || part; }).join("・");
-                const confirmed = confirmedIds.indexOf(Number(candidate.id)) >= 0;
-                const hasImpact = impactPins.some(function (pin) { return Number(pin.candidateId) === Number(candidate.id); });
-                return '<button type="button" class="v4-ai-candidate-button' + (confirmed ? ' is-selected' : '') + '" data-ai-candidate-id="' + candidate.id + '">' +
-                    '<span class="v4-ai-candidate-number">' + (confirmed ? '✓' : (index + 1)) + '</span>' +
-                    '<span class="v4-ai-candidate-info"><strong>一致率 ' + percent + '%</strong><small>' + (matched || '配色候補') + '</small></span>' +
-                    '<span class="v4-ai-candidate-action">' + (hasImpact ? '得点位置済み' : (confirmed ? '刺さり位置を指定' : '矢候補を確認')) + '</span></button>';
-            }).join("");
+            el.candidatePanel.hidden = visibleCandidates.length === 0;
+            if (!currentCandidate) {
+                el.candidateList.innerHTML = "";
+                return;
+            }
+            const percent = Math.max(0, Math.min(99, Math.round((currentCandidate.confidence || 0) * 100)));
+            const matched = (currentCandidate.matchedParts || []).map(function (part) { return PROFILE_LABELS[part] || part; }).join("・") || "配色候補";
+            const confirmed = confirmedIds.indexOf(Number(currentCandidate.id)) >= 0;
+            const hasImpact = impactPins.some(function (pin) { return Number(pin.candidateId) === Number(currentCandidate.id); });
+            const confirmedCount = visibleCandidates.filter(function (candidate) { return confirmedIds.indexOf(Number(candidate.id)) >= 0; }).length;
+            el.candidateList.innerHTML =
+                '<div class="v4-ai-carousel-nav">' +
+                    '<button type="button" data-ai-action="prev" aria-label="前の候補">‹</button>' +
+                    '<strong>候補 ' + (currentAiCandidateIndex + 1) + ' / ' + visibleCandidates.length + '</strong>' +
+                    '<button type="button" data-ai-action="next" aria-label="次の候補">›</button>' +
+                '</div>' +
+                '<div class="v4-ai-carousel-card' + (confirmed ? ' is-selected' : '') + '">' +
+                    '<span class="v4-ai-candidate-number">' + (currentAiCandidateIndex + 1) + '</span>' +
+                    '<span class="v4-ai-candidate-info"><strong>一致率 ' + percent + '%</strong><small>' + escapeHtml(matched) + '</small></span>' +
+                '</div>' +
+                '<div class="v4-ai-carousel-actions">' +
+                    '<button type="button" class="v4-ai-primary-action" data-ai-action="place" data-ai-candidate-id="' + currentCandidate.id + '">' + (hasImpact ? '刺さり位置を変更' : 'この矢の刺さり位置を指定') + '</button>' +
+                    '<button type="button" data-ai-action="exclude" data-ai-candidate-id="' + currentCandidate.id + '">候補から除外</button>' +
+                '</div>' +
+                '<div class="v4-ai-carousel-footer"><span>確認済み ' + confirmedCount + ' / ' + visibleCandidates.length + '</span>' +
+                    '<button type="button" data-ai-action="toggle-pins">' + (showAllImpactPins ? '現在のピンだけ表示' : '全ピン表示') + '</button></div>';
         }
     }
 
     async function selectAiCandidate(event) {
-        const button = event.target.closest("[data-ai-candidate-id]");
-        if (!button || !currentPreviewPhoto || !currentPhotoAnalysis || !Array.isArray(currentPhotoAnalysis.candidates)) return;
-        const id = Number(button.getAttribute("data-ai-candidate-id"));
+        const actionButton = event.target.closest("[data-ai-action]");
+        if (!actionButton || !currentPhotoAnalysis || !Array.isArray(currentPhotoAnalysis.candidates)) return;
+        const action = actionButton.getAttribute("data-ai-action");
+        const excludedIds = Array.isArray(currentPhotoAnalysis.excludedCandidateIds) ? currentPhotoAnalysis.excludedCandidateIds.map(Number) : [];
+        const visibleCandidates = currentPhotoAnalysis.candidates.filter(function (candidate) { return excludedIds.indexOf(Number(candidate.id)) < 0; });
+
+        if (action === "prev" || action === "next") {
+            if (!visibleCandidates.length) return;
+            const direction = action === "prev" ? -1 : 1;
+            currentAiCandidateIndex = (currentAiCandidateIndex + direction + visibleCandidates.length) % visibleCandidates.length;
+            pendingImpactCandidateId = null;
+            renderSavedCandidates(currentPhotoAnalysis.candidates);
+            return;
+        }
+        if (action === "toggle-pins") {
+            showAllImpactPins = !showAllImpactPins;
+            renderSavedCandidates(currentPhotoAnalysis.candidates);
+            return;
+        }
+
+        const id = Number(actionButton.getAttribute("data-ai-candidate-id"));
         const candidate = currentPhotoAnalysis.candidates.find(function (item) { return Number(item.id) === id; });
         if (!candidate) return;
+
+        if (action === "exclude") {
+            if (!Array.isArray(currentPhotoAnalysis.excludedCandidateIds)) currentPhotoAnalysis.excludedCandidateIds = [];
+            if (currentPhotoAnalysis.excludedCandidateIds.map(Number).indexOf(id) < 0) currentPhotoAnalysis.excludedCandidateIds.push(id);
+            if (Array.isArray(currentPhotoAnalysis.confirmedCandidates)) {
+                currentPhotoAnalysis.confirmedCandidates = currentPhotoAnalysis.confirmedCandidates.filter(function (item) { return Number(item.id) !== id; });
+            }
+            if (currentPhotoPins && Array.isArray(currentPhotoPins.impactPins)) {
+                currentPhotoPins.impactPins = currentPhotoPins.impactPins.filter(function (pin) { return Number(pin.candidateId) !== id; });
+                try { await putPins(currentPhotoPins); } catch (error) { console.warn("Excluded pin save failed:", error); }
+            }
+            pendingImpactCandidateId = null;
+            try { await putAnalysis(currentPhotoAnalysis); } catch (error) { console.warn("Excluded candidate save failed:", error); }
+            renderSavedCandidates(currentPhotoAnalysis.candidates);
+            return;
+        }
+
+        if (action !== "place" || !currentPreviewPhoto) return;
         if (!Array.isArray(currentPhotoAnalysis.confirmedCandidates)) currentPhotoAnalysis.confirmedCandidates = [];
         const exists = currentPhotoAnalysis.confirmedCandidates.some(function (item) { return Number(item.id) === id; });
         if (!exists) currentPhotoAnalysis.confirmedCandidates.push({ id: id, x: candidate.x, y: candidate.y, confidence: candidate.confidence, confirmedAt: new Date().toISOString() });
@@ -996,8 +1063,8 @@
         const el = getElements();
         const hasPin = currentPhotoPins && Array.isArray(currentPhotoPins.impactPins) && currentPhotoPins.impactPins.some(function (pin) { return Number(pin.candidateId) === id; });
         if (el.analysisStatus) el.analysisStatus.textContent = hasPin
-            ? "候補" + id + "の得点位置を変更できます。写真上の新しい位置をタップするか、緑ピンをドラッグしてください。"
-            : "紫の印はノック候補です。候補" + id + "の矢が的へ刺さっている位置を写真上でタップしてください。";
+            ? "候補" + (currentAiCandidateIndex + 1) + "の刺さり位置を変更できます。写真上の新しい位置をタップしてください。"
+            : "紫の印はノック候補です。この矢が的へ刺さっている位置を写真上でタップしてください。";
     }
 
     async function placeImpactPinFromPhotoTap(event) {
@@ -1030,8 +1097,10 @@
         if (!controls) {
             controls = document.createElement("div");
             controls.className = "v4-photo-analysis-controls v4-photo-analysis-controls-persistent";
-            shell.appendChild(controls);
+            shell.insertBefore(controls, shell.firstChild);
         }
+
+        if (controls.parentNode === shell && shell.firstElementChild !== controls) shell.insertBefore(controls, shell.firstChild);
 
         if (!document.getElementById("v4AnalyzeSavedPhotoButton")) {
             const button = document.createElement("button");
@@ -1155,6 +1224,8 @@
         if (el.candidatePanel) el.candidatePanel.hidden = true;
         selectedAiCandidateId = null;
         pendingImpactCandidateId = null;
+        currentAiCandidateIndex = 0;
+        showAllImpactPins = true;
     }
 
     function revokeListObjectUrls() {

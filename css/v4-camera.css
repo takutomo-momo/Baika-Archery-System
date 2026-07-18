@@ -511,3 +511,53 @@ body.v4-camera-open { overflow:hidden; position:fixed; width:100%; }
 .v4-impact-pin:active{cursor:grabbing}
 .v4-impact-pin circle{pointer-events:auto}
 .v4-impact-pin text{pointer-events:none;user-select:none}
+
+/* Step38: AI候補を1件ずつ確認・12本以上のグルーピングに対応 */
+.v4-photo-preview-modal{overflow:hidden}
+.v4-photo-preview-shell{
+  justify-content:flex-start;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:max(14px,env(safe-area-inset-bottom));
+}
+.v4-photo-analysis-controls-persistent,
+.v4-photo-analysis-controls{
+  position:sticky;
+  top:0;
+  z-index:30;
+  order:-10;
+  width:min(100%,1000px);
+  grid-template-columns:auto minmax(0,1fr) !important;
+  padding-right:58px;
+  flex:0 0 auto;
+  background:rgba(15,23,42,.96);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+}
+#v4AnalyzeSavedPhotoButton{width:auto !important;min-width:132px}
+.v4-photo-preview-close{position:fixed;z-index:40;top:max(14px,env(safe-area-inset-top));right:max(14px,env(safe-area-inset-right))}
+.v4-photo-analysis-stage{flex:0 0 auto;width:100%;height:min(54dvh,560px);max-height:none}
+.v4-photo-preview-meta{flex:0 0 auto}
+.v4-ai-candidate-panel{width:min(100%,720px);flex:0 0 auto;margin:0;padding:9px}
+.v4-ai-candidate-list{display:grid;grid-template-columns:1fr;max-height:none;overflow:visible;gap:8px}
+.v4-ai-carousel-nav{display:grid;grid-template-columns:48px 1fr 48px;align-items:center;gap:8px}
+.v4-ai-carousel-nav strong{text-align:center;font-size:15px}
+.v4-ai-carousel-nav button{height:42px;border:1px solid #ddd6fe;border-radius:11px;background:#f5f3ff;color:#6d28d9;font-size:27px;font-weight:900}
+.v4-ai-carousel-card{display:grid;grid-template-columns:38px 1fr;align-items:center;gap:9px;padding:8px 10px;border:1px solid #ddd6fe;border-radius:11px;background:#fff}
+.v4-ai-carousel-card.is-selected{border-color:#16a34a;background:#f0fdf4}
+.v4-ai-carousel-actions{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+.v4-ai-carousel-actions button,.v4-ai-carousel-footer button{min-height:40px;border:1px solid #cbd5e1;border-radius:10px;padding:7px 10px;background:#f8fafc;color:#475569;font:inherit;font-size:11px;font-weight:900}
+.v4-ai-carousel-actions .v4-ai-primary-action{border:0;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
+.v4-ai-carousel-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#475569;font-size:11px;font-weight:850}
+.v4-saved-candidate.is-current circle{stroke:#f59e0b;stroke-width:10;filter:drop-shadow(0 0 5px rgba(245,158,11,.85))}
+.v4-arrow-profile-panel{flex:0 0 auto}
+@media(max-width:640px){
+  .v4-photo-preview-shell{padding-top:0}
+  .v4-photo-analysis-controls-persistent,.v4-photo-analysis-controls{grid-template-columns:124px minmax(0,1fr) !important;padding:7px 52px 7px 7px}
+  #v4AnalyzeSavedPhotoButton{min-width:0;width:100% !important;padding:8px 7px;font-size:12px}
+  .v4-photo-analysis-status{text-align:left;font-size:10px;line-height:1.3;max-height:2.7em;overflow:hidden}
+  .v4-photo-analysis-stage{height:min(50dvh,470px)}
+  .v4-ai-candidate-heading small{display:none}
+  .v4-ai-carousel-actions{grid-template-columns:1fr 104px}
+}
