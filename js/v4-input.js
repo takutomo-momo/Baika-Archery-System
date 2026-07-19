@@ -336,7 +336,6 @@ function renderTargetPins() {
 
     targetSource.forEach(function (arrow, index) {
 if (
-    arrow.val === "M" ||
     arrow.x == null ||
     arrow.y == null
 ) {

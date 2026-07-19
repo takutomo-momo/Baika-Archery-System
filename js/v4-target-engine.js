@@ -342,8 +342,13 @@
         event.stopPropagation();
 
         const finishedDrag = activeDrag;
+        /*
+         * pointerup時はブラウザ側で座標がわずかに変わることがある。
+         * ドラッグ中に確定した最後のSVG座標をそのまま使用し、
+         * ピンが別位置へ飛んだりM判定になって消えることを防ぐ。
+         */
         const point = finishedDrag.moved
-            ? (getSvgPoint(event) || finishedDrag.lastPoint)
+            ? finishedDrag.lastPoint
             : finishedDrag.originalPoint;
 
         /*
