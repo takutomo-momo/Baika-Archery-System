@@ -1222,8 +1222,26 @@
         try {
             const photo = await getPhoto(Number(photoId));
             if (!photo || !photo.blob) return;
+
+            // Step52: よく似た的写真の取り違えを防ぐため、
+            // 入力画面へ表示する前に「入力済み／未入力」を必ず確認する。
+            const status = getPhotoStatus(photo);
+            const isComplete = status === "complete";
+            const statusLabel = isComplete ? "入力済み" : "未入力";
+            const confirmMessage = isComplete
+                ? "この写真は【入力済み】です。\n\n再入力・確認のために開きますか？"
+                : "この写真は【未入力】です。\n\n入力画面に表示しますか？";
+
+            if (!window.confirm(confirmMessage)) return;
+
             window.dispatchEvent(new CustomEvent("baika:select-local-photo", {
-                detail: { photoId: Number(photo.id), blob: photo.blob, name: "target-photo-" + photo.id + ".jpg" }
+                detail: {
+                    photoId: Number(photo.id),
+                    blob: photo.blob,
+                    name: "target-photo-" + photo.id + ".jpg",
+                    status: status,
+                    statusLabel: statusLabel
+                }
             }));
             closePhotoList();
         } catch (error) {
