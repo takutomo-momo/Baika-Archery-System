@@ -45,6 +45,7 @@
     let showAllImpactPins = true;
     let photoSelectionMode = false;
     let photoPickerMode = false;
+    let photoListFilter = "all";
     const selectedPhotoIds = new Set();
     const PROFILE_PARTS = ["nock", "vane1", "vane2", "vane3"];
     const PROFILE_LABELS = { nock: "ノック", vane1: "羽①", vane2: "羽②", vane3: "羽③" };
@@ -168,13 +169,26 @@
                 if (!existingIds.has(Number(id))) selectedPhotoIds.delete(id);
             });
             const pending = photos.filter(function (photo) { return getPhotoStatus(photo) !== "complete"; }).length;
+            const filteredPhotos = photos.filter(function (photo) {
+                const complete = getPhotoStatus(photo) === "complete";
+                if (photoListFilter === "pending") return !complete;
+                if (photoListFilter === "complete") return complete;
+                return true;
+            });
             el.listTotal.textContent = String(photos.length);
             el.listPending.textContent = String(pending);
-            el.listEmpty.hidden = photos.length !== 0;
-            el.listGrid.hidden = photos.length === 0;
+            el.listEmpty.hidden = filteredPhotos.length !== 0;
+            el.listGrid.hidden = filteredPhotos.length === 0;
+            if (el.listEmpty && photos.length > 0 && filteredPhotos.length === 0) {
+                el.listEmpty.textContent = photoListFilter === "pending"
+                    ? "未入力の写真はありません。"
+                    : "入力済みの写真はありません。";
+            } else if (el.listEmpty) {
+                el.listEmpty.textContent = "撮影済みの写真はありません。";
+            }
             updatePhotoSelectionToolbar(photos);
 
-            photos.forEach(function (photo) {
+            filteredPhotos.forEach(function (photo) {
                 const photoId = Number(photo.id);
                 const url = URL.createObjectURL(photo.blob);
                 listObjectUrls.push(url);
@@ -195,8 +209,7 @@
                     + '</div>';
                 card.querySelector("img").src = url;
                 card.querySelector(".v4-photo-open-button").addEventListener("click", function () {
-                    // 写真一覧を統合したため、写真カードのタップは常に
-                    // 入力画面への写真選択として処理する。
+                    // Step50: 統合一覧では写真カードのタップを常に入力写真の選択として扱う。
                     selectPhotoForTargetInput(photoId);
                 });
                 card.querySelector(".v4-photo-select-input").addEventListener("change", function (event) {
@@ -225,8 +238,12 @@
             const toolbar = document.createElement("div");
             toolbar.id = "v4PhotoSelectionToolbar";
             toolbar.className = "v4-photo-selection-toolbar";
-            toolbar.innerHTML = '<button type="button" id="v4PhotoSelectionModeButton">複数選択</button>'
-                + '<button type="button" id="v4SelectCompletedPhotosButton">入力済みを選択</button>'
+            toolbar.innerHTML = '<div class="v4-photo-filter-buttons" role="group" aria-label="写真の表示切替">'
+                + '<button type="button" id="v4PhotoFilterAllButton" data-photo-filter="all">すべて</button>'
+                + '<button type="button" id="v4PhotoFilterPendingButton" data-photo-filter="pending">未入力</button>'
+                + '<button type="button" id="v4PhotoFilterCompleteButton" data-photo-filter="complete">入力済み</button>'
+                + '</div>'
+                + '<button type="button" id="v4PhotoSelectionModeButton">複数選択</button>'
                 + '<span id="v4PhotoSelectedCount">0枚選択中</span>'
                 + '<button type="button" id="v4DeleteSelectedPhotosButton" class="is-danger" disabled>選択した写真を削除</button>';
             listGrid.parentNode.insertBefore(toolbar, listGrid);
@@ -235,12 +252,11 @@
                 if (!photoSelectionMode) selectedPhotoIds.clear();
                 renderPhotoList();
             });
-            document.getElementById("v4SelectCompletedPhotosButton").addEventListener("click", async function () {
-                const photos = await getAllPhotos();
-                selectedPhotoIds.clear();
-                photos.filter(function (photo) { return getPhotoStatus(photo) === "complete"; }).forEach(function (photo) { selectedPhotoIds.add(Number(photo.id)); });
-                photoSelectionMode = true;
-                await renderPhotoList();
+            toolbar.querySelectorAll("[data-photo-filter]").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    photoListFilter = button.getAttribute("data-photo-filter") || "all";
+                    renderPhotoList();
+                });
             });
             document.getElementById("v4DeleteSelectedPhotosButton").addEventListener("click", deleteSelectedPhotos);
         }
@@ -273,6 +289,11 @@
         const modeButton = document.getElementById("v4PhotoSelectionModeButton");
         const count = document.getElementById("v4PhotoSelectedCount");
         const deleteButton = document.getElementById("v4DeleteSelectedPhotosButton");
+        toolbar.querySelectorAll("[data-photo-filter]").forEach(function (button) {
+            const active = button.getAttribute("data-photo-filter") === photoListFilter;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
         if (modeButton) modeButton.textContent = photoSelectionMode ? "選択を終了" : "複数選択";
         if (count) count.textContent = selectedPhotoIds.size + "枚選択中";
         if (deleteButton) deleteButton.disabled = selectedPhotoIds.size === 0;
