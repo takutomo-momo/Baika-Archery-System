@@ -1079,6 +1079,7 @@
                 "0 2px 6px rgba(0, 0, 0, 0.35)";
             dot.style.pointerEvents = "auto";
             dot.style.touchAction = "none";
+            dot.style.touchAction = "none";
             dot.style.cursor = "grab";
             dot.style.userSelect = "none";
             dot.style.webkitUserSelect = "none";
@@ -1099,6 +1100,7 @@
                 "translate(-50%, -50%)";
 
             dot.dataset.pinIndex = String(index);
+            dot.dataset.baikaPhotoPin = "true";
 
             bindPinDrag(
                 dot,

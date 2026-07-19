@@ -66,7 +66,6 @@
             };
 
             this.lastTapTime = 0;
-            this.singleTapTimer = null;
             this.resizeObserver = null;
 
             this.handlePointerDown =
@@ -190,11 +189,6 @@
             }
 
             this.pointers.clear();
-
-            if (this.singleTapTimer) {
-                clearTimeout(this.singleTapTimer);
-                this.singleTapTimer = null;
-            }
         }
 
         setLoaded(loaded) {
@@ -229,6 +223,25 @@
                 return;
             }
 
+            /*
+             * Step56-1:
+             * 写真上の着弾ピンを操作している間は、写真本体の
+             * パン／ピンチ処理へ同じPointerEventを渡さない。
+             * iPhone SafariではstopPropagationだけでは写真側が
+             * 反応する場合があるため、エンジン側でも明示的に遮断する。
+             */
+            if (
+                global.baikaPhotoPinDragging === true ||
+                (
+                    event.target instanceof Element &&
+                    event.target.closest(
+                        '[data-baika-photo-pin="true"]'
+                    )
+                )
+            ) {
+                return;
+            }
+
             if (
                 event.pointerType === "mouse" &&
                 event.button !== 0
@@ -259,6 +272,10 @@
         }
 
         handlePointerMove(event) {
+            if (global.baikaPhotoPinDragging === true) {
+                return;
+            }
+
             if (
                 !this.state.loaded ||
                 !this.pointers.has(event.pointerId)
@@ -461,7 +478,6 @@
                 this.gesture.moved ||
                 this.gesture.wasMultiTouch
             ) {
-                this.cancelSingleTap();
                 this.lastTapTime = 0;
                 return;
             }
@@ -472,69 +488,11 @@
                 now - this.lastTapTime <=
                 this.options.doubleTapDelay
             ) {
-                this.cancelSingleTap();
                 this.reset();
                 this.lastTapTime = 0;
-                return;
+            } else {
+                this.lastTapTime = now;
             }
-
-            this.lastTapTime = now;
-
-            const clientX = endedPointer.clientX;
-            const clientY = endedPointer.clientY;
-
-            this.cancelSingleTap();
-
-            this.singleTapTimer = setTimeout(() => {
-                this.singleTapTimer = null;
-                this.lastTapTime = 0;
-
-                const imagePoint =
-                    this.screenToImagePoint(
-                        clientX,
-                        clientY
-                    );
-
-                if (
-                    imagePoint.x < 0 ||
-                    imagePoint.y < 0 ||
-                    imagePoint.x >
-                        this.image.naturalWidth ||
-                    imagePoint.y >
-                        this.image.naturalHeight
-                ) {
-                    return;
-                }
-
-                this.viewer.dispatchEvent(
-                    new CustomEvent(
-                        "baika-photo-singletap",
-                        {
-                            detail: {
-                                clientX,
-                                clientY,
-                                imageX: imagePoint.x,
-                                imageY: imagePoint.y,
-                                normalizedX:
-                                    imagePoint.x /
-                                    this.image.naturalWidth,
-                                normalizedY:
-                                    imagePoint.y /
-                                    this.image.naturalHeight
-                            }
-                        }
-                    )
-                );
-            }, this.options.doubleTapDelay);
-        }
-
-        cancelSingleTap() {
-            if (!this.singleTapTimer) {
-                return;
-            }
-
-            clearTimeout(this.singleTapTimer);
-            this.singleTapTimer = null;
         }
 
         handleWheel(event) {
