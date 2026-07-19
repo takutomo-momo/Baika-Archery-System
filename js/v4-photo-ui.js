@@ -70,6 +70,7 @@
         createPinLayer(elements);
         createAimingCrosshair(elements);
         createApplyToEndButton(elements);
+        createScoreSummary(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
