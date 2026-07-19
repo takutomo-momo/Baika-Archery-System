@@ -11,6 +11,8 @@
 (function () {
     let activeDrag = null;
     let suppressClickUntil = 0;
+    let pendingFrame = 0;
+    let pendingPoint = null;
 
     function suppressNextClick() {
         suppressClickUntil =
@@ -310,23 +312,36 @@
             suppressNextClick();
         }
 
-        moveVisual(
-            activeDrag.pinElement,
-            activeDrag.labelElement,
-            point
-        );
+        pendingPoint = point;
 
-        if (
-            window.baikaTargetModel &&
-            typeof window.baikaTargetModel
-                .updatePinPosition === "function"
-        ) {
-            window.baikaTargetModel
-                .updatePinPosition(
-                    activeDrag.index,
-                    point.x,
-                    point.y
+        if (!pendingFrame) {
+            pendingFrame = window.requestAnimationFrame(function () {
+                pendingFrame = 0;
+                if (!activeDrag || !pendingPoint) {
+                    return;
+                }
+
+                const framePoint = pendingPoint;
+                pendingPoint = null;
+
+                moveVisual(
+                    activeDrag.pinElement,
+                    activeDrag.labelElement,
+                    framePoint
                 );
+
+                if (
+                    window.baikaTargetModel &&
+                    typeof window.baikaTargetModel
+                        .updatePinPosition === "function"
+                ) {
+                    window.baikaTargetModel.updatePinPosition(
+                        activeDrag.index,
+                        framePoint.x,
+                        framePoint.y
+                    );
+                }
+            });
         }
     }
 
@@ -340,6 +355,12 @@
 
         event.preventDefault();
         event.stopPropagation();
+
+        if (pendingFrame) {
+            window.cancelAnimationFrame(pendingFrame);
+            pendingFrame = 0;
+            pendingPoint = null;
+        }
 
         const finishedDrag = activeDrag;
         /*

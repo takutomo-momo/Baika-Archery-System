@@ -1777,12 +1777,59 @@
         };
     }
 
+
+    async function openNextPendingPhoto(currentPhotoId) {
+        try {
+            const photos = await getAllPhotos();
+            const pending = photos
+                .filter(function (photo) {
+                    return getPhotoStatus(photo) !== "complete";
+                })
+                .sort(function (a, b) {
+                    return Number(a.id) - Number(b.id);
+                });
+
+            if (pending.length === 0) {
+                return false;
+            }
+
+            const currentId = Number(currentPhotoId);
+            let next = pending.find(function (photo) {
+                return Number(photo.id) > currentId;
+            });
+
+            if (!next) {
+                next = pending[0];
+            }
+
+            if (!next || !next.blob) {
+                return false;
+            }
+
+            window.dispatchEvent(new CustomEvent("baika:select-local-photo", {
+                detail: {
+                    photoId: Number(next.id),
+                    blob: next.blob,
+                    name: "target-photo-" + next.id + ".jpg",
+                    status: "pending",
+                    statusLabel: "未入力"
+                }
+            }));
+
+            return true;
+        } catch (error) {
+            console.error("Next pending photo failed:", error);
+            return false;
+        }
+    }
+
     window.BaikaLocalPhotoStore = {
         databaseName: DB_NAME,
         storeName: STORE_NAME,
         refreshCounts: refreshCounts,
         getAllPhotos: getAllPhotos,
         openPicker: function () { return openPhotoList(true); },
+        openNextPendingPhoto: openNextPendingPhoto,
         markPhotoComplete: function (photoId) { return setPhotoComplete(photoId, true); },
         markPhotoPending: function (photoId) { return setPhotoComplete(photoId, false); },
         deletePhoto: deletePhoto

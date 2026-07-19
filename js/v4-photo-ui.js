@@ -784,9 +784,22 @@
             updateScoreList(elements);
             updateApplyToEndButton();
 
-            window.alert(
-                "写真の記録を登録しました。"
+            const moveNext = window.confirm(
+                "写真の記録を登録しました。\n\n次の未入力写真を開きますか？"
             );
+
+            if (
+                moveNext &&
+                window.BaikaLocalPhotoStore &&
+                typeof window.BaikaLocalPhotoStore.openNextPendingPhoto === "function"
+            ) {
+                const opened = await window.BaikaLocalPhotoStore
+                    .openNextPendingPhoto(selectedPhotoId);
+
+                if (!opened) {
+                    window.alert("未入力の写真はありません。");
+                }
+            }
         } finally {
             applyToEndButton.textContent =
                 "💾 写真を登録";
@@ -1472,6 +1485,7 @@
                 event.stopPropagation();
 
                 dragging = true;
+                window.baikaPhotoPinDragging = true;
                 pointerId = event.pointerId;
                 dragStartX = event.clientX;
                 dragStartY = event.clientY;
@@ -1608,6 +1622,7 @@
             event.stopPropagation();
 
             dragging = false;
+            window.baikaPhotoPinDragging = false;
             pointerId = null;
 
             dot.style.cursor = "grab";
@@ -1617,6 +1632,9 @@
             dot.style.opacity = "1";
 
             if (!moved) {
+                // Step55: ピンを短くタップすると、テンキーを使わず
+                // X〜Mの得点選択パネルを表示する。
+                editPinScore(pin, elements);
                 return;
             }
 
