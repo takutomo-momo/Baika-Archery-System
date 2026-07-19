@@ -783,9 +783,37 @@
             updateScoreList(elements);
             updateApplyToEndButton();
 
-            window.alert(
-                "写真の記録を登録しました。"
-            );
+            const shouldDeletePhoto =
+                Number.isFinite(selectedPhotoId) &&
+                selectedPhotoId > 0 &&
+                window.confirm(
+                    "写真の記録を登録しました。\n\n" +
+                    "得点記録はスプレッドシートに保存されています。\n" +
+                    "入力に使用した写真を削除しますか？"
+                );
+
+            if (
+                shouldDeletePhoto &&
+                window.BaikaLocalPhotoStore &&
+                typeof window.BaikaLocalPhotoStore.deletePhoto === "function"
+            ) {
+                try {
+                    await window.BaikaLocalPhotoStore.deletePhoto(selectedPhotoId);
+                    await window.BaikaLocalPhotoStore.refreshCounts();
+                    clearPhoto();
+                    window.alert("登録済みの写真を削除しました。");
+                } catch (error) {
+                    console.warn("Registered photo delete failed:", error);
+                    window.alert(
+                        "得点記録は保存されましたが、写真を削除できませんでした。\n" +
+                        "写真一覧から削除してください。"
+                    );
+                }
+            } else {
+                window.alert(
+                    "写真の記録を登録しました。\n写真は入力済みとして残しています。"
+                );
+            }
         } finally {
             applyToEndButton.textContent =
                 "💾 写真を登録";
@@ -1155,11 +1183,25 @@
                 );
             }).length;
 
+        const missCount =
+            scoredPins.filter(function (pin) {
+                return pin.score === "M";
+            }).length;
+
+        const average = scoredPins.length > 0
+            ? (total / scoredPins.length).toFixed(1)
+            : "0.0";
+
+        scoreSummary.style.gridTemplateColumns =
+            "repeat(3, minmax(0, 1fr))";
+
         scoreSummary.innerHTML =
             `<div>本数<br><strong>${scoredPins.length}</strong></div>`
             + `<div>合計<br><strong>${total}</strong></div>`
+            + `<div>平均<br><strong>${average}</strong></div>`
             + `<div>X<br><strong>${xCount}</strong></div>`
-            + `<div>10以上<br><strong>${tenCount}</strong></div>`;
+            + `<div>10以上<br><strong>${tenCount}</strong></div>`
+            + `<div>M<br><strong>${missCount}</strong></div>`;
     }
 
     function createScoreList(elements) {
