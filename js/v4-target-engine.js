@@ -406,10 +406,14 @@
         svg.dataset.targetEngineBound = "true";
 
         /*
-         * SVG全体のtouch-actionは変更しない。
-         * ピンク丸を掴んだ場合だけTarget Engineが処理し、
-         * それ以外は既存の的タップ・ズームへ渡す。
+         * Step56-2:
+         * iPhone横向きでピンをドラッグした際にページがスクロールし、
+         * 横の写真パネルまで動いて見える問題を防ぐ。
+         * 的の操作領域内ではブラウザ標準のスクロールを停止する。
          */
+        svg.style.touchAction = "none";
+        svg.style.webkitUserSelect = "none";
+        svg.style.userSelect = "none";
 
         svg.addEventListener(
             "pointerdown",

@@ -223,25 +223,6 @@
                 return;
             }
 
-            /*
-             * Step56-1:
-             * 写真上の着弾ピンを操作している間は、写真本体の
-             * パン／ピンチ処理へ同じPointerEventを渡さない。
-             * iPhone SafariではstopPropagationだけでは写真側が
-             * 反応する場合があるため、エンジン側でも明示的に遮断する。
-             */
-            if (
-                global.baikaPhotoPinDragging === true ||
-                (
-                    event.target instanceof Element &&
-                    event.target.closest(
-                        '[data-baika-photo-pin="true"]'
-                    )
-                )
-            ) {
-                return;
-            }
-
             if (
                 event.pointerType === "mouse" &&
                 event.button !== 0
@@ -272,10 +253,6 @@
         }
 
         handlePointerMove(event) {
-            if (global.baikaPhotoPinDragging === true) {
-                return;
-            }
-
             if (
                 !this.state.loaded ||
                 !this.pointers.has(event.pointerId)
