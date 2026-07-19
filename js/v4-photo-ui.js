@@ -12,7 +12,6 @@
 
     const pins = [];
     let pinLayer = null;
-    let step57AutoZoomSource = "";
     let aimingCrosshair = null;
     let scorePanel = null;
     let scoreEditingPin = null;
@@ -947,29 +946,6 @@
                 renderPins(elements);
                 renderArrowCandidates(elements);
 
-                /*
-                 * Step57:
-                 * 写真を開いた直後だけ400%へ自動拡大する。
-                 * 100%ボタンを押した時は、同じ写真を再拡大しない。
-                 */
-                if (
-                    event.detail.loaded &&
-                    Number(event.detail.scale) <= 1.05 &&
-                    elements.preview &&
-                    elements.preview.currentSrc &&
-                    step57AutoZoomSource !== elements.preview.currentSrc
-                ) {
-                    step57AutoZoomSource = elements.preview.currentSrc;
-
-                    requestAnimationFrame(function () {
-                        const rect = elements.viewer.getBoundingClientRect();
-                        photoEngine.zoomAt(
-                            4,
-                            rect.left + rect.width / 2,
-                            rect.top + rect.height / 2
-                        );
-                    });
-                }
             }
         );
 
