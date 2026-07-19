@@ -70,7 +70,6 @@
         createPinLayer(elements);
         createAimingCrosshair(elements);
         createApplyToEndButton(elements);
-        createScoreSummary(elements);
         createUndoButton(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
@@ -784,37 +783,9 @@
             updateScoreList(elements);
             updateApplyToEndButton();
 
-            const shouldDeletePhoto =
-                Number.isFinite(selectedPhotoId) &&
-                selectedPhotoId > 0 &&
-                window.confirm(
-                    "写真の記録を登録しました。\n\n" +
-                    "得点記録はスプレッドシートに保存されています。\n" +
-                    "入力に使用した写真を削除しますか？"
-                );
-
-            if (
-                shouldDeletePhoto &&
-                window.BaikaLocalPhotoStore &&
-                typeof window.BaikaLocalPhotoStore.deletePhoto === "function"
-            ) {
-                try {
-                    await window.BaikaLocalPhotoStore.deletePhoto(selectedPhotoId);
-                    await window.BaikaLocalPhotoStore.refreshCounts();
-                    clearPhoto();
-                    window.alert("登録済みの写真を削除しました。");
-                } catch (error) {
-                    console.warn("Registered photo delete failed:", error);
-                    window.alert(
-                        "得点記録は保存されましたが、写真を削除できませんでした。\n" +
-                        "写真一覧から削除してください。"
-                    );
-                }
-            } else {
-                window.alert(
-                    "写真の記録を登録しました。\n写真は入力済みとして残しています。"
-                );
-            }
+            window.alert(
+                "写真の記録を登録しました。"
+            );
         } finally {
             applyToEndButton.textContent =
                 "💾 写真を登録";
@@ -856,6 +827,11 @@
     }
 
     function bindUIEvents(elements) {
+        window.addEventListener(
+            "baika:target-pin-updated",
+            updateScoreSummary
+        );
+
         if (elements.input) {
             elements.input.addEventListener(
                 "change",
@@ -1138,7 +1114,16 @@
         scoreSummary.style.fontWeight = "800";
         scoreSummary.style.textAlign = "center";
 
-        if (elements.clearButton) {
+        const targetSummaryHost =
+            document.getElementById(
+                "v4TargetScoreSummary"
+            );
+
+        if (targetSummaryHost) {
+            targetSummaryHost.replaceChildren(
+                scoreSummary
+            );
+        } else if (elements.clearButton) {
             elements.clearButton.insertAdjacentElement(
                 "beforebegin",
                 scoreSummary
@@ -1153,48 +1138,68 @@
             return;
         }
 
+        const targetArrows =
+            window.baikaTargetModel &&
+            typeof window.baikaTargetModel.getArrows
+                === "function"
+                ? window.baikaTargetModel.getArrows()
+                : [];
+
+        const summarySource =
+            Array.isArray(targetArrows) &&
+            targetArrows.length > 0
+                ? targetArrows.map(function (arrow) {
+                    return {
+                        score:
+                            arrow.val === "M"
+                                ? "M"
+                                : arrow.val
+                    };
+                })
+                : pins;
+
         const scoredPins =
-            pins.filter(function (pin) {
-                return pin.score !== null;
+            summarySource.filter(function (pin) {
+                return pin.score !== null &&
+                    pin.score !== "" &&
+                    pin.score !== undefined;
             });
 
         const total =
             scoredPins.reduce(function (sum, pin) {
-                if (pin.score === "X") {
+                const score = String(pin.score).toUpperCase();
+
+                if (score === "X") {
                     return sum + 10;
                 }
 
-                if (pin.score === "M") {
+                if (score === "M") {
                     return sum;
                 }
 
-                return sum + Number(pin.score);
+                return sum + Number(score || 0);
             }, 0);
 
         const xCount =
             scoredPins.filter(function (pin) {
-                return pin.score === "X";
+                return String(pin.score).toUpperCase() === "X";
             }).length;
 
         const tenCount =
             scoredPins.filter(function (pin) {
-                return (
-                    pin.score === "X" ||
-                    pin.score === "10"
-                );
+                const score = String(pin.score).toUpperCase();
+                return score === "X" || score === "10";
             }).length;
 
         const missCount =
             scoredPins.filter(function (pin) {
-                return pin.score === "M";
+                return String(pin.score).toUpperCase() === "M";
             }).length;
 
-        const average = scoredPins.length > 0
-            ? (total / scoredPins.length).toFixed(1)
-            : "0.0";
-
-        scoreSummary.style.gridTemplateColumns =
-            "repeat(3, minmax(0, 1fr))";
+        const average =
+            scoredPins.length > 0
+                ? (total / scoredPins.length).toFixed(1)
+                : "0.0";
 
         scoreSummary.innerHTML =
             `<div>本数<br><strong>${scoredPins.length}</strong></div>`

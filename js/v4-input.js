@@ -464,10 +464,37 @@ function updateTargetPinPosition(
     photoGroupingArrows[index].y =
         Math.max(0, Math.min(300, Number(y)));
 
+    const adjustedArrow = calculateArrowScore(
+        photoGroupingArrows[index].x,
+        photoGroupingArrows[index].y
+    );
+
+    photoGroupingArrows[index].val =
+        adjustedArrow.val;
+    photoGroupingArrows[index].score =
+        adjustedArrow.score;
+    photoGroupingArrows[index].isMiss =
+        adjustedArrow.val === "M";
     photoGroupingArrows[index].targetAdjusted =
         true;
 
     renderGroupingPins();
+
+    window.dispatchEvent(
+        new CustomEvent(
+            "baika:target-pin-updated",
+            {
+                detail: {
+                    index: index,
+                    arrows: photoGroupingArrows.map(
+                        function (arrow) {
+                            return { ...arrow };
+                        }
+                    )
+                }
+            }
+        )
+    );
 
     return true;
 }
@@ -942,52 +969,6 @@ currentArrows.push({
 }
 
 /**
- * 得点ラベルから、記録として残す自動集計値を作成する
- * 写真そのものではなく、practiceシートの練習記録へ保存する。
- */
-function calculatePracticeScoreStats(scoreLabels) {
-    const labels = Array.isArray(scoreLabels)
-        ? scoreLabels.map(function (value) {
-            return String(value == null || value === "" ? "M" : value).toUpperCase();
-        })
-        : [];
-
-    const numericScores = labels.map(function (label) {
-        if (label === "X" || label === "10") return 10;
-        if (label === "M") return 0;
-        const value = Number(label);
-        return Number.isFinite(value) ? value : 0;
-    });
-
-    const total = numericScores.reduce(function (sum, value) {
-        return sum + value;
-    }, 0);
-
-    const counts = {
-        X: 0, "10": 0, "9": 0, "8": 0, "7": 0, "6": 0,
-        "5": 0, "4": 0, "3": 0, "2": 0, "1": 0, M: 0
-    };
-
-    labels.forEach(function (label) {
-        if (Object.prototype.hasOwnProperty.call(counts, label)) {
-            counts[label] += 1;
-        }
-    });
-
-    return {
-        total: total,
-        average: labels.length > 0
-            ? Number((total / labels.length).toFixed(1))
-            : 0,
-        arrowCount: labels.length,
-        xCount: counts.X,
-        tenCount: counts.X + counts["10"],
-        missCount: counts.M,
-        scoreCounts: counts
-    };
-}
-
-/**
  * 写真入力の1本以上をGoogleスプレッドシートへ登録する
  */
 async function registerPhotoPracticeEnd(photoPins) {
@@ -1108,12 +1089,6 @@ async function registerPhotoPracticeEnd(photoPins) {
             return b.score - a.score;
         });
 
-    const scoreLabels = sorted.map(function (arrow) {
-        return arrow.val;
-    });
-
-    const stats = calculatePracticeScoreStats(scoreLabels);
-
     const record = {
         date: practiceDate,
         memberName: memberName,
@@ -1124,13 +1099,12 @@ async function registerPhotoPracticeEnd(photoPins) {
         a4: sorted[3] ? sorted[3].val : "",
         a5: sorted[4] ? sorted[4].val : "",
         a6: sorted[5] ? sorted[5].val : "",
-        total: stats.total,
-        average: stats.average,
-        arrowCount: stats.arrowCount,
-        xCount: stats.xCount,
-        tenCount: stats.tenCount,
-        missCount: stats.missCount,
-        scoreCounts: stats.scoreCounts,
+        total: sorted.reduce(
+            function (sum, arrow) {
+                return sum + arrow.score;
+            },
+            0
+        ),
         pins: arrows
     };
 
@@ -1149,37 +1123,7 @@ async function registerPhotoPracticeEnd(photoPins) {
 
         const practiceData =
             Array.isArray(cloudData.practice)
-                ? cloudData.practice.map(function (item) {
-                    const labels = [
-                        item.a1, item.a2, item.a3,
-                        item.a4, item.a5, item.a6
-                    ].filter(function (value) {
-                        return value !== null && value !== undefined && value !== "";
-                    });
-                    const existingStats = calculatePracticeScoreStats(labels);
-
-                    return Object.assign({}, item, {
-                        total: Number.isFinite(Number(item.total))
-                            ? Number(item.total)
-                            : existingStats.total,
-                        average: item.average !== undefined && item.average !== ""
-                            ? Number(item.average)
-                            : existingStats.average,
-                        arrowCount: item.arrowCount !== undefined && item.arrowCount !== ""
-                            ? Number(item.arrowCount)
-                            : existingStats.arrowCount,
-                        xCount: item.xCount !== undefined && item.xCount !== ""
-                            ? Number(item.xCount)
-                            : existingStats.xCount,
-                        tenCount: item.tenCount !== undefined && item.tenCount !== ""
-                            ? Number(item.tenCount)
-                            : existingStats.tenCount,
-                        missCount: item.missCount !== undefined && item.missCount !== ""
-                            ? Number(item.missCount)
-                            : existingStats.missCount,
-                        scoreCounts: item.scoreCounts || existingStats.scoreCounts
-                    });
-                })
+                ? cloudData.practice
                 : [];
 
         practiceData.push(record);

@@ -35,6 +35,36 @@
         return document.getElementById("targetSvg");
     }
 
+    function shouldZoomForFineAdjustment() {
+        return (
+            window.matchMedia(
+                "(orientation: landscape)"
+            ).matches &&
+            Math.min(
+                window.innerWidth,
+                window.innerHeight
+            ) <= 600
+        );
+    }
+
+    function zoomAroundPin(svg, x, y) {
+        const size = 100;
+        const half = size / 2;
+        const left = Math.max(
+            0,
+            Math.min(300 - size, x - half)
+        );
+        const top = Math.max(
+            0,
+            Math.min(300 - size, y - half)
+        );
+
+        svg.setAttribute(
+            "viewBox",
+            `${left} ${top} ${size} ${size}`
+        );
+    }
+
     function getSvgPoint(event) {
         const svg = getSvg();
 
@@ -193,6 +223,21 @@
         event.preventDefault();
         event.stopPropagation();
 
+        const svg = getSvg();
+        const initialPoint = getSvgPoint(event);
+
+        if (
+            svg &&
+            initialPoint &&
+            shouldZoomForFineAdjustment()
+        ) {
+            zoomAroundPin(
+                svg,
+                initialPoint.x,
+                initialPoint.y
+            );
+        }
+
         const pinParts =
             findPinParts(index);
 
@@ -207,6 +252,7 @@
             labelElement: findLabel(index),
             startClientX: event.clientX,
             startClientY: event.clientY,
+            lastPoint: initialPoint,
             moved: false
         };
 
@@ -244,6 +290,8 @@
         if (!point) {
             return;
         }
+
+        activeDrag.lastPoint = point;
 
         const movement =
             Math.hypot(
@@ -289,7 +337,9 @@
         event.preventDefault();
         event.stopPropagation();
 
-        const point = getSvgPoint(event);
+        const point =
+            getSvgPoint(event) ||
+            activeDrag.lastPoint;
         const finishedDrag = activeDrag;
 
         /*
