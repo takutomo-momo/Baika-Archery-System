@@ -1,0 +1,49 @@
+/* Step59: 写真操作ボタンを写真の右側へ縦配置 */
+.v4-photo-interaction-area {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 52px;
+    gap: 8px;
+    width: 100%;
+    align-items: stretch;
+}
+.v4-photo-interaction-area .v4-photo-viewer {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+}
+.v4-photo-interaction-area .v4-photo-controls {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 52px;
+    margin: 0;
+}
+.v4-photo-interaction-area .v4-photo-control-button,
+.v4-photo-interaction-area .v4-photo-control-wide {
+    width: 52px;
+    min-width: 52px;
+    min-height: 46px;
+    padding: 6px 3px;
+    font-size: 12px;
+    line-height: 1.15;
+}
+@media (orientation: landscape) and (max-height: 700px) {
+    .v4-photo-interaction-area {
+        grid-template-columns: minmax(0, 1fr) 48px;
+        gap: 5px;
+    }
+    .v4-photo-interaction-area .v4-photo-controls {
+        width: 48px;
+        gap: 4px;
+    }
+    .v4-photo-interaction-area .v4-photo-control-button,
+    .v4-photo-interaction-area .v4-photo-control-wide {
+        width: 48px;
+        min-width: 48px;
+        min-height: 42px;
+        padding: 4px 2px;
+        font-size: 11px;
+    }
+}

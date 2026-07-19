@@ -909,7 +909,7 @@
             elements.resetButton.addEventListener(
                 "click",
                 function () {
-                    photoEngine.reset();
+                    resetPhotoToBaseScale(elements);
                 }
             );
         }
@@ -1018,12 +1018,13 @@
 
                 /*
                  * 的入力と同じ2段階操作にする。
-                 * 1回目: タップ位置を中心に拡大
-                 * 2回目: ピンを入力して100%へ戻す
+                 * 1回目: タップ位置を中心に600%へ拡大
+                 * 2回目: 画面中央の照準位置へピンを入力
+                 * 基準表示が210%でも必ず1回目は拡大になる。
                  */
-                if (state.scale <= 1.05) {
+                if (state.scale < 5.95) {
                     photoEngine.zoomAt(
-                        4,
+                        6,
                         point.clientX,
                         point.clientY
                     );
@@ -1874,6 +1875,27 @@
 
         elements.undoButton.disabled =
             pins.length === 0;
+    }
+
+    function resetPhotoToBaseScale(elements) {
+        if (!elements || !elements.viewer) {
+            return;
+        }
+
+        photoEngine.reset();
+
+        requestAnimationFrame(function () {
+            const rect = elements.viewer.getBoundingClientRect();
+            if (rect.width <= 0 || rect.height <= 0) {
+                return;
+            }
+
+            photoEngine.zoomAt(
+                2.1,
+                rect.left + rect.width / 2,
+                rect.top + rect.height / 2
+            );
+        });
     }
 
     function updatePhotoUI(elements, hasPhoto) {

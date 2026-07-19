@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/v4.css?v=3021">
     <link rel="stylesheet" href="css/v4-landscape.css?v=3022">
     <link rel="stylesheet" href="css/v4-camera.css?v=355b?v=355">
+    <link rel="stylesheet" href="css/v4-step59-photo-controls.css?v=591">
  </head>
 
 <body class="v4-body">
@@ -163,6 +164,7 @@
 
 
     <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
+<div class="v4-photo-interaction-area">
 <div class="v4-photo-controls">
     <button
         type="button"
@@ -229,6 +231,7 @@
             hidden
         >
     </div>
+</div>
 
     <div id="v4PhotoQuickActions" class="v4-photo-quick-actions" aria-label="写真入力の修正操作">
         <button
@@ -737,7 +740,7 @@
             </div>
             <div class="v4-photo-zoom-controls" aria-label="写真の拡大操作">
                 <button type="button" id="v4PhotoZoomOutButton" aria-label="縮小">−</button>
-                <button type="button" id="v4PhotoZoomResetButton" aria-label="倍率を100パーセントへ戻す">100%</button>
+                <button type="button" id="v4PhotoZoomResetButton" aria-label="基準倍率210パーセントへ戻す">100%</button>
                 <button type="button" id="v4PhotoZoomInButton" aria-label="拡大">＋</button>
             </div>
             <div class="v4-photo-zoom-hint">2本指で拡大・1本指で移動</div>
@@ -804,7 +807,7 @@
 <script src="js/v4-layout.js?v=29b4"></script>
 <script src="js/v4-target-engine.js?v=55"></script>
 <script src="js/v4-arrow-detector.js?v=354a"></script>
-<script src="js/v4-photo-ui.js?v=572"></script>
+<script src="js/v4-photo-ui.js?v=591"></script>
 <script src="js/v4-camera.js?v=55"></script>
 </body>
 </html>
