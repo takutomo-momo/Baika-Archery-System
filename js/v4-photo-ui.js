@@ -71,6 +71,7 @@
         createAimingCrosshair(elements);
         createApplyToEndButton(elements);
         createUndoButton(elements);
+        createScoreSummary(elements);
         bindUIEvents(elements);
         updatePhotoUI(elements, false);
 

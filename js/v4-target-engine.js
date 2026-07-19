@@ -48,7 +48,8 @@
     }
 
     function zoomAroundPin(svg, x, y) {
-        const size = 100;
+        // 300 / 50 = 6.0（600%）
+        const size = 50;
         const half = size / 2;
         const left = Math.max(
             0,
@@ -224,35 +225,38 @@
         event.stopPropagation();
 
         const svg = getSvg();
-        const initialPoint = getSvgPoint(event);
+        const pinParts =
+            findPinParts(index);
+        const visiblePin =
+            pinParts.visiblePin || pinElement;
+        const originalPoint = {
+            x: Number(visiblePin.getAttribute("cx")),
+            y: Number(visiblePin.getAttribute("cy"))
+        };
 
         if (
             svg &&
-            initialPoint &&
+            Number.isFinite(originalPoint.x) &&
+            Number.isFinite(originalPoint.y) &&
             shouldZoomForFineAdjustment()
         ) {
             zoomAroundPin(
                 svg,
-                initialPoint.x,
-                initialPoint.y
+                originalPoint.x,
+                originalPoint.y
             );
         }
-
-        const pinParts =
-            findPinParts(index);
 
         activeDrag = {
             pointerId: event.pointerId,
             index: index,
-            pinElement:
-                pinParts.visiblePin ||
-                pinElement,
-            hitArea:
-                pinParts.hitArea,
+            pinElement: visiblePin,
+            hitArea: pinParts.hitArea,
             labelElement: findLabel(index),
             startClientX: event.clientX,
             startClientY: event.clientY,
-            lastPoint: initialPoint,
+            originalPoint: originalPoint,
+            lastPoint: originalPoint,
             moved: false
         };
 
@@ -337,10 +341,10 @@
         event.preventDefault();
         event.stopPropagation();
 
-        const point =
-            getSvgPoint(event) ||
-            activeDrag.lastPoint;
         const finishedDrag = activeDrag;
+        const point = finishedDrag.moved
+            ? (getSvgPoint(event) || finishedDrag.lastPoint)
+            : finishedDrag.originalPoint;
 
         /*
          * pointerup後にブラウザが発生させるclickを抑止。
