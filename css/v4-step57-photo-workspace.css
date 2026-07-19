@@ -1,0 +1,185 @@
+/*
+ * Baika Archery System Ver4 - Step57 Photo Workspace
+ * スマートフォン横向きでの「写真 → 入力用的」転記を最優先にする。
+ */
+
+.v4-photo-workspace-card {
+    overflow: visible;
+}
+
+.v4-photo-interaction-area {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.v4-photo-interaction-area .v4-photo-controls {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+}
+
+.v4-photo-interaction-area #v4TargetPhotoViewer {
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    touch-action: none !important;
+    overscroll-behavior: contain;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.v4-photo-interaction-area .v4-photo-control-button {
+    width: 50px;
+    min-width: 50px;
+    min-height: 44px;
+    padding: 6px 3px;
+}
+
+.v4-photo-interaction-area .v4-photo-control-wide {
+    width: 50px;
+}
+
+.v4-input-target-panel .v4-target-container,
+.v4-input-target-panel #targetSvg {
+    touch-action: none !important;
+    overscroll-behavior: contain;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+@media (orientation: landscape) and (max-height: 700px) and (max-width: 1100px) {
+    html,
+    body {
+        overscroll-behavior: none;
+    }
+
+    .v4-main {
+        padding-left: max(8px, env(safe-area-inset-left));
+        padding-right: max(8px, env(safe-area-inset-right));
+    }
+
+    .v4-photo-workspace-card {
+        padding: 8px !important;
+    }
+
+    .v4-photo-workspace-card > .v4-card-title {
+        margin-bottom: 3px !important;
+        font-size: 14px !important;
+    }
+
+    .v4-photo-workspace-card > .v4-card-subtitle,
+    .v4-photo-panel .v4-photo-description,
+    .v4-camera-local-status,
+    .v4-grouping-note {
+        display: none !important;
+    }
+
+    .v4-photo-workspace-card .v4-target-layout {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr) !important;
+        gap: 8px !important;
+        align-items: start !important;
+    }
+
+    .v4-photo-workspace-card .v4-photo-panel,
+    .v4-photo-workspace-card .v4-input-target-panel {
+        position: static !important;
+        top: auto !important;
+        min-width: 0 !important;
+        padding: 7px !important;
+    }
+
+    .v4-photo-workspace-card .v4-target-layout > .v4-target-panel:nth-child(3) {
+        display: none !important;
+    }
+
+    .v4-photo-workspace-card .v4-target-panel-title {
+        margin: 0 0 4px !important;
+        font-size: 12px !important;
+    }
+
+    .v4-camera-launch-area {
+        margin-bottom: 5px !important;
+    }
+
+    .v4-camera-launch-buttons {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 5px !important;
+    }
+
+    .v4-camera-launch-button,
+    .v4-photo-list-button {
+        min-height: 34px !important;
+        padding: 5px 6px !important;
+        font-size: 10px !important;
+    }
+
+    .v4-photo-interaction-area {
+        gap: 5px;
+    }
+
+    .v4-photo-interaction-area #v4TargetPhotoViewer {
+        width: 100% !important;
+        height: clamp(245px, 60vh, 360px) !important;
+        min-height: 245px !important;
+        max-height: none !important;
+    }
+
+    .v4-photo-interaction-area .v4-photo-controls {
+        gap: 4px !important;
+    }
+
+    .v4-photo-interaction-area .v4-photo-control-button {
+        width: 46px !important;
+        min-width: 46px !important;
+        min-height: 42px !important;
+        padding: 4px 2px !important;
+        font-size: 11px !important;
+    }
+
+    .v4-photo-quick-actions {
+        margin-top: 4px !important;
+    }
+
+    .v4-photo-clear-button {
+        min-height: 32px !important;
+        padding: 4px 8px !important;
+        font-size: 10px !important;
+    }
+
+    .v4-input-target-panel .v4-target-container {
+        width: min(100%, 60vh) !important;
+        max-width: none !important;
+        min-width: 0 !important;
+        margin: 0 auto !important;
+    }
+
+    .v4-input-target-panel .v4-target-score-summary {
+        margin-top: 4px !important;
+        min-height: 28px !important;
+        font-size: 11px !important;
+    }
+
+    .v4-input-target-panel .v4-target-reset {
+        position: absolute;
+        right: 8px;
+        bottom: 8px;
+        z-index: 20;
+        width: auto !important;
+        min-height: 36px !important;
+        margin: 0 !important;
+        padding: 6px 9px !important;
+        font-size: 10px !important;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .v4-input-target-panel {
+        position: relative !important;
+    }
+}

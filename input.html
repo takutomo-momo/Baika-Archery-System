@@ -13,6 +13,7 @@
     <link rel="stylesheet" href="css/v4.css?v=3021">
     <link rel="stylesheet" href="css/v4-landscape.css?v=3022">
     <link rel="stylesheet" href="css/v4-camera.css?v=355b?v=355">
+    <link rel="stylesheet" href="css/v4-step57-photo-workspace.css?v=571">
  </head>
 
 <body class="v4-body">
@@ -114,14 +115,14 @@
     </div>
 </section>
 
-<section class="v4-card v4-card-full">
+<section class="v4-card v4-card-full v4-photo-workspace-card">
     <div class="v4-card-title">
-        🎯 的タップ入力
+        🎯 写真から着弾位置を転記
     </div>
 
     <p class="v4-card-subtitle">
-        的をタップして着弾位置を入力します。
-        1回目で拡大し、2回目で着弾位置を確定します。
+        スマートフォン横向きでは、左の写真を見ながら右の的へ転記できます。
+        写真は選択時に自動拡大され、中央の＋位置でタップすると写真側にも番号が付きます。
     </p>
 
 <div class="v4-target-layout">
@@ -164,6 +165,7 @@
 
 
     <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
+<div class="v4-photo-interaction-area">
 <div class="v4-photo-controls">
     <button
         type="button"
@@ -230,6 +232,7 @@
             hidden
         >
     </div>
+</div>
 
     <div id="v4PhotoQuickActions" class="v4-photo-quick-actions" aria-label="写真入力の修正操作">
         <button
@@ -244,9 +247,9 @@
 </div>
 
     <!-- 入力用の的 -->
-    <div class="v4-target-panel">
+    <div class="v4-target-panel v4-input-target-panel">
         <div class="v4-target-panel-title">
-            入力用
+            🎯 入力用
         </div>
 
         <div class="v4-target-container">
@@ -801,11 +804,11 @@
 </div>
 
 <script src="js/v4-input.js?v=542"></script>
-<script src="js/v4-photo-engine.js?v=562"></script>
+<script src="js/v4-photo-engine.js?v=11"></script>
 <script src="js/v4-layout.js?v=29b4"></script>
-<script src="js/v4-target-engine.js?v=562"></script>
+<script src="js/v4-target-engine.js?v=55"></script>
 <script src="js/v4-arrow-detector.js?v=354a"></script>
-<script src="js/v4-photo-ui.js?v=562"></script>
+<script src="js/v4-photo-ui.js?v=571"></script>
 <script src="js/v4-camera.js?v=55"></script>
 </body>
 </html>
