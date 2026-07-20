@@ -37,7 +37,7 @@ body.v4-photo-focus-mode > .v4-photo-panel {
   overflow: hidden !important;
 }
 
-body.v4-photo-focus-mode > .v4-photo-panel > :not(.v4-photo-interaction-area):not(.v4-photo-fullscreen-close) {
+body.v4-photo-focus-mode > .v4-photo-panel > :not(.v4-photo-interaction-area):not(.v4-photo-fullscreen-close):not(.v4-photo-quick-actions) {
   display: none !important;
 }
 

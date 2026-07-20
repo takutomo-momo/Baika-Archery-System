@@ -167,12 +167,34 @@
 
         const hasSelection = Number.isInteger(selectedPinIndex);
         panel.classList.toggle("is-active", hasSelection);
+        const availablePinIndexes = new Set();
+        if (getSvg()) {
+            getSvg().querySelectorAll("[data-target-pin-index]").forEach(function (element) {
+                const index = Number(element.getAttribute("data-target-pin-index"));
+                if (Number.isInteger(index)) availablePinIndexes.add(index);
+            });
+        }
+        const availablePins = availablePinIndexes.size;
+
+        if (hasSelection && !availablePinIndexes.has(selectedPinIndex)) {
+            selectedPinIndex = null;
+        }
+        const selectionStillActive = Number.isInteger(selectedPinIndex);
+        panel.classList.toggle("is-active", selectionStillActive);
         panel.querySelectorAll("[data-pin-nudge]").forEach(function (button) {
-            button.disabled = !hasSelection;
+            button.disabled = !selectionStillActive;
         });
-        status.textContent = hasSelection
-            ? `ピン ${selectedPinIndex + 1} を選択中`
-            : "入力的のピンをタップしてください";
+
+        panel.querySelectorAll("[data-pin-select]").forEach(function (button) {
+            const index = Number(button.dataset.pinSelect);
+            button.disabled = index >= availablePins;
+            button.classList.toggle("is-selected", selectionStillActive && index === selectedPinIndex);
+            button.setAttribute("aria-pressed", String(selectionStillActive && index === selectedPinIndex));
+        });
+
+        status.textContent = selectionStillActive
+            ? `ピン ${selectedPinIndex + 1} を選択中` 
+            : (availablePins > 0 ? "①〜⑥から調整するピンを選んでください" : "ピンを入力すると番号で選択できます");
     }
 
     function selectPin(index) {
@@ -225,14 +247,21 @@
         nudgeHoldTimer = window.setTimeout(function () {
             nudgeRepeatTimer = window.setInterval(function () {
                 nudgeSelectedPin(dx, dy);
-            }, 70);
-        }, 360);
+            }, 55);
+        }, 300);
     }
 
     function bindAdjustmentPanel() {
         const panel = document.getElementById("v4PinAdjustPanel");
         if (!panel || panel.dataset.bound) return;
         panel.dataset.bound = "true";
+
+        panel.querySelectorAll("[data-pin-select]").forEach(function (button) {
+            button.addEventListener("click", function () {
+                const index = Number(button.dataset.pinSelect);
+                if (!button.disabled && Number.isInteger(index)) selectPin(index);
+            });
+        });
 
         panel.querySelectorAll("[data-pin-nudge]").forEach(function (button) {
             button.addEventListener("pointerdown", function (event) {
@@ -518,7 +547,10 @@
         bindAdjustmentPanel();
 
         const observer = new MutationObserver(function () {
-            if (Number.isInteger(selectedPinIndex)) requestAnimationFrame(applyPinSelection);
+            requestAnimationFrame(function () {
+                if (Number.isInteger(selectedPinIndex)) applyPinSelection();
+                updateAdjustmentPanel();
+            });
         });
         const pinsGroup = document.getElementById("pinsGroup");
         if (pinsGroup) observer.observe(pinsGroup, { childList: true });
