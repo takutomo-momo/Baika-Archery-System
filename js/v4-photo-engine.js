@@ -586,12 +586,26 @@
                 return;
             }
 
+            /*
+             * Step60-1:
+             * 210%標準表示では、縦長写真の横幅が表示枠より小さい場合でも
+             * 的の位置を合わせられるよう、少量の上下左右パンを許可する。
+             */
+            const minimumPanX =
+                this.state.scale >= 2.05
+                    ? bounds.viewportWidth * 0.18
+                    : 0;
+            const minimumPanY =
+                this.state.scale >= 2.05
+                    ? bounds.viewportHeight * 0.18
+                    : 0;
+
             const maxX = Math.max(
-                0,
+                minimumPanX,
                 (bounds.width - bounds.viewportWidth) / 2
             );
             const maxY = Math.max(
-                0,
+                minimumPanY,
                 (bounds.height - bounds.viewportHeight) / 2
             );
 

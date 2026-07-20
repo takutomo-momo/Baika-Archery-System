@@ -948,11 +948,10 @@
                 renderArrowCandidates(elements);
 
                 /*
-                 * Step58:
-                 * 一覧のサムネイルと同じように、写真選択直後は
-                 * 表示枠いっぱいに写真を拡大する。
-                 * 縦長写真では上下が一部隠れるが、的を大きく確認できる。
-                 * 100%ボタンを押した後は自動で再拡大しない。
+                 * Step60-1:
+                 * 写真選択直後の標準表示を210%に統一する。
+                 * Step58の「枠いっぱい倍率」は端末ごとに131%などへ
+                 * 変化したため、固定の2.1倍を採用する。
                  */
                 if (
                     event.detail.loaded &&
@@ -965,42 +964,12 @@
 
                     requestAnimationFrame(function () {
                         const rect = elements.viewer.getBoundingClientRect();
-                        const naturalWidth = Number(event.detail.naturalWidth);
-                        const naturalHeight = Number(event.detail.naturalHeight);
-
-                        if (
-                            rect.width <= 0 ||
-                            rect.height <= 0 ||
-                            naturalWidth <= 0 ||
-                            naturalHeight <= 0
-                        ) {
+                        if (rect.width <= 0 || rect.height <= 0) {
                             return;
                         }
 
-                        const imageRatio = naturalWidth / naturalHeight;
-                        const viewerRatio = rect.width / rect.height;
-                        let fittedWidth;
-                        let fittedHeight;
-
-                        if (imageRatio > viewerRatio) {
-                            fittedWidth = rect.width;
-                            fittedHeight = rect.width / imageRatio;
-                        } else {
-                            fittedHeight = rect.height;
-                            fittedWidth = rect.height * imageRatio;
-                        }
-
-                        const fillScale = Math.min(
-                            6,
-                            Math.max(
-                                1,
-                                rect.width / fittedWidth,
-                                rect.height / fittedHeight
-                            )
-                        );
-
                         photoEngine.zoomAt(
-                            fillScale,
+                            2.1,
                             rect.left + rect.width / 2,
                             rect.top + rect.height / 2
                         );
