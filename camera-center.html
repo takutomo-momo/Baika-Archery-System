@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta name="theme-color" content="#24113f">
+
+    <title>撮影センター | Baika Archery System</title>
+
+    <!-- Ver4 共通デザイン -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/v4.css">
+
+    <!-- 撮影センター専用デザイン -->
+    <link rel="stylesheet" href="css/v4-camera-center.css">
+</head>
+
+<body class="camera-center-page">
+
+    <!-- 背景の的 -->
+    <div class="camera-center-background" aria-hidden="true">
+        <div class="camera-center-target">
+            <span class="target-ring ring-white"></span>
+            <span class="target-ring ring-black"></span>
+            <span class="target-ring ring-blue"></span>
+            <span class="target-ring ring-red"></span>
+            <span class="target-ring ring-gold"></span>
+        </div>
+    </div>
+
+    <!-- 上部ヘッダー -->
+    <header class="camera-center-header">
+        <a
+            class="camera-center-back-button"
+            href="index.html"
+            aria-label="ホームへ戻る"
+        >
+            <span aria-hidden="true">←</span>
+            <span>ホーム</span>
+        </a>
+
+        <div class="camera-center-header-title">
+            <span class="camera-center-header-mark" aria-hidden="true">🏹</span>
+
+            <div>
+                <p class="camera-center-system-name">
+                    Baika Archery System
+                </p>
+
+                <p class="camera-center-system-subtitle">
+                    梅花女子大学アーチェリー部 練習支援システム
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <!-- メイン画面 -->
+    <main class="camera-center-main">
+
+        <!-- タイトル -->
+        <section class="camera-center-hero">
+            <div class="camera-center-hero-icon" aria-hidden="true">📷</div>
+
+            <p class="camera-center-section-label">
+                撮影・確認・解析
+            </p>
+
+            <h1>撮影センター</h1>
+
+            <p class="camera-center-description">
+                的写真やフォーム動画を撮影し、
+                記録の確認と分析につなげます。
+            </p>
+        </section>
+
+        <!-- 機能メニュー -->
+        <section
+            class="camera-center-menu"
+            aria-label="撮影センターメニュー"
+        >
+
+            <!-- 的写真撮影 -->
+            <button
+                class="camera-center-card camera-center-card-target"
+                type="button"
+                disabled
+            >
+                <span class="camera-center-card-icon" aria-hidden="true">
+                    🎯
+                </span>
+
+                <span class="camera-center-card-body">
+                    <span class="camera-center-card-title">
+                        的写真撮影
+                    </span>
+
+                    <span class="camera-center-card-description">
+                        的をガイドに合わせて撮影し、端末に保存します
+                    </span>
+                </span>
+
+                <span class="camera-center-card-status">
+                    準備中
+                </span>
+            </button>
+
+            <!-- フォーム動画撮影 -->
+            <button
+                class="camera-center-card camera-center-card-video"
+                type="button"
+                disabled
+            >
+                <span class="camera-center-card-icon" aria-hidden="true">
+                    🎥
+                </span>
+
+                <span class="camera-center-card-body">
+                    <span class="camera-center-card-title">
+                        フォーム動画撮影
+                    </span>
+
+                    <span class="camera-center-card-description">
+                        射形を動画で撮影し、フォームを確認します
+                    </span>
+                </span>
+
+                <span class="camera-center-card-status">
+                    準備中
+                </span>
+            </button>
+
+            <!-- 撮影ライブラリ -->
+            <button
+                class="camera-center-card camera-center-card-library"
+                type="button"
+                disabled
+            >
+                <span class="camera-center-card-icon" aria-hidden="true">
+                    🗂️
+                </span>
+
+                <span class="camera-center-card-body">
+                    <span class="camera-center-card-title">
+                        撮影ライブラリ
+                    </span>
+
+                    <span class="camera-center-card-description">
+                        撮影した的写真やフォーム動画を確認します
+                    </span>
+                </span>
+
+                <span class="camera-center-card-status">
+                    準備中
+                </span>
+            </button>
+
+            <!-- AI解析 -->
+            <button
+                class="camera-center-card camera-center-card-ai"
+                type="button"
+                disabled
+            >
+                <span class="camera-center-card-icon" aria-hidden="true">
+                    ✨
+                </span>
+
+                <span class="camera-center-card-body">
+                    <span class="camera-center-card-title">
+                        AI解析
+                    </span>
+
+                    <span class="camera-center-card-description">
+                        的写真やフォーム動画をAIで分析します
+                    </span>
+                </span>
+
+                <span class="camera-center-card-status">
+                    将来対応
+                </span>
+            </button>
+
+        </section>
+
+        <p class="camera-center-notice">
+            各機能は、動作確認を行いながら順番に追加します。
+        </p>
+
+    </main>
+
+</body>
+</html>

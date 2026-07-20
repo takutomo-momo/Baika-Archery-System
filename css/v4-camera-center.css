@@ -1,0 +1,673 @@
+/* =========================================================
+   Baika Archery System Ver4
+   撮影センター基本画面
+   ========================================================= */
+
+.camera-center-page {
+    min-height: 100vh;
+    min-height: 100dvh;
+    margin: 0;
+    color: #ffffff;
+    background:
+        radial-gradient(
+            circle at 50% 0%,
+            rgba(151, 91, 255, 0.32),
+            transparent 42%
+        ),
+        linear-gradient(
+            145deg,
+            #160d25 0%,
+            #281443 48%,
+            #120b20 100%
+        );
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Hiragino Kaku Gothic ProN",
+        "Yu Gothic",
+        Meiryo,
+        sans-serif;
+    overflow-x: hidden;
+}
+
+/* 背景装飾 */
+
+.camera-center-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.camera-center-target {
+    position: absolute;
+    top: 50%;
+    right: -160px;
+    width: min(560px, 90vw);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    opacity: 0.08;
+    transform: translateY(-50%);
+}
+
+.target-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.ring-white {
+    width: 100%;
+    height: 100%;
+    background: #ffffff;
+}
+
+.ring-black {
+    width: 80%;
+    height: 80%;
+    background: #111111;
+}
+
+.ring-blue {
+    width: 60%;
+    height: 60%;
+    background: #169ee8;
+}
+
+.ring-red {
+    width: 40%;
+    height: 40%;
+    background: #e73b4d;
+}
+
+.ring-gold {
+    width: 20%;
+    height: 20%;
+    background: #ffd84d;
+}
+
+/* ヘッダー */
+
+.camera-center-header {
+    position: relative;
+    z-index: 10;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 18px;
+    min-height: 76px;
+    padding:
+        max(12px, env(safe-area-inset-top))
+        max(20px, env(safe-area-inset-right))
+        12px
+        max(20px, env(safe-area-inset-left));
+    background: rgba(20, 10, 34, 0.72);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.camera-center-back-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 44px;
+    padding: 0 15px;
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: 700;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    transition:
+        transform 0.2s ease,
+        background-color 0.2s ease;
+}
+
+.camera-center-back-button:hover {
+    background: rgba(255, 255, 255, 0.17);
+    transform: translateY(-1px);
+}
+
+.camera-center-back-button:active {
+    transform: translateY(1px);
+}
+
+.camera-center-header-title {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+}
+
+.camera-center-header-mark {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+    background: linear-gradient(
+        145deg,
+        rgba(184, 119, 255, 0.3),
+        rgba(112, 56, 180, 0.18)
+    );
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+}
+
+.camera-center-system-name,
+.camera-center-system-subtitle {
+    margin: 0;
+}
+
+.camera-center-system-name {
+    font-size: clamp(16px, 2.4vw, 21px);
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.camera-center-system-subtitle {
+    margin-top: 3px;
+    color: rgba(255, 255, 255, 0.67);
+    font-size: clamp(10px, 1.5vw, 12px);
+    line-height: 1.4;
+}
+
+/* メイン領域 */
+
+.camera-center-main {
+    position: relative;
+    z-index: 1;
+    width: min(100% - 32px, 1040px);
+    margin: 0 auto;
+    padding:
+        44px
+        0
+        max(38px, env(safe-area-inset-bottom));
+}
+
+/* タイトル */
+
+.camera-center-hero {
+    max-width: 700px;
+    margin: 0 auto 34px;
+    text-align: center;
+}
+
+.camera-center-hero-icon {
+    display: grid;
+    place-items: center;
+    width: 78px;
+    height: 78px;
+    margin: 0 auto 17px;
+    font-size: 38px;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(202, 151, 255, 0.28),
+            rgba(119, 68, 187, 0.13)
+        );
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 25px;
+    box-shadow:
+        0 18px 40px rgba(0, 0, 0, 0.24),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+.camera-center-section-label {
+    margin: 0 0 8px;
+    color: #d9b8ff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+}
+
+.camera-center-hero h1 {
+    margin: 0;
+    font-size: clamp(29px, 6vw, 48px);
+    line-height: 1.2;
+    letter-spacing: 0.03em;
+}
+
+.camera-center-description {
+    margin: 13px auto 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: clamp(14px, 2vw, 16px);
+    line-height: 1.8;
+}
+
+/* メニューカード */
+
+.camera-center-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+}
+
+.camera-center-card {
+    position: relative;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 17px;
+    min-height: 150px;
+    padding: 24px;
+    color: #ffffff;
+    text-align: left;
+    font: inherit;
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.13),
+            rgba(255, 255, 255, 0.055)
+        );
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 24px;
+    box-shadow:
+        0 18px 42px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.camera-center-card::before {
+    position: absolute;
+    content: "";
+    top: -70px;
+    right: -55px;
+    width: 150px;
+    height: 150px;
+    background: rgba(190, 137, 255, 0.13);
+    border-radius: 50%;
+}
+
+.camera-center-card:disabled {
+    opacity: 1;
+    cursor: default;
+}
+
+.camera-center-card-icon {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 62px;
+    height: 62px;
+    font-size: 32px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.13);
+    border-radius: 20px;
+}
+
+.camera-center-card-body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.camera-center-card-title {
+    font-size: clamp(17px, 2.5vw, 21px);
+    font-weight: 800;
+    line-height: 1.4;
+}
+
+.camera-center-card-description {
+    margin-top: 7px;
+    color: rgba(255, 255, 255, 0.64);
+    font-size: 13px;
+    line-height: 1.65;
+}
+
+.camera-center-card-status {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 2;
+    padding: 5px 9px;
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    background: rgba(14, 8, 24, 0.42);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px;
+}
+
+.camera-center-card-target {
+    border-top-color: rgba(255, 215, 77, 0.55);
+}
+
+.camera-center-card-video {
+    border-top-color: rgba(255, 101, 156, 0.55);
+}
+
+.camera-center-card-library {
+    border-top-color: rgba(89, 195, 255, 0.55);
+}
+
+.camera-center-card-ai {
+    border-top-color: rgba(194, 136, 255, 0.65);
+}
+
+/* 下部メッセージ */
+
+.camera-center-notice {
+    margin: 25px 0 0;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 12px;
+    line-height: 1.7;
+    text-align: center;
+}
+
+/* スマートフォン */
+
+@media (max-width: 700px) {
+    .camera-center-header {
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 10px;
+        min-height: 68px;
+        padding-left: max(12px, env(safe-area-inset-left));
+        padding-right: max(12px, env(safe-area-inset-right));
+    }
+
+    .camera-center-back-button {
+        width: 44px;
+        padding: 0;
+    }
+
+    .camera-center-back-button span:last-child {
+        display: none;
+    }
+
+    .camera-center-header-mark {
+        width: 37px;
+        height: 37px;
+        font-size: 19px;
+        border-radius: 12px;
+    }
+
+    .camera-center-system-name {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .camera-center-system-subtitle {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .camera-center-main {
+        width: min(100% - 24px, 1040px);
+        padding-top: 31px;
+    }
+
+    .camera-center-hero {
+        margin-bottom: 25px;
+    }
+
+    .camera-center-hero-icon {
+        width: 68px;
+        height: 68px;
+        font-size: 33px;
+        border-radius: 22px;
+    }
+
+    .camera-center-description {
+        max-width: 320px;
+    }
+
+    .camera-center-menu {
+        grid-template-columns: 1fr;
+        gap: 13px;
+    }
+
+    .camera-center-card {
+        min-height: 126px;
+        gap: 14px;
+        padding: 21px 17px;
+        padding-right: 68px;
+        border-radius: 20px;
+    }
+
+    .camera-center-card-icon {
+        width: 54px;
+        height: 54px;
+        font-size: 28px;
+        border-radius: 17px;
+    }
+}
+
+/* 小さいスマートフォン */
+
+@media (max-width: 390px) {
+    .camera-center-system-subtitle {
+        display: none;
+    }
+
+    .camera-center-card {
+        grid-template-columns: 48px minmax(0, 1fr);
+        gap: 12px;
+        padding-left: 14px;
+    }
+
+    .camera-center-card-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 25px;
+    }
+
+    .camera-center-card-description {
+        font-size: 12px;
+    }
+}
+
+/* 横向きスマートフォン */
+
+@media (max-height: 520px) and (orientation: landscape) {
+    .camera-center-header {
+        min-height: 58px;
+        padding-top: 7px;
+        padding-bottom: 7px;
+    }
+
+    .camera-center-main {
+        padding-top: 22px;
+    }
+
+    .camera-center-hero {
+        margin-bottom: 20px;
+    }
+
+    .camera-center-hero-icon {
+        display: none;
+    }
+
+    .camera-center-description {
+        margin-top: 7px;
+    }
+
+    .camera-center-menu {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .camera-center-card {
+        min-height: 112px;
+        padding-top: 17px;
+        padding-bottom: 17px;
+    }
+}
+
+/* 動きを減らす設定 */
+
+@media (prefers-reduced-motion: reduce) {
+    .camera-center-back-button {
+        transition: none;
+    }
+}
+
+/* ========================================
+   Ver4 梅花ピンクテーマ
+   撮影センター
+======================================== */
+
+.camera-center-page {
+    color: #4b2840;
+
+    background:
+        radial-gradient(
+            circle at 12% 12%,
+            rgba(255, 255, 255, 0.96),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 88% 82%,
+            rgba(245, 138, 189, 0.22),
+            transparent 36%
+        ),
+        linear-gradient(
+            145deg,
+            #fffafd 0%,
+            #ffeaf4 48%,
+            #fbd5e7 100%
+        );
+}
+
+.camera-center-background {
+    opacity: 0.18;
+}
+
+.camera-center-header {
+    border-bottom: 1px solid rgba(217, 79, 145, 0.16);
+
+    background:
+        rgba(255, 250, 253, 0.82);
+
+    box-shadow:
+        0 8px 30px rgba(183, 47, 115, 0.08);
+
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}
+
+.camera-center-back-button {
+    color: #a92d69;
+    border-color: rgba(217, 79, 145, 0.22);
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.camera-center-back-button:hover {
+    background: #fff0f7;
+    border-color: rgba(217, 79, 145, 0.42);
+}
+
+.camera-center-header-mark {
+    background:
+        linear-gradient(
+            135deg,
+            #f58abd,
+            #b72f73
+        );
+
+    box-shadow:
+        0 10px 24px rgba(183, 47, 115, 0.24);
+}
+
+.camera-center-system-name {
+    color: #4b2840;
+}
+
+.camera-center-system-subtitle {
+    color: #846376;
+}
+
+.camera-center-hero-icon {
+    background:
+        linear-gradient(
+            135deg,
+            #f58abd,
+            #b72f73
+        );
+
+    box-shadow:
+        0 16px 34px rgba(183, 47, 115, 0.25);
+}
+
+.camera-center-section-label {
+    color: #b72f73;
+}
+
+.camera-center-hero h1 {
+    color: #4b2840;
+}
+
+.camera-center-description {
+    color: #846376;
+}
+
+.camera-center-card {
+    color: #4b2840;
+    border-color: rgba(217, 79, 145, 0.2);
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(255, 255, 255, 0.96),
+            rgba(255, 239, 247, 0.9)
+        );
+
+    box-shadow:
+        0 18px 42px rgba(183, 47, 115, 0.11);
+}
+
+.camera-center-card:not(:disabled):hover {
+    border-color: rgba(217, 79, 145, 0.42);
+
+    box-shadow:
+        0 24px 48px rgba(183, 47, 115, 0.18);
+}
+
+.camera-center-card-icon {
+    background:
+        linear-gradient(
+            135deg,
+            rgba(245, 138, 189, 0.28),
+            rgba(255, 255, 255, 0.96)
+        );
+
+    box-shadow:
+        inset 0 0 0 1px rgba(217, 79, 145, 0.14);
+}
+
+.camera-center-card-title {
+    color: #4b2840;
+}
+
+.camera-center-card-description {
+    color: #846376;
+}
+
+.camera-center-card-status {
+    color: #a92d69;
+    border-color: rgba(217, 79, 145, 0.22);
+    background: rgba(255, 235, 245, 0.9);
+}
+
+.camera-center-notice {
+    color: #846376;
+}
