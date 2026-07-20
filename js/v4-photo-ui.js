@@ -843,6 +843,42 @@
 
 
     let photoFocusRestore = null;
+    let photoFocusTouchBlocker = null;
+
+    function lockPhotoFocusViewport() {
+        if (photoFocusTouchBlocker) return;
+
+        /*
+         * Step63:
+         * iPhone Safariのページスクロール／ゴムバンド／画面引き下げを
+         * フォーカス表示中だけ止める。写真操作はPointer Events側で
+         * 継続するため、パン速度やピン入力のテンポは変えない。
+         */
+        photoFocusTouchBlocker = function (event) {
+            if (
+                document.documentElement.classList.contains("v4-photo-focus-mode") ||
+                document.body.classList.contains("v4-photo-focus-mode")
+            ) {
+                event.preventDefault();
+            }
+        };
+
+        document.addEventListener(
+            "touchmove",
+            photoFocusTouchBlocker,
+            { passive: false, capture: true }
+        );
+    }
+
+    function unlockPhotoFocusViewport() {
+        if (!photoFocusTouchBlocker) return;
+        document.removeEventListener(
+            "touchmove",
+            photoFocusTouchBlocker,
+            { capture: true }
+        );
+        photoFocusTouchBlocker = null;
+    }
 
     function setPhotoFocusMode(enabled, elements) {
         const shouldEnable = Boolean(enabled);
@@ -860,10 +896,20 @@
                 parent: panel.parentNode,
                 nextSibling: panel.nextSibling,
                 scrollX: window.scrollX,
-                scrollY: window.scrollY
+                scrollY: window.scrollY,
+                bodyPosition: document.body.style.position,
+                bodyTop: document.body.style.top,
+                bodyLeft: document.body.style.left,
+                bodyWidth: document.body.style.width
             };
             document.body.appendChild(panel);
-            window.scrollTo(0, 0);
+
+            /* 現在位置を保ったままbody自体を固定する。 */
+            document.body.style.position = "fixed";
+            document.body.style.top = `-${photoFocusRestore.scrollY}px`;
+            document.body.style.left = `-${photoFocusRestore.scrollX}px`;
+            document.body.style.width = "100%";
+            lockPhotoFocusViewport();
         } else if (!shouldEnable && panel && photoFocusRestore) {
             const restore = photoFocusRestore;
             if (
@@ -874,6 +920,11 @@
             } else {
                 restore.parent.appendChild(panel);
             }
+            document.body.style.position = restore.bodyPosition;
+            document.body.style.top = restore.bodyTop;
+            document.body.style.left = restore.bodyLeft;
+            document.body.style.width = restore.bodyWidth;
+            unlockPhotoFocusViewport();
             photoFocusRestore = null;
             requestAnimationFrame(function () {
                 window.scrollTo(restore.scrollX, restore.scrollY);

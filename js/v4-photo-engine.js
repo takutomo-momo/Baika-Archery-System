@@ -675,17 +675,25 @@
              * 上端・右端の矢孔を中央へ運べないため、全画面時だけ
              * ビューポート半分の追加移動量を許可する。
              */
-            const focusExtraX = focusMode ? bounds.viewportWidth / 2 : 0;
-            const focusExtraY = focusMode ? bounds.viewportHeight / 2 : 0;
-
-            const maxX = Math.max(
-                minimumPanX,
-                Math.max(0, (bounds.width - bounds.viewportWidth) / 2) + focusExtraX
-            );
-            const maxY = Math.max(
-                minimumPanY,
-                Math.max(0, (bounds.height - bounds.viewportHeight) / 2) + focusExtraY
-            );
+            /*
+             * Step63:
+             * 600%フォーカス中は、写真の端そのものを十字照準の中心まで
+             * 運べるよう、表示画像の半幅・半高さを移動上限にする。
+             * ビューポート差分から逆算する方式より、iPhone Safariの
+             * Visual Viewport／セーフエリア変化の影響を受けにくい。
+             */
+            const maxX = focusMode
+                ? Math.max(minimumPanX, bounds.width / 2)
+                : Math.max(
+                    minimumPanX,
+                    Math.max(0, (bounds.width - bounds.viewportWidth) / 2)
+                );
+            const maxY = focusMode
+                ? Math.max(minimumPanY, bounds.height / 2)
+                : Math.max(
+                    minimumPanY,
+                    Math.max(0, (bounds.height - bounds.viewportHeight) / 2)
+                );
 
             this.state.x = this.clamp(
                 this.state.x,
