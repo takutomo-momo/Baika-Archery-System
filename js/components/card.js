@@ -59,43 +59,90 @@
         }
 
         if (
-            settings.title ||
-            settings.description
-        ) {
-            const header = document.createElement("div");
+    settings.title ||
+    settings.description ||
+    settings.icon ||
+    settings.status
+) {
+    const header = document.createElement("div");
 
-            header.className = "bas-card__header";
+    header.className = "bas-card__header";
 
-            const headingGroup =
-                document.createElement("div");
+    const top = document.createElement("div");
 
-            if (settings.title) {
-                const title = document.createElement(
-                    settings.headingLevel || "h2"
-                );
+    top.className = "bas-card__top";
 
-                title.className = "bas-card__title";
-                title.textContent = settings.title;
+    const heading = document.createElement("div");
 
-                headingGroup.append(title);
-            }
+    heading.className = "bas-card__heading";
 
-            if (settings.description) {
-                const description =
-                    document.createElement("p");
+    if (settings.icon) {
+        const icon = document.createElement("span");
 
-                description.className =
-                    "bas-card__description";
+        icon.className = "bas-card__icon";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = settings.icon;
 
-                description.textContent =
-                    settings.description;
+        heading.append(icon);
+    }
 
-                headingGroup.append(description);
-            }
+    const headingText =
+        document.createElement("div");
 
-            header.append(headingGroup);
-            article.append(header);
-        }
+    headingText.className =
+        "bas-card__heading-text";
+
+    if (settings.title) {
+        const title = document.createElement(
+            settings.headingLevel || "h2"
+        );
+
+        title.className = "bas-card__title";
+        title.textContent = settings.title;
+
+        headingText.append(title);
+    }
+
+    if (settings.description) {
+        const description =
+            document.createElement("p");
+
+        description.className =
+            "bas-card__description";
+
+        description.textContent =
+            settings.description;
+
+        headingText.append(description);
+    }
+
+    heading.append(headingText);
+    top.append(heading);
+
+    if (
+        settings.status &&
+        settings.status.label
+    ) {
+        const status =
+            document.createElement("span");
+
+        const statusType =
+            settings.status.type || "planned";
+
+        status.className =
+            "bas-card__status " +
+            "bas-card__status--" +
+            statusType;
+
+        status.textContent =
+            settings.status.label;
+
+        top.append(status);
+    }
+
+    header.append(top);
+    article.append(header);
+}
 
         if (settings.body) {
             const body = document.createElement("div");

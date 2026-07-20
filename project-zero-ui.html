@@ -197,50 +197,64 @@
                 targetId: "featureCards",
 
                 cards: [
-                    {
-            title: "練習入力",
+    {
+        icon: "📝",
 
-            description:
-                "得点や着弾位置を入力します。",
+        title: "練習入力",
 
-            body:
-                "的タップ、キーパッド、写真を使った入力に対応する予定です。",
+        description:
+            "得点や着弾位置を入力します。",
 
-            interactive: true,
+        body:
+            "的タップ、キーパッド、写真を使った入力に対応する予定です。",
 
-            actions: [
-                {
-                    label: "入力画面を開く",
-                    href: "input.html",
-                    className:
-                        "bas-button--primary"
-                }
-            ]
+        status: {
+            label: "利用可能",
+            type: "ready"
         },
 
-        {
-            title: "カメラセンター",
+        interactive: true,
 
-            description:
-                "撮影に必要な機能をまとめます。",
+        actions: [
+            {
+                label: "入力画面を開く",
+                href: "input.html",
+                className:
+                    "bas-button--primary"
+            }
+        ]
+    },
 
-            body:
-                "距離選択、撮影ガイド、写真確認などを一つの画面で操作できる構成を目指します。",
+    {
+        icon: "📷",
 
-            interactive: true,
+        title: "カメラセンター",
 
-            actions: [
-                {
-                    label:
-                        "カメラセンターを開く",
-                    href:
-                        "camera-center.html",
-                    className:
-                        "bas-button--secondary"
-                }
-            ]
-        }
-    ]
+        description:
+            "撮影に必要な機能をまとめます。",
+
+        body:
+            "距離選択、撮影ガイド、写真確認などを一つの画面で操作できる構成を目指します。",
+
+        status: {
+            label: "開発中",
+            type: "development"
+        },
+
+        interactive: true,
+
+        actions: [
+            {
+                label:
+                    "カメラセンターを開く",
+                href:
+                    "camera-center.html",
+                className:
+                    "bas-button--secondary"
+            }
+        ]
+    }
+]
 });
 
             const statusElement =
