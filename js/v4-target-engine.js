@@ -23,6 +23,19 @@
     let singleTapTimer = 0;
     let lastTap = null;
     let renderFrame = 0;
+    let pendingViewBox = null;
+
+    function scheduleViewBox(svg, box) {
+        pendingViewBox = box;
+        if (renderFrame) return;
+        renderFrame = requestAnimationFrame(function () {
+            renderFrame = 0;
+            if (!pendingViewBox) return;
+            const next = pendingViewBox;
+            pendingViewBox = null;
+            setViewBox(svg, next);
+        });
+    }
 
     function getSvg() {
         return document.getElementById("targetSvg");
@@ -146,6 +159,11 @@
     }
 
     function beginPinch(svg) {
+        if (pendingViewBox) {
+            const next = pendingViewBox;
+            pendingViewBox = null;
+            setViewBox(svg, next);
+        }
         const pair = firstTwoPointers();
         if (!pair) return;
         const center = centerOf(pair[0], pair[1]);
@@ -169,7 +187,7 @@
         const rect = svg.getBoundingClientRect();
         const fx = (center.x - rect.left) / rect.width;
         const fy = (center.y - rect.top) / rect.height;
-        setViewBox(svg, {
+        scheduleViewBox(svg, {
             x: gesture.anchor.x - fx * width,
             y: gesture.anchor.y - fy * width,
             width,
@@ -178,6 +196,11 @@
     }
 
     function beginBackgroundPan(svg, event) {
+        if (pendingViewBox) {
+            const next = pendingViewBox;
+            pendingViewBox = null;
+            setViewBox(svg, next);
+        }
         gesture = {
             mode: "background",
             pointerId: event.pointerId,
@@ -201,7 +224,7 @@
         if (!gesture.moved) return;
         const rect = svg.getBoundingClientRect();
         const box = gesture.startBox;
-        setViewBox(svg, {
+        scheduleViewBox(svg, {
             x: box.x - dx * box.width / rect.width,
             y: box.y - dy * box.height / rect.height,
             width: box.width,
@@ -245,13 +268,14 @@
             y: clamp(raw.y, 0, SVG_SIZE)
         };
         gesture.lastPoint = point;
-        if (renderFrame) cancelAnimationFrame(renderFrame);
+        if (renderFrame) return;
         renderFrame = requestAnimationFrame(function () {
             renderFrame = 0;
-            if (!gesture || gesture.mode !== "pin") return;
-            movePinVisual(gesture.index, point);
+            if (!gesture || gesture.mode !== "pin" || !gesture.lastPoint) return;
+            const latest = gesture.lastPoint;
+            movePinVisual(gesture.index, latest);
             if (window.baikaTargetModel && typeof window.baikaTargetModel.updatePinPosition === "function") {
-                window.baikaTargetModel.updatePinPosition(gesture.index, point.x, point.y);
+                window.baikaTargetModel.updatePinPosition(gesture.index, latest.x, latest.y);
             }
         });
     }

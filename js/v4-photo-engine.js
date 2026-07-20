@@ -67,6 +67,7 @@
 
             this.lastTapTime = 0;
             this.resizeObserver = null;
+            this.renderFrame = 0;
 
             this.handlePointerDown =
                 this.handlePointerDown.bind(this);
@@ -181,6 +182,10 @@
             }
 
             this.pointers.clear();
+            if (this.renderFrame) {
+                cancelAnimationFrame(this.renderFrame);
+                this.renderFrame = 0;
+            }
         }
 
         setLoaded(loaded) {
@@ -402,7 +407,7 @@
                 this.gesture.startY + deltaY;
 
             this.constrainPosition();
-            this.applyTransform();
+            this.scheduleTransform();
         }
 
         beginPinch() {
@@ -470,7 +475,7 @@
                 currentCenter.y - projected.y;
 
             this.constrainPosition();
-            this.applyTransform();
+            this.scheduleTransform();
         }
 
         detectDoubleTap(endedPointer) {
@@ -617,6 +622,14 @@
             this.applyTransform();
         }
 
+        scheduleTransform() {
+            if (this.renderFrame) return;
+            this.renderFrame = requestAnimationFrame(() => {
+                this.renderFrame = 0;
+                this.applyTransform();
+            });
+        }
+
         applyTransform() {
             this.image.style.transform = [
                 "translate(-50%, -50%)",
@@ -652,13 +665,26 @@
                     ? bounds.viewportHeight * 0.18
                     : 0;
 
+            const focusMode =
+                document.documentElement.classList.contains("v4-photo-focus-mode") ||
+                document.body.classList.contains("v4-photo-focus-mode");
+
+            /*
+             * 全画面600%では、写真の四隅まで十字照準の中央へ
+             * 移動できる必要がある。通常の「余白を出さない制限」では
+             * 上端・右端の矢孔を中央へ運べないため、全画面時だけ
+             * ビューポート半分の追加移動量を許可する。
+             */
+            const focusExtraX = focusMode ? bounds.viewportWidth / 2 : 0;
+            const focusExtraY = focusMode ? bounds.viewportHeight / 2 : 0;
+
             const maxX = Math.max(
                 minimumPanX,
-                (bounds.width - bounds.viewportWidth) / 2
+                Math.max(0, (bounds.width - bounds.viewportWidth) / 2) + focusExtraX
             );
             const maxY = Math.max(
                 minimumPanY,
-                (bounds.height - bounds.viewportHeight) / 2
+                Math.max(0, (bounds.height - bounds.viewportHeight) / 2) + focusExtraY
             );
 
             this.state.x = this.clamp(
