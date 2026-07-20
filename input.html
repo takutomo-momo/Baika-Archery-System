@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/v4-step60-8-photo-focus-fix.css?v=608">
     <link rel="stylesheet" href="css/v4-step63-photo-lock.css?v=630">
     <link rel="stylesheet" href="css/v4-step64-pin-adjust.css?v=640">
-    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=651">
+    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=652">
 </head>
 
 <body class="v4-body">
@@ -121,7 +121,7 @@
     </div>
 </section>
 
-<section class="v4-card v4-card-full">
+<section class="v4-card v4-card-full v4-photo-workspace-card">
     <div class="v4-card-title">
         🎯 写真から着弾位置を転記
     </div>
@@ -173,52 +173,6 @@
 
     <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
 <div class="v4-photo-interaction-area">
-<div class="v4-photo-controls">
-    <button
-        type="button"
-        id="v4PhotoZoomOut"
-        class="v4-photo-control-button"
-        disabled
-    >
-        −
-    </button>
-
-    <button
-        type="button"
-        id="v4PhotoZoomReset"
-        class="v4-photo-control-button v4-photo-control-wide"
-        disabled
-    >
-        100%
-    </button>
-
-    <button
-        type="button"
-        id="v4PhotoZoomIn"
-        class="v4-photo-control-button"
-        disabled
-    >
-        ＋
-    </button>
-
-    <button
-        type="button"
-        id="v4PhotoRotateLeft"
-        class="v4-photo-control-button"
-        disabled
-    >
-        ↺ 90°
-    </button>
-
-    <button
-        type="button"
-        id="v4PhotoRotateRight"
-        class="v4-photo-control-button"
-        disabled
-    >
-        ↻ 90°
-    </button>
-</div>
     <div
         id="v4TargetPhotoViewer"
         class="v4-photo-viewer"
@@ -254,7 +208,7 @@
 </div>
 
     <!-- 入力用の的 -->
-    <div class="v4-target-panel">
+    <div class="v4-target-panel v4-input-target-panel">
         <div class="v4-target-panel-title">
             🎯 入力用
         </div>
