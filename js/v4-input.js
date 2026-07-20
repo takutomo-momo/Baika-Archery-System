@@ -884,8 +884,35 @@ function getActiveInputArrows() {
         : currentArrows;
 }
 
+function updateTargetScoreSummary(arrows) {
+    const summary = document.getElementById("v4TargetScoreSummary");
+    if (!summary) return;
+
+    const source = Array.isArray(arrows) ? arrows : getActiveInputArrows();
+
+    if (source.length === 0) {
+        summary.textContent = "着弾を入力すると得点を表示します";
+        return;
+    }
+
+    const scoreLabels = source.map(function (arrow, index) {
+        const label = arrow && arrow.val != null ? String(arrow.val) : "－";
+        return `${index + 1}:${label}`;
+    });
+
+    const total = source.reduce(function (sum, arrow) {
+        return sum + Number(arrow && arrow.score || 0);
+    }, 0);
+
+    const average = (total / source.length).toFixed(1);
+
+    summary.textContent =
+        `${scoreLabels.join("  ")}　｜　本数 ${source.length}　合計 ${total}　平均 ${average}`;
+}
+
 function updateCurrentEndDisplay() {
     const arrows = getActiveInputArrows();
+    updateTargetScoreSummary(arrows);
     const preview = document.getElementById("v4ArrowsPreview");
 
     if (preview) {
