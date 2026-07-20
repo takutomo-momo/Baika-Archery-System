@@ -842,13 +842,55 @@
     }
 
 
+    let photoFocusRestore = null;
+
     function setPhotoFocusMode(enabled, elements) {
+        const shouldEnable = Boolean(enabled);
+        const panel = elements.viewer
+            ? elements.viewer.closest(".v4-photo-panel")
+            : null;
+
+        if (shouldEnable && panel && !photoFocusRestore) {
+            /*
+             * iPhone Safariでは、transform等を持つ祖先要素の内側にある
+             * position: fixed が画面全体ではなく祖先基準になることがある。
+             * フォーカス中だけ写真パネルをbody直下へ移し、確実に全画面化する。
+             */
+            photoFocusRestore = {
+                parent: panel.parentNode,
+                nextSibling: panel.nextSibling,
+                scrollX: window.scrollX,
+                scrollY: window.scrollY
+            };
+            document.body.appendChild(panel);
+            window.scrollTo(0, 0);
+        } else if (!shouldEnable && panel && photoFocusRestore) {
+            const restore = photoFocusRestore;
+            if (
+                restore.nextSibling &&
+                restore.nextSibling.parentNode === restore.parent
+            ) {
+                restore.parent.insertBefore(panel, restore.nextSibling);
+            } else {
+                restore.parent.appendChild(panel);
+            }
+            photoFocusRestore = null;
+            requestAnimationFrame(function () {
+                window.scrollTo(restore.scrollX, restore.scrollY);
+            });
+        }
+
         document.documentElement.classList.toggle(
             "v4-photo-focus-mode",
-            Boolean(enabled)
+            shouldEnable
         );
+        document.body.classList.toggle(
+            "v4-photo-focus-mode",
+            shouldEnable
+        );
+
         if (elements.fullscreenCloseButton) {
-            elements.fullscreenCloseButton.hidden = !enabled;
+            elements.fullscreenCloseButton.hidden = !shouldEnable;
         }
     }
 
