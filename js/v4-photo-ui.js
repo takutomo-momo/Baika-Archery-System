@@ -1100,20 +1100,20 @@
             dot.style.position = "absolute";
             dot.style.display = "grid";
             dot.style.placeItems = "center";
-            dot.style.minWidth = "28px";
+            dot.style.minWidth = "18px";
             dot.style.width = "auto";
-            dot.style.padding = "0 6px";
-            dot.style.height = "28px";
+            dot.style.padding = "0 3px";
+            dot.style.height = "18px";
             dot.style.borderRadius = "50%";
             dot.style.background = "red";
             dot.style.color = "white";
-            dot.style.fontSize = "12px";
+            dot.style.fontSize = "9px";
             dot.style.fontWeight = "800";
             dot.style.lineHeight = "1";
-            dot.style.border = "2px solid white";
+            dot.style.border = "1px solid white";
             dot.style.boxSizing = "border-box";
             dot.style.boxShadow =
-                "0 2px 6px rgba(0, 0, 0, 0.35)";
+                "0 1px 4px rgba(0, 0, 0, 0.45)";
             dot.style.pointerEvents = "auto";
             dot.style.touchAction = "none";
             dot.style.cursor = "grab";
