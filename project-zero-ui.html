@@ -97,67 +97,10 @@
                     </div>
                 </section>
 
-                <section class="bas-grid bas-grid--2">
-                    <article class="bas-card bas-card--interactive">
-                        <div class="bas-card__header">
-                            <div>
-                                <h2 class="bas-card__title">
-                                    練習入力
-                                </h2>
-
-                                <p class="bas-card__description">
-                                    得点や着弾位置を入力します。
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="bas-card__body">
-                            <p>
-                                的タップ、キーパッド、写真を使った入力に
-                                対応する予定です。
-                            </p>
-                        </div>
-
-                        <footer class="bas-card__footer">
-                            <a
-                                class="bas-button bas-button--primary"
-                                href="input.html"
-                            >
-                                入力画面を開く
-                            </a>
-                        </footer>
-                    </article>
-
-                    <article class="bas-card bas-card--interactive">
-                        <div class="bas-card__header">
-                            <div>
-                                <h2 class="bas-card__title">
-                                    カメラセンター
-                                </h2>
-
-                                <p class="bas-card__description">
-                                    撮影に必要な機能をまとめます。
-                                </p>
-                            </div>
-                        </div>
-
-                        <div class="bas-card__body">
-                            <p>
-                                距離選択、撮影ガイド、写真確認などを
-                                一つの画面で操作できる構成を目指します。
-                            </p>
-                        </div>
-
-                        <footer class="bas-card__footer">
-                            <a
-                                class="bas-button bas-button--secondary"
-                                href="camera-center.html"
-                            >
-                                カメラセンターを開く
-                            </a>
-                        </footer>
-                    </article>
-                </section>
+                <section
+                    id="featureCards"
+                    class="bas-grid bas-grid--2"
+                ></section>
 
                 <section class="bas-card">
                     <div class="bas-card__header">
@@ -234,8 +177,8 @@
     <script src="js/core/router.js"></script>
     <script src="js/components/header.js"></script>
     <script src="js/components/page-header.js"></script>
+    <script src="js/components/card.js"></script>
     <script src="js/core/app.js"></script>
-
     <script>
         window.addEventListener("baika:ready", function (event) {
             BAS_HEADER.render({
@@ -249,6 +192,56 @@
                     "梅花女子大学アーチェリー部 " +
                     "練習支援システムの共通UI確認ページです。"
             });
+
+            BAS_CARD.renderAll({
+                targetId: "featureCards",
+
+                cards: [
+                    {
+            title: "練習入力",
+
+            description:
+                "得点や着弾位置を入力します。",
+
+            body:
+                "的タップ、キーパッド、写真を使った入力に対応する予定です。",
+
+            interactive: true,
+
+            actions: [
+                {
+                    label: "入力画面を開く",
+                    href: "input.html",
+                    className:
+                        "bas-button--primary"
+                }
+            ]
+        },
+
+        {
+            title: "カメラセンター",
+
+            description:
+                "撮影に必要な機能をまとめます。",
+
+            body:
+                "距離選択、撮影ガイド、写真確認などを一つの画面で操作できる構成を目指します。",
+
+            interactive: true,
+
+            actions: [
+                {
+                    label:
+                        "カメラセンターを開く",
+                    href:
+                        "camera-center.html",
+                    className:
+                        "bas-button--secondary"
+                }
+            ]
+        }
+    ]
+});
 
             const statusElement =
                 document.getElementById("coreStatus");
