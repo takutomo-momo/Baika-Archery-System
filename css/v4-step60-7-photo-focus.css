@@ -1,0 +1,64 @@
+/* Step60-7: equal landscape panels + full-screen-style photo focus */
+@media (orientation: landscape) and (min-width: 568px) and (max-height: 900px) {
+  html.v4-is-landscape-layout .v4-target-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+  html.v4-is-landscape-layout .v4-target-layout > .v4-photo-panel,
+  html.v4-is-landscape-layout .v4-target-layout > .v4-target-panel:nth-child(2) {
+    min-width: 0 !important;
+  }
+  html.v4-is-landscape-layout .v4-target-layout > .v4-target-panel:nth-child(2) .v4-target-container {
+    width: min(100%, 52vh) !important;
+    max-width: 340px !important;
+    margin-inline: auto !important;
+  }
+}
+
+.v4-photo-fullscreen-close { display:none; }
+html.v4-photo-focus-mode,
+html.v4-photo-focus-mode body { overflow:hidden !important; }
+html.v4-photo-focus-mode .v4-photo-panel {
+  position:fixed !important;
+  inset:0 !important;
+  z-index:10000 !important;
+  width:100vw !important;
+  height:100dvh !important;
+  max-width:none !important;
+  margin:0 !important;
+  padding:8px !important;
+  border-radius:0 !important;
+  background:#111 !important;
+  display:flex !important;
+  flex-direction:column !important;
+}
+html.v4-photo-focus-mode .v4-photo-panel > :not(.v4-photo-interaction-area):not(.v4-photo-fullscreen-close) {
+  display:none !important;
+}
+html.v4-photo-focus-mode .v4-photo-interaction-area {
+  flex:1 1 auto !important;
+  min-height:0 !important;
+  display:flex !important;
+}
+html.v4-photo-focus-mode .v4-photo-controls { z-index:10003 !important; }
+html.v4-photo-focus-mode .v4-photo-viewer {
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+  max-height:none !important;
+  border-radius:8px !important;
+}
+html.v4-photo-focus-mode .v4-photo-fullscreen-close {
+  display:block !important;
+  position:fixed !important;
+  top:max(8px, env(safe-area-inset-top)) !important;
+  right:max(8px, env(safe-area-inset-right)) !important;
+  z-index:10005 !important;
+  border:0 !important;
+  border-radius:10px !important;
+  padding:10px 14px !important;
+  font-weight:700 !important;
+  background:rgba(255,255,255,.94) !important;
+  color:#4f2683 !important;
+  box-shadow:0 2px 12px rgba(0,0,0,.35) !important;
+}

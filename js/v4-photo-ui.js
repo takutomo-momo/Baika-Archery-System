@@ -841,7 +841,36 @@
         elements.undoButton = undoButton;
     }
 
+
+    function setPhotoFocusMode(enabled, elements) {
+        document.documentElement.classList.toggle(
+            "v4-photo-focus-mode",
+            Boolean(enabled)
+        );
+        if (elements.fullscreenCloseButton) {
+            elements.fullscreenCloseButton.hidden = !enabled;
+        }
+    }
+
     function bindUIEvents(elements) {
+        if (elements.fullscreenCloseButton) {
+            elements.fullscreenCloseButton.addEventListener(
+                "click",
+                function () {
+                    const rect = elements.viewer.getBoundingClientRect();
+                    setPhotoFocusMode(false, elements);
+                    requestAnimationFrame(function () {
+                        const nextRect = elements.viewer.getBoundingClientRect();
+                        photoEngine.focusAt(
+                            2.1,
+                            nextRect.left + nextRect.width / 2,
+                            nextRect.top + nextRect.height / 2
+                        );
+                    });
+                }
+            );
+        }
+
         /*
          * Step60-5:
          * 入力的で修正したピンは写真側へ同期しない。
@@ -943,6 +972,12 @@
 
                 setAimingCrosshairVisible(
                     Number(event.detail.scale) >= 5.95
+                );
+
+                setPhotoFocusMode(
+                    event.detail.loaded &&
+                    Number(event.detail.scale) >= 5.95,
+                    elements
                 );
 
                 renderPins(elements);
@@ -1979,6 +2014,10 @@
             emptyDisplay:
                 document.getElementById(
                     "v4TargetPhotoEmpty"
+                ),
+            fullscreenCloseButton:
+                document.getElementById(
+                    "v4PhotoFullscreenClose"
                 )
         };
     }
