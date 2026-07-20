@@ -312,6 +312,16 @@ function resetTargetZoom() {
     }
 
     svg.setAttribute("viewBox", "0 0 300 300");
+
+    if (
+        window.baikaTargetGesture &&
+        typeof window.baikaTargetGesture
+            .resetFineAdjustment === "function"
+    ) {
+        window.baikaTargetGesture
+            .resetFineAdjustment();
+    }
+
     renderTargetPins();
      renderGroupingPins();
 }

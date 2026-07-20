@@ -13,6 +13,7 @@
     let suppressClickUntil = 0;
     let pendingFrame = 0;
     let pendingPoint = null;
+    let fineAdjustIndex = null;
 
     function suppressNextClick() {
         suppressClickUntil =
@@ -30,7 +31,10 @@
 
     window.baikaTargetGesture = {
         consumeSuppressedClick:
-            consumeSuppressedClick
+            consumeSuppressedClick,
+        resetFineAdjustment: function () {
+            fineAdjustIndex = null;
+        }
     };
 
     function getSvg() {
@@ -66,6 +70,50 @@
             "viewBox",
             `${left} ${top} ${size} ${size}`
         );
+    }
+
+    function isFineZoomed(svg) {
+        if (!svg || !svg.viewBox || !svg.viewBox.baseVal) {
+            return false;
+        }
+
+        return svg.viewBox.baseVal.width <= 55;
+    }
+
+    function markFineAdjustPin(index) {
+        const svg = getSvg();
+        if (!svg) return;
+
+        svg.querySelectorAll(
+            "[data-target-pin-index]"
+        ).forEach(function (element) {
+            if (Number(element.getAttribute("r")) < 10) {
+                element.setAttribute(
+                    "stroke-width",
+                    Number(element.getAttribute(
+                        "data-original-stroke-width"
+                    ) || 1)
+                );
+            }
+        });
+
+        const parts = findPinParts(index);
+        if (parts.visiblePin) {
+            if (!parts.visiblePin.hasAttribute(
+                "data-original-stroke-width"
+            )) {
+                parts.visiblePin.setAttribute(
+                    "data-original-stroke-width",
+                    parts.visiblePin.getAttribute(
+                        "stroke-width"
+                    ) || "1"
+                );
+            }
+            parts.visiblePin.setAttribute(
+                "stroke-width",
+                "3"
+            );
+        }
     }
 
     function getSvgPoint(event) {
@@ -240,14 +288,27 @@
             svg &&
             Number.isFinite(originalPoint.x) &&
             Number.isFinite(originalPoint.y) &&
-            shouldZoomForFineAdjustment()
+            shouldZoomForFineAdjustment() &&
+            (!isFineZoomed(svg) || fineAdjustIndex !== index)
         ) {
+            /*
+             * 1回目のタップは600%拡大とピン選択だけにする。
+             * 拡大とドラッグを同じ指操作で行わないため、
+             * iPhoneでも細かな修正を始めやすい。
+             */
             zoomAroundPin(
                 svg,
                 originalPoint.x,
                 originalPoint.y
             );
+            fineAdjustIndex = index;
+            markFineAdjustPin(index);
+            suppressNextClick();
+            return;
         }
+
+        fineAdjustIndex = index;
+        markFineAdjustPin(index);
 
         activeDrag = {
             pointerId: event.pointerId,

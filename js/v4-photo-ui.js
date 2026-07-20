@@ -844,7 +844,10 @@
     function bindUIEvents(elements) {
         window.addEventListener(
             "baika:target-pin-updated",
-            updateScoreSummary
+            function (event) {
+                syncPhotoPinFromTarget(event, elements);
+                updateScoreSummary();
+            }
         );
 
         if (elements.input) {
@@ -1835,6 +1838,72 @@
             state ? state.naturalHeight : 0,
             getCalibration()
         );
+    }
+
+
+    /*
+     * Step60-4:
+     * 入力用の的でピンを修正したとき、写真上の同じ番号のピンも
+     * 同じ着弾位置へ戻す。これにより写真と入力的の表示が分離しない。
+     */
+    function syncPhotoPinFromTarget(event, elements) {
+        if (!event || !event.detail || !photoEngine) {
+            return;
+        }
+
+        const index = Number(event.detail.index);
+        const arrows = event.detail.arrows;
+
+        if (
+            !Number.isInteger(index) ||
+            !Array.isArray(arrows) ||
+            !pins[index] ||
+            !arrows[index]
+        ) {
+            return;
+        }
+
+        const state = photoEngine.getState();
+        const naturalWidth = Number(state.naturalWidth || 0);
+        const naturalHeight = Number(state.naturalHeight || 0);
+
+        if (!naturalWidth || !naturalHeight) {
+            return;
+        }
+
+        const arrow = arrows[index];
+        const targetX = Math.max(0, Math.min(300, Number(arrow.x)));
+        const targetY = Math.max(0, Math.min(300, Number(arrow.y)));
+        const calibration = getCalibration();
+
+        let photoX;
+        let photoY;
+
+        if (calibration.ready) {
+            photoX =
+                Number(calibration.centerX) +
+                ((targetX - 150) / 150) *
+                    Number(calibration.radiusX);
+            photoY =
+                Number(calibration.centerY) +
+                ((targetY - 150) / 150) *
+                    Number(calibration.radiusY);
+        } else {
+            photoX = (targetX / 300) * naturalWidth;
+            photoY = (targetY / 300) * naturalHeight;
+        }
+
+        const pin = pins[index];
+        pin.x = Math.max(0, Math.min(naturalWidth, photoX));
+        pin.y = Math.max(0, Math.min(naturalHeight, photoY));
+        pin.score = arrow.val === "M"
+            ? "M"
+            : String(arrow.val || arrow.score || "");
+        pin.photoPositionChanged = false;
+
+        renderPins(elements);
+        updateScoreList(elements);
+        updateApplyToEndButton();
     }
 
     function updateUndoButton(elements) {
