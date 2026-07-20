@@ -2,34 +2,145 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover"
+    >
+    <meta name="theme-color" content="#261243">
+
     <title>Baika Archery System Ver4</title>
+
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/v4-opening.css">
 </head>
-<body>
-    <header class="v4-header">
-        <div class="v4-brand">🏹 Baika Archery System Ver4</div>
-        <nav class="v4-nav">
-            <a href="index.html">🏠 ホーム</a>
-            <a href="input.html">📝 記録入力</a>
-            <a href="analysis.html">📊 分析</a>
-        </nav>
-    </header>
 
-    <div class="opening-content" style="max-width:720px; margin:60px auto;">
-        <h1>🏹 Baika Archery System Ver4</h1>
-        <p style="color:#666;">梅花女子大学洋弓部 スコア管理システム</p>
+<body class="v4-opening-page">
+    <main class="v4-opening-shell">
+        <section class="v4-opening-card">
+            <div class="v4-opening-brand">
+                <div class="v4-opening-brand-icon" aria-hidden="true">🏹</div>
 
-        <div class="stats-summary-grid" style="margin-top:24px;">
-            <a class="stat-box" href="input.html" style="text-decoration:none;">
-                <div class="stat-val">📝</div>
-                <div>記録入力</div>
-            </a>
+                <h1 class="v4-opening-title">
+                    Baika Archery System Ver4
+                </h1>
+            </div>
 
-            <a class="stat-box" href="analysis.html" style="text-decoration:none;">
-                <div class="stat-val">📊</div>
-                <div>分析</div>
-            </a>
-        </div>
-    </div>
+            <p class="v4-opening-subtitle">
+                梅花女子大学洋弓部 スコア管理システム
+            </p>
+
+            <!-- ログイン前 -->
+            <section
+                id="v4LoginPanel"
+                class="v4-login-panel"
+                aria-labelledby="v4LoginHeading"
+            >
+                <h2 id="v4LoginHeading" class="v4-visually-hidden">
+                    ログイン
+                </h2>
+
+                <div class="v4-login-form">
+                    <div class="v4-login-field">
+                        <label for="v4LoginMember">部員選択</label>
+
+                        <select id="v4LoginMember">
+                            <option value="">
+                                部員データを読み込んでいます
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="v4-login-field">
+                        <label for="v4LoginPassword">パスワード</label>
+
+                        <input
+                            id="v4LoginPassword"
+                            type="password"
+                            inputmode="text"
+                            autocomplete="current-password"
+                            placeholder="パスワードを入力"
+                        >
+                    </div>
+
+                    <button
+                        id="v4LoginButton"
+                        class="v4-login-button"
+                        type="button"
+                    >
+                        ログイン
+                    </button>
+                </div>
+            </section>
+
+            <!-- ログイン後 -->
+            <section
+                id="v4MenuPanel"
+                class="v4-menu-panel"
+                hidden
+                aria-labelledby="v4MenuHeading"
+            >
+                <div class="v4-welcome-box">
+                    <p class="v4-welcome-label">ログイン中</p>
+
+                    <p class="v4-welcome-member">
+                        <span id="v4LoggedInMember"></span>
+                    </p>
+                </div>
+
+                <h2 id="v4MenuHeading" class="v4-visually-hidden">
+                    メインメニュー
+                </h2>
+
+                <div class="v4-menu-grid">
+                    <a class="v4-menu-link" href="input.html">
+                        <span class="v4-menu-icon" aria-hidden="true">📝</span>
+                        <span class="v4-menu-label">練習入力</span>
+                    </a>
+
+                    <a
+                        class="v4-menu-link"
+                        href="input.html?mode=camera"
+                    >
+                        <span class="v4-menu-icon" aria-hidden="true">📷</span>
+                        <span class="v4-menu-label">撮影専用モード</span>
+                    </a>
+
+                    <a class="v4-menu-link" href="analysis.html">
+                        <span class="v4-menu-icon" aria-hidden="true">📊</span>
+                        <span class="v4-menu-label">分析</span>
+                    </a>
+
+                    <a
+                        class="v4-menu-link"
+                        href="match.html"
+                        id="v4MatchMenuLink"
+                    >
+                        <span class="v4-menu-icon" aria-hidden="true">🏆</span>
+                        <span class="v4-menu-label">大会記録</span>
+                    </a>
+                </div>
+
+                <div class="v4-menu-actions">
+                    <button
+                        id="v4LogoutButton"
+                        class="v4-logout-button"
+                        type="button"
+                    >
+                        ログアウト
+                    </button>
+                </div>
+            </section>
+
+            <p
+                id="v4LoginMessage"
+                class="v4-login-message"
+                role="status"
+                aria-live="polite"
+            ></p>
+        </section>
+    </main>
+
+    <script src="js/config.js"></script>
+    <script src="js/v4-auth.js"></script>
 </body>
 </html>

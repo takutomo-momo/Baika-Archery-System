@@ -88,6 +88,13 @@
         });
 
         refreshCounts();
+        const params = new URLSearchParams(window.location.search);
+
+       if (params.get("mode") === "camera") {
+       window.setTimeout(() => {
+        el.open.click();
+       }, 300);
+      }
     }
 
     async function openCamera() {
