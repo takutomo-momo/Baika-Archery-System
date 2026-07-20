@@ -270,3 +270,36 @@ body.v4-photo-focus-mode #v4TargetPhotoClear {
     .v4-landscape-sticky-stage { display: contents; }
     .v4-pin-adjust-panel { position: static; bottom: auto; }
 }
+
+/* Step66.1: 写真的上部の起動ボタンを下へ移し、3列の上端を統一 */
+.v4-camera-launch-area-bottom {
+    margin-top: 6px;
+}
+
+@media (orientation: landscape) and (min-width: 568px) and (max-height: 900px) {
+    html.v4-is-landscape-layout .v4-photo-panel .v4-photo-description {
+        display: none !important;
+    }
+
+    html.v4-is-landscape-layout .v4-camera-launch-area-bottom {
+        order: 20;
+        margin: 4px 0 0 !important;
+    }
+
+    html.v4-is-landscape-layout .v4-photo-panel {
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    html.v4-is-landscape-layout .v4-photo-panel .v4-photo-interaction-area {
+        order: 10;
+    }
+
+    html.v4-is-landscape-layout .v4-photo-panel .v4-photo-quick-actions {
+        order: 15;
+    }
+
+    html.v4-is-landscape-layout .v4-camera-launch-buttons {
+        grid-template-columns: 1fr 1fr !important;
+    }
+}

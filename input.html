@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/v4-step60-8-photo-focus-fix.css?v=608">
     <link rel="stylesheet" href="css/v4-step63-photo-lock.css?v=630">
     <link rel="stylesheet" href="css/v4-step64-pin-adjust.css?v=640">
-    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=660">
+    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=661">
 </head>
 
 <body class="v4-body">
@@ -143,16 +143,6 @@
                 射ち終えた的の写真を選択し、写真を確認しながら着弾位置を入力できます。
             </p>
 
-            <div class="v4-camera-launch-area">
-                <div class="v4-camera-launch-buttons">
-                    <button type="button" id="v4OpenCameraButton" class="v4-camera-launch-button">📷 撮影専用モードを開く</button>
-                    <button type="button" id="v4OpenPhotoListButton" class="v4-photo-list-button">🗂 写真一覧を開く・選択</button>
-                </div>
-                <div class="v4-camera-local-status" aria-live="polite">
-                    この端末に保存済み：<strong id="v4LocalPhotoCount">0</strong>枚
-                </div>
-            </div>
-
             <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
 
             <div class="v4-photo-interaction-area">
@@ -167,6 +157,16 @@
 
             <div id="v4PhotoQuickActions" class="v4-photo-quick-actions" aria-label="写真入力の修正操作">
                 <button type="button" id="v4TargetPhotoClear" class="v4-photo-clear-button" disabled>写真を閉じる</button>
+            </div>
+
+            <div class="v4-camera-launch-area v4-camera-launch-area-bottom">
+                <div class="v4-camera-launch-buttons">
+                    <button type="button" id="v4OpenCameraButton" class="v4-camera-launch-button">📷 撮影専用モードを開く</button>
+                    <button type="button" id="v4OpenPhotoListButton" class="v4-photo-list-button">🗂 写真一覧を開く・選択</button>
+                </div>
+                <div class="v4-camera-local-status" aria-live="polite">
+                    この端末に保存済み：<strong id="v4LocalPhotoCount">0</strong>枚
+                </div>
             </div>
         </div>
 
