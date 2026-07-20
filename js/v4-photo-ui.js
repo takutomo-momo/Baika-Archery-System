@@ -892,6 +892,21 @@
         if (elements.fullscreenCloseButton) {
             elements.fullscreenCloseButton.hidden = !shouldEnable;
         }
+
+        /*
+         * パネルをbody直下へ移動した直後は、iPhone Safariで
+         * 旧サイズの座標変換が残ることがある。2フレーム待って
+         * Photo Engineへ新しい表示領域を確実に再計算させる。
+         */
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                if (photoEngine && typeof photoEngine.handleResize === "function") {
+                    photoEngine.handleResize();
+                }
+                renderPins(elements);
+                renderArrowCandidates(elements);
+            });
+        });
     }
 
     function bindUIEvents(elements) {
@@ -1172,30 +1187,42 @@
             const dot =
                 document.createElement("div");
 
-            dot.textContent = String(index + 1);
-
+            /*
+             * 見た目は18pxの小さいピンを維持しつつ、
+             * 指で掴む範囲だけ34pxに広げる。
+             */
             dot.style.position = "absolute";
             dot.style.display = "grid";
             dot.style.placeItems = "center";
-            dot.style.minWidth = "18px";
-            dot.style.width = "auto";
-            dot.style.padding = "0 3px";
-            dot.style.height = "18px";
+            dot.style.width = "34px";
+            dot.style.height = "34px";
             dot.style.borderRadius = "50%";
-            dot.style.background = "red";
-            dot.style.color = "white";
-            dot.style.fontSize = "9px";
-            dot.style.fontWeight = "800";
-            dot.style.lineHeight = "1";
-            dot.style.border = "1px solid white";
-            dot.style.boxSizing = "border-box";
-            dot.style.boxShadow =
-                "0 1px 4px rgba(0, 0, 0, 0.45)";
+            dot.style.background = "transparent";
             dot.style.pointerEvents = "auto";
             dot.style.touchAction = "none";
             dot.style.cursor = "grab";
             dot.style.userSelect = "none";
             dot.style.webkitUserSelect = "none";
+
+            const visual = document.createElement("span");
+            visual.textContent = String(index + 1);
+            visual.style.display = "grid";
+            visual.style.placeItems = "center";
+            visual.style.minWidth = "18px";
+            visual.style.width = "auto";
+            visual.style.padding = "0 3px";
+            visual.style.height = "18px";
+            visual.style.borderRadius = "50%";
+            visual.style.background = "red";
+            visual.style.color = "white";
+            visual.style.fontSize = "9px";
+            visual.style.fontWeight = "800";
+            visual.style.lineHeight = "1";
+            visual.style.border = "1px solid white";
+            visual.style.boxSizing = "border-box";
+            visual.style.boxShadow = "0 1px 4px rgba(0, 0, 0, 0.45)";
+            visual.style.pointerEvents = "none";
+            dot.appendChild(visual);
 
             dot.style.left =
                 (

@@ -162,6 +162,10 @@ function handleTargetClick(event) {
         return;
     }
 
+    /*
+     * Target Engineがピンドラッグ／ピンタップとして
+     * 処理した直後のclickは、ズームへ渡さない。
+     */
     if (
         window.baikaTargetGesture &&
         typeof window.baikaTargetGesture
@@ -172,6 +176,10 @@ function handleTargetClick(event) {
         return;
     }
 
+    /*
+     * ピンク丸そのものをタップした場合も、
+     * 的ズームや新規入力として扱わない。
+     */
     if (
         event.target &&
         typeof event.target.closest === "function" &&
@@ -182,72 +190,52 @@ function handleTargetClick(event) {
         return;
     }
 
-    const point = getTargetSvgPoint(event);
+    const tappedPoint = getTargetSvgPoint(event);
 
-    if (!point) {
+    if (!tappedPoint) {
+        return;
+    }
+
+    const tappedX = tappedPoint.x;
+    const tappedY = tappedPoint.y;
+
+    if (!isZoomed) {
+        isZoomed = true;
+
+        zoomCenter = {
+            x: tappedX,
+            y: tappedY
+        };
+
+        svg.setAttribute(
+            "viewBox",
+            `${Math.max(0, Math.min(250, tappedX - 25))} ${Math.max(0, Math.min(250, tappedY - 25))} 50 50`
+        );
+
         return;
     }
 
     /*
-     * Step60-5:
-     * 写真から取り込んだピンがある場合、入力的は調整専用。
-     * 1回タップで、その位置を中心に600%へ拡大する。
-     * 新しいピンは追加しない。
+     * 6本入力済みでもズーム表示は利用できる。
+     * ただし、新しい7本目は追加しない。
      */
-    if (photoGroupingArrows.length > 0) {
-        const size = 50;
-        const half = size / 2;
-        const left = Math.max(
-            0,
-            Math.min(300 - size, point.x - half)
-        );
-        const top = Math.max(
-            0,
-            Math.min(300 - size, point.y - half)
-        );
-
-        isZoomed = true;
-        zoomCenter = {
-            x: left + half,
-            y: top + half
-        };
-
-        svg.setAttribute(
-            "viewBox",
-            `${left} ${top} ${size} ${size}`
-        );
-        return;
-    }
-
-    /* 通常の的入力は従来どおり。 */
-    if (!isZoomed) {
-        isZoomed = true;
-        zoomCenter = {
-            x: point.x,
-            y: point.y
-        };
-        svg.setAttribute(
-            "viewBox",
-            `${point.x - 50} ${point.y - 50} 100 100`
-        );
-        return;
-    }
-
     if (currentArrows.length >= 6) {
         return;
     }
 
     const realX =
-        zoomCenter.x - 50 + (point.x / 300) * 100;
+        zoomCenter.x - 50 + (tappedX / 300) * 100;
+
     const realY =
-        zoomCenter.y - 50 + (point.y / 300) * 100;
+        zoomCenter.y - 50 + (tappedY / 300) * 100;
 
     const arrow = calculateArrowScore(realX, realY);
-    currentArrows.push(arrow);
 
-    updateCurrentEndDisplay();
-    resetTargetZoom();
-    updateScoreInputState();
+currentArrows.push(arrow);
+
+updateCurrentEndDisplay();
+resetTargetZoom();
+updateScoreInputState();
 }
 
 /**
@@ -402,7 +390,7 @@ if (
             "cy",
             String(arrow.y)
         );
-        pinHitArea.setAttribute("r", "18");
+        pinHitArea.setAttribute("r", "12");
         pinHitArea.setAttribute(
             "fill",
             "transparent"
