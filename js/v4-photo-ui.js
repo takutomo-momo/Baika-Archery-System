@@ -941,7 +941,7 @@
                 );
 
                 setAimingCrosshairVisible(
-                    Number(event.detail.scale) > 1.05
+                    Number(event.detail.scale) >= 5.95
                 );
 
                 renderPins(elements);
@@ -992,7 +992,7 @@
                  * 基準表示が210%でも必ず1回目は拡大になる。
                  */
                 if (state.scale < 5.95) {
-                    photoEngine.zoomAt(
+                    photoEngine.focusAt(
                         6,
                         point.clientX,
                         point.clientY

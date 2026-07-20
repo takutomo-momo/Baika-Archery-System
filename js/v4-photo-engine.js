@@ -114,10 +114,6 @@
                 this.handleWheel,
                 { passive: false }
             );
-            this.viewer.addEventListener(
-                "dblclick",
-                this.handleDoubleClick
-            );
 
             this.image.addEventListener(
                 "load",
@@ -169,10 +165,6 @@
             this.viewer.removeEventListener(
                 "wheel",
                 this.handleWheel
-            );
-            this.viewer.removeEventListener(
-                "dblclick",
-                this.handleDoubleClick
             );
             this.image.removeEventListener(
                 "load",
@@ -331,7 +323,39 @@
             this.viewer.classList.remove("is-dragging");
             this.state.gestureMode = "idle";
 
-            this.detectDoubleTap(endedPointer);
+            /*
+             * Step60-2:
+             * パンやピンチではない短い1本指操作だけを
+             * 写真UIへ「シングルタップ」として通知する。
+             * 2段階入力（210% → 600% → ピン確定）と
+             * ダブルタップ判定が競合しないよう、ここでは
+             * pointerup時に即時通知する。
+             */
+            const isSingleTap =
+                event.type === "pointerup" &&
+                !this.gesture.moved &&
+                !this.gesture.wasMultiTouch;
+
+            if (isSingleTap && endedPointer) {
+                const imagePoint = this.screenToImagePoint(
+                    endedPointer.clientX,
+                    endedPointer.clientY
+                );
+
+                this.viewer.dispatchEvent(
+                    new CustomEvent(
+                        "baika-photo-singletap",
+                        {
+                            detail: {
+                                clientX: endedPointer.clientX,
+                                clientY: endedPointer.clientY,
+                                imageX: imagePoint.x,
+                                imageY: imagePoint.y
+                            }
+                        }
+                    )
+                );
+            }
 
             this.gesture.tapStart = null;
             this.gesture.moved = false;
@@ -530,6 +554,34 @@
 
             this.state.x += clientX - projected.x;
             this.state.y += clientY - projected.y;
+
+            this.constrainPosition();
+            this.applyTransform();
+        }
+
+        focusAt(scale, clientX, clientY) {
+            if (!this.state.loaded) {
+                return;
+            }
+
+            const anchor =
+                this.screenToImagePoint(clientX, clientY);
+
+            this.state.scale = this.clamp(
+                scale,
+                this.options.minScale,
+                this.options.maxScale
+            );
+
+            const projected =
+                this.imageToScreenPoint(anchor.x, anchor.y);
+            const rect =
+                this.viewer.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            this.state.x += centerX - projected.x;
+            this.state.y += centerY - projected.y;
 
             this.constrainPosition();
             this.applyTransform();
