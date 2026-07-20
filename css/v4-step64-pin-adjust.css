@@ -1,0 +1,151 @@
+/*
+ * Baika Archery System Ver4 - Step64
+ * 入力的ピン選択＋方向ボタン微調整、横向き入力的サイズ改善
+ */
+
+.v4-pin-adjust-panel {
+    margin-top: 8px;
+    padding: 9px;
+    border: 1px solid rgba(124, 58, 237, 0.20);
+    border-radius: 14px;
+    background: rgba(248, 250, 252, 0.92);
+}
+
+.v4-pin-adjust-panel.is-active {
+    border-color: rgba(236, 72, 153, 0.65);
+    box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.10);
+}
+
+.v4-pin-adjust-status {
+    min-height: 20px;
+    margin-bottom: 6px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #374151;
+}
+
+.v4-pin-adjust-panel.is-active .v4-pin-adjust-status {
+    color: #be185d;
+}
+
+.v4-pin-adjust-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 46px);
+    grid-template-rows: repeat(3, 42px);
+    justify-content: center;
+    align-items: center;
+    gap: 3px;
+    touch-action: none;
+}
+
+.v4-pin-nudge {
+    width: 46px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid rgba(124, 58, 237, 0.25);
+    border-radius: 11px;
+    background: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    color: #6d28d9;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.v4-pin-nudge:active:not(:disabled) {
+    transform: scale(0.94);
+    background: #f3e8ff;
+}
+
+.v4-pin-nudge:disabled {
+    opacity: 0.35;
+}
+
+.v4-pin-nudge-up { grid-column: 2; grid-row: 1; }
+.v4-pin-nudge-left { grid-column: 1; grid-row: 2; }
+.v4-pin-adjust-center {
+    grid-column: 2;
+    grid-row: 2;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: #6b7280;
+}
+.v4-pin-nudge-right { grid-column: 3; grid-row: 2; }
+.v4-pin-nudge-down { grid-column: 2; grid-row: 3; }
+
+.v4-pin-adjust-options {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 7px 12px;
+    margin-top: 6px;
+    font-size: 11px;
+    color: #4b5563;
+}
+
+.v4-pin-adjust-options label {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.v4-pin-adjust-done {
+    min-height: 32px;
+    padding: 5px 11px;
+    border: 1px solid rgba(107, 114, 128, 0.28);
+    border-radius: 9px;
+    background: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    color: #4b5563;
+}
+
+/* 横向きでは、従来の34vh/220px制限を上書きして入力的を優先する */
+@media (orientation: landscape) and (min-width: 568px) and (max-height: 900px) {
+    html.v4-is-landscape-layout .v4-target-layout {
+        grid-template-columns: minmax(0, 1fr) minmax(280px, 64vh) !important;
+        gap: 8px !important;
+        align-items: start !important;
+    }
+
+    html.v4-is-landscape-layout
+    .v4-target-layout
+    > .v4-target-panel:nth-child(2)
+    .v4-target-container {
+        width: min(100%, 64vh) !important;
+        min-width: min(280px, 64vh) !important;
+        max-width: 390px !important;
+        margin-inline: auto !important;
+    }
+
+    html.v4-is-landscape-layout .v4-pin-adjust-panel {
+        padding: 5px 7px;
+        margin-top: 5px;
+    }
+
+    html.v4-is-landscape-layout .v4-pin-adjust-grid {
+        grid-template-columns: repeat(3, 42px);
+        grid-template-rows: repeat(3, 34px);
+    }
+
+    html.v4-is-landscape-layout .v4-pin-nudge {
+        width: 42px;
+        height: 34px;
+        font-size: 17px;
+    }
+
+    html.v4-is-landscape-layout .v4-pin-adjust-status {
+        margin-bottom: 2px;
+        min-height: 16px;
+        font-size: 10px;
+    }
+
+    html.v4-is-landscape-layout .v4-pin-adjust-options {
+        margin-top: 3px;
+        font-size: 10px;
+    }
+}

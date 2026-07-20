@@ -24,6 +24,9 @@
     let lastTap = null;
     let renderFrame = 0;
     let pendingViewBox = null;
+    let selectedPinIndex = null;
+    let nudgeHoldTimer = 0;
+    let nudgeRepeatTimer = 0;
 
     function scheduleViewBox(svg, box) {
         pendingViewBox = box;
@@ -134,6 +137,118 @@
         }
     }
 
+    function clearPinSelection() {
+        selectedPinIndex = null;
+        applyPinSelection();
+        updateAdjustmentPanel();
+    }
+
+    function applyPinSelection() {
+        const svg = getSvg();
+        if (!svg) return;
+
+        svg.querySelectorAll("[data-target-pin-index]").forEach(function (element) {
+            const index = Number(element.getAttribute("data-target-pin-index"));
+            const radius = Number(element.getAttribute("r"));
+            const isSelected = index === selectedPinIndex;
+
+            if (radius < 10) {
+                element.setAttribute("stroke", isSelected ? "#111827" : "#ffffff");
+                element.setAttribute("stroke-width", isSelected ? "2.5" : "1");
+                element.setAttribute("r", isSelected ? "6.5" : "5");
+            }
+        });
+    }
+
+    function updateAdjustmentPanel() {
+        const panel = document.getElementById("v4PinAdjustPanel");
+        const status = document.getElementById("v4PinAdjustStatus");
+        if (!panel || !status) return;
+
+        const hasSelection = Number.isInteger(selectedPinIndex);
+        panel.classList.toggle("is-active", hasSelection);
+        panel.querySelectorAll("[data-pin-nudge]").forEach(function (button) {
+            button.disabled = !hasSelection;
+        });
+        status.textContent = hasSelection
+            ? `ピン ${selectedPinIndex + 1} を選択中`
+            : "入力的のピンをタップしてください";
+    }
+
+    function selectPin(index) {
+        if (!Number.isInteger(index)) return;
+        selectedPinIndex = index;
+        applyPinSelection();
+        updateAdjustmentPanel();
+        window.dispatchEvent(new CustomEvent("baika:target-pin-selected", {
+            detail: { index: index }
+        }));
+    }
+
+    function getNudgeStep() {
+        const checked = document.querySelector('input[name="v4PinAdjustStep"]:checked');
+        return checked ? Number(checked.value) || 1 : 1;
+    }
+
+    function nudgeSelectedPin(dx, dy) {
+        if (!Number.isInteger(selectedPinIndex)) return false;
+        const parts = findPinParts(selectedPinIndex);
+        const visiblePin = parts.visiblePin;
+        if (!visiblePin) return false;
+
+        const step = getNudgeStep();
+        const point = {
+            x: clamp(Number(visiblePin.getAttribute("cx")) + dx * step, 0, SVG_SIZE),
+            y: clamp(Number(visiblePin.getAttribute("cy")) + dy * step, 0, SVG_SIZE)
+        };
+
+        movePinVisual(selectedPinIndex, point);
+        if (window.baikaTargetModel && typeof window.baikaTargetModel.finishPinPosition === "function") {
+            window.baikaTargetModel.finishPinPosition(selectedPinIndex, point.x, point.y);
+        }
+        requestAnimationFrame(applyPinSelection);
+        return true;
+    }
+
+    function stopNudgeRepeat() {
+        clearTimeout(nudgeHoldTimer);
+        clearInterval(nudgeRepeatTimer);
+        nudgeHoldTimer = 0;
+        nudgeRepeatTimer = 0;
+    }
+
+    function startNudge(button) {
+        const dx = Number(button.dataset.dx || 0);
+        const dy = Number(button.dataset.dy || 0);
+        nudgeSelectedPin(dx, dy);
+        stopNudgeRepeat();
+        nudgeHoldTimer = window.setTimeout(function () {
+            nudgeRepeatTimer = window.setInterval(function () {
+                nudgeSelectedPin(dx, dy);
+            }, 70);
+        }, 360);
+    }
+
+    function bindAdjustmentPanel() {
+        const panel = document.getElementById("v4PinAdjustPanel");
+        if (!panel || panel.dataset.bound) return;
+        panel.dataset.bound = "true";
+
+        panel.querySelectorAll("[data-pin-nudge]").forEach(function (button) {
+            button.addEventListener("pointerdown", function (event) {
+                event.preventDefault();
+                startNudge(button);
+            });
+            ["pointerup", "pointercancel", "pointerleave", "lostpointercapture"].forEach(function (name) {
+                button.addEventListener(name, stopNudgeRepeat);
+            });
+        });
+
+        const clearButton = document.getElementById("v4PinAdjustDone");
+        if (clearButton) clearButton.addEventListener("click", clearPinSelection);
+        updateAdjustmentPanel();
+    }
+
     function pointerRecord(event) {
         return {
             id: event.pointerId,
@@ -232,25 +347,15 @@
         });
     }
 
-    function beginPinDrag(svg, event, pinElement) {
+    function beginPinSelection(event, pinElement) {
         const index = Number(pinElement.getAttribute("data-target-pin-index"));
         if (!Number.isInteger(index)) return false;
-        const parts = findPinParts(index);
-        const visiblePin = parts.visiblePin || pinElement;
+        selectPin(index);
         gesture = {
-            mode: "pin",
+            mode: "pin-select",
             pointerId: event.pointerId,
-            index,
-            startClientX: event.clientX,
-            startClientY: event.clientY,
-            moved: false,
-            original: {
-                x: Number(visiblePin.getAttribute("cx")),
-                y: Number(visiblePin.getAttribute("cy"))
-            },
-            lastPoint: null
+            moved: false
         };
-        visiblePin.style.cursor = "grabbing";
         suppressNextClick();
         return true;
     }
@@ -346,7 +451,7 @@
         }
 
         const pin = findPinElement(event.target);
-        if (pin && beginPinDrag(svg, event, pin)) return;
+        if (pin && beginPinSelection(event, pin)) return;
         beginBackgroundPan(svg, event);
     }
 
@@ -363,8 +468,7 @@
             return;
         }
         if (!gesture || gesture.pointerId !== event.pointerId) return;
-        if (gesture.mode === "pin") updatePinDrag(svg, event);
-        else if (gesture.mode === "background") updateBackgroundPan(svg, event);
+        if (gesture.mode === "background") updateBackgroundPan(svg, event);
     }
 
     function handlePointerEnd(event) {
@@ -376,7 +480,9 @@
         pointers.delete(event.pointerId);
         try { svg.releasePointerCapture(event.pointerId); } catch (error) {}
 
-        if (endedGesture && endedGesture.mode === "pin" && endedGesture.pointerId === event.pointerId) {
+        if (endedGesture && endedGesture.mode === "pin-select" && endedGesture.pointerId === event.pointerId) {
+            gesture = null;
+        } else if (endedGesture && endedGesture.mode === "pin" && endedGesture.pointerId === event.pointerId) {
             finishPinDrag();
             gesture = null;
         } else if (endedGesture && endedGesture.mode === "background" && endedGesture.pointerId === event.pointerId) {
@@ -409,11 +515,21 @@
         svg.addEventListener("pointerup", handlePointerEnd);
         svg.addEventListener("pointercancel", handlePointerEnd);
         svg.addEventListener("lostpointercapture", handlePointerEnd);
+        bindAdjustmentPanel();
+
+        const observer = new MutationObserver(function () {
+            if (Number.isInteger(selectedPinIndex)) requestAnimationFrame(applyPinSelection);
+        });
+        const pinsGroup = document.getElementById("pinsGroup");
+        if (pinsGroup) observer.observe(pinsGroup, { childList: true });
     }
 
     window.baikaTargetGesture = {
         consumeSuppressedClick,
-        resetFineAdjustment: resetView
+        resetFineAdjustment: resetView,
+        selectPin: selectPin,
+        clearPinSelection: clearPinSelection,
+        nudgeSelectedPin: nudgeSelectedPin
     };
 
     document.addEventListener("DOMContentLoaded", bind);

@@ -18,6 +18,7 @@
      <link rel="stylesheet" href="css/v4-step60-7-photo-focus.css?v=607">
     <link rel="stylesheet" href="css/v4-step60-8-photo-focus-fix.css?v=608">
     <link rel="stylesheet" href="css/v4-step63-photo-lock.css?v=630">
+    <link rel="stylesheet" href="css/v4-step64-pin-adjust.css?v=640">
 </head>
 
 <body class="v4-body">
@@ -272,6 +273,26 @@
             class="v4-target-score-summary"
             aria-live="polite"
         ></div>
+
+        <div id="v4PinAdjustPanel" class="v4-pin-adjust-panel" aria-label="入力的ピンの微調整">
+            <div id="v4PinAdjustStatus" class="v4-pin-adjust-status" aria-live="polite">
+                入力的のピンをタップしてください
+            </div>
+
+            <div class="v4-pin-adjust-grid">
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-up" data-pin-nudge data-dx="0" data-dy="-1" aria-label="上へ移動">▲</button>
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-left" data-pin-nudge data-dx="-1" data-dy="0" aria-label="左へ移動">◀</button>
+                <div class="v4-pin-adjust-center">微調整</div>
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-right" data-pin-nudge data-dx="1" data-dy="0" aria-label="右へ移動">▶</button>
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-down" data-pin-nudge data-dx="0" data-dy="1" aria-label="下へ移動">▼</button>
+            </div>
+
+            <div class="v4-pin-adjust-options">
+                <label><input type="radio" name="v4PinAdjustStep" value="0.5" checked> 細かく</label>
+                <label><input type="radio" name="v4PinAdjustStep" value="1.5"> 大きく</label>
+                <button type="button" id="v4PinAdjustDone" class="v4-pin-adjust-done">選択解除</button>
+            </div>
+        </div>
 
         <button
             type="button"
@@ -811,7 +832,7 @@
 <script src="js/v4-input.js?v=610"></script>
 <script src="js/v4-photo-engine.js?v=630"></script>
 <script src="js/v4-layout.js?v=29b4"></script>
-<script src="js/v4-target-engine.js?v=620"></script>
+<script src="js/v4-target-engine.js?v=640"></script>
 <script src="js/v4-arrow-detector.js?v=354a"></script>
 <script src="js/v4-photo-ui.js?v=630"></script>
 <script src="js/v4-camera.js?v=55"></script>
