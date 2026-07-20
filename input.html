@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/v4-step60-8-photo-focus-fix.css?v=608">
     <link rel="stylesheet" href="css/v4-step63-photo-lock.css?v=630">
     <link rel="stylesheet" href="css/v4-step64-pin-adjust.css?v=640">
-    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=654">
+    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=660">
 </head>
 
 <body class="v4-body">
@@ -132,103 +132,57 @@
 
 <div class="v4-target-layout">
 
-    <!-- 撮影した的の写真 -->
-<div class="v4-target-panel v4-photo-panel">
-    <div class="v4-target-panel-title">
-        📷 撮影した的
-    </div>
+    <div class="v4-landscape-sticky-stage">
+        <!-- 撮影した的の写真 -->
+        <div class="v4-target-panel v4-photo-panel">
+            <div class="v4-target-panel-title">📷 撮影した的</div>
 
-    <button type="button" id="v4PhotoFullscreenClose" class="v4-photo-fullscreen-close" hidden>↩ 左右表示に戻る</button>
+            <button type="button" id="v4PhotoFullscreenClose" class="v4-photo-fullscreen-close" hidden>↩ 左右表示に戻る</button>
 
-    <p class="v4-photo-description">
-        射ち終えた的の写真を選択し、
-        写真を確認しながら着弾位置を入力できます。
-    </p>
+            <p class="v4-photo-description">
+                射ち終えた的の写真を選択し、写真を確認しながら着弾位置を入力できます。
+            </p>
 
-    <div class="v4-camera-launch-area">
-        <div class="v4-camera-launch-buttons">
-            <button
-                type="button"
-                id="v4OpenCameraButton"
-                class="v4-camera-launch-button"
-            >
-                📷 撮影専用モードを開く
-            </button>
+            <div class="v4-camera-launch-area">
+                <div class="v4-camera-launch-buttons">
+                    <button type="button" id="v4OpenCameraButton" class="v4-camera-launch-button">📷 撮影専用モードを開く</button>
+                    <button type="button" id="v4OpenPhotoListButton" class="v4-photo-list-button">🗂 写真一覧を開く・選択</button>
+                </div>
+                <div class="v4-camera-local-status" aria-live="polite">
+                    この端末に保存済み：<strong id="v4LocalPhotoCount">0</strong>枚
+                </div>
+            </div>
 
-            <button
-                type="button"
-                id="v4OpenPhotoListButton"
-                class="v4-photo-list-button"
-            >
-                🗂 写真一覧を開く・選択
-            </button>
+            <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
+
+            <div class="v4-photo-interaction-area">
+                <div id="v4TargetPhotoViewer" class="v4-photo-viewer">
+                    <div id="v4TargetPhotoEmpty" class="v4-photo-empty">
+                        <span class="v4-photo-empty-icon">📷</span>
+                        <span>写真が選択されていません</span>
+                    </div>
+                    <img id="v4TargetPhotoPreview" class="v4-photo-preview" alt="撮影したアーチェリーの的" draggable="false" hidden>
+                </div>
+            </div>
+
+            <div id="v4PhotoQuickActions" class="v4-photo-quick-actions" aria-label="写真入力の修正操作">
+                <button type="button" id="v4TargetPhotoClear" class="v4-photo-clear-button" disabled>写真を閉じる</button>
+            </div>
         </div>
 
-        <div class="v4-camera-local-status" aria-live="polite">
-            この端末に保存済み：
-            <strong id="v4LocalPhotoCount">0</strong>枚
-        </div>
-    </div>
+        <!-- 入力用の的 -->
+        <div class="v4-target-panel v4-input-target-panel">
+            <div class="v4-target-panel-title">🎯 入力用</div>
 
+            <div class="v4-target-container">
+                <svg id="targetSvg" viewBox="0 0 300 300" role="img" aria-label="着弾位置入力用の的"></svg>
+            </div>
 
-    <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
-<div class="v4-photo-interaction-area">
-    <div
-        id="v4TargetPhotoViewer"
-        class="v4-photo-viewer"
-    >
-        <div
-            id="v4TargetPhotoEmpty"
-            class="v4-photo-empty"
-        >
-            <span class="v4-photo-empty-icon">📷</span>
-            <span>写真が選択されていません</span>
+            <div id="v4TargetScoreSummary" class="v4-target-score-summary" aria-live="polite"></div>
         </div>
 
-        <img
-            id="v4TargetPhotoPreview"
-            class="v4-photo-preview"
-            alt="撮影したアーチェリーの的"
-            draggable="false"
-            hidden
-        >
-    </div>
-</div>
-
-    <div id="v4PhotoQuickActions" class="v4-photo-quick-actions" aria-label="写真入力の修正操作">
-        <button
-            type="button"
-            id="v4TargetPhotoClear"
-            class="v4-photo-clear-button"
-            disabled
-        >
-            写真を閉じる
-        </button>
-    </div>
-</div>
-
-    <!-- 入力用の的 -->
-    <div class="v4-target-panel v4-input-target-panel">
-        <div class="v4-target-panel-title">
-            🎯 入力用
-        </div>
-
-        <div class="v4-target-container">
-            <svg
-                id="targetSvg"
-                viewBox="0 0 300 300"
-                role="img"
-                aria-label="着弾位置入力用の的"
-            ></svg>
-        </div>
-
-        <div
-            id="v4TargetScoreSummary"
-            class="v4-target-score-summary"
-            aria-live="polite"
-        ></div>
-
-        <div id="v4PinAdjustPanel" class="v4-pin-adjust-panel" aria-label="入力的ピンの微調整">
+        <!-- 入力的の右側に独立配置するピン調整ボタン -->
+        <div id="v4PinAdjustPanel" class="v4-pin-adjust-panel v4-pin-adjust-panel-right" aria-label="入力的ピンの微調整">
             <div id="v4PinAdjustStatus" class="v4-pin-adjust-status" aria-live="polite">
                 調整するピンを入力的で選択してください
             </div>
@@ -250,23 +204,12 @@
     </div>
 
     <!-- グルーピング確認用の的 -->
-    <div class="v4-target-panel">
-        <div class="v4-target-panel-title">
-            グルーピング確認
-        </div>
-
+    <div class="v4-target-panel v4-grouping-panel">
+        <div class="v4-target-panel-title">グルーピング確認</div>
         <div class="v4-target-container v4-grouping-container">
-            <svg
-                id="groupingTargetSvg"
-                viewBox="0 0 300 300"
-                role="img"
-                aria-label="グルーピング確認用の的"
-            ></svg>
+            <svg id="groupingTargetSvg" viewBox="0 0 300 300" role="img" aria-label="グルーピング確認用の的"></svg>
         </div>
-
-        <p class="v4-grouping-note">
-            入力済みの着弾位置を全体表示します。
-        </p>
+        <p class="v4-grouping-note">入力済みの着弾位置を全体表示します。</p>
     </div>
 
 </div>
