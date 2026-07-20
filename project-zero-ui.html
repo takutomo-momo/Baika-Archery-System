@@ -48,20 +48,7 @@
        <div id="app-header"></div>
 
         <main class="bas-app__main">
-            <header class="bas-page-header">
-                <p class="bas-page-header__eyebrow">
-                    Project Zero
-                </p>
-
-                <h1 class="bas-page-header__title">
-                    Baika Archery System
-                </h1>
-
-                <p class="bas-page-header__description">
-                    梅花女子大学アーチェリー部
-                    練習支援システムの共通UI確認ページです。
-                </p>
-            </header>
+            <div id="page-header"></div>
 
             <div class="bas-stack">
                 <section class="bas-card">
@@ -246,6 +233,7 @@
     <script src="js/core/state.js"></script>
     <script src="js/core/router.js"></script>
     <script src="js/components/header.js"></script>
+    <script src="js/components/page-header.js"></script>
     <script src="js/core/app.js"></script>
 
     <script>
@@ -253,7 +241,15 @@
             BAS_HEADER.render({
                 currentRoute: event.detail.route
             });
-            
+
+            BAS_PAGE_HEADER.render({
+                eyebrow: "Project Zero",
+                title: "Baika Archery System",
+                description:
+                    "梅花女子大学アーチェリー部 " +
+                    "練習支援システムの共通UI確認ページです。"
+            });
+
             const statusElement =
                 document.getElementById("coreStatus");
 
