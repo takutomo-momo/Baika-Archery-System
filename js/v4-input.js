@@ -8,11 +8,12 @@
  * ・的の描画
  * ・2段階ズーム
  * ・着弾位置の取得
- * ・最大6本までの仮入力
+ * ・本数制限なしの仮入力
  */
 
 let currentArrows = [];
 let photoGroupingArrows = [];
+let registeredGroupingArrows = [];
 let isZoomed = false;
 let zoomCenter = {
     x: 150,
@@ -212,14 +213,6 @@ function handleTargetClick(event) {
             `${Math.max(0, Math.min(250, tappedX - 25))} ${Math.max(0, Math.min(250, tappedY - 25))} 50 50`
         );
 
-        return;
-    }
-
-    /*
-     * 6本入力済みでもズーム表示は利用できる。
-     * ただし、新しい7本目は追加しない。
-     */
-    if (currentArrows.length >= 6) {
         return;
     }
 
@@ -489,6 +482,7 @@ function updateTargetPinPosition(
         true;
 
     renderGroupingPins();
+    updateCurrentEndDisplay();
 
     window.dispatchEvent(
         new CustomEvent(
@@ -547,10 +541,13 @@ function renderGroupingPins() {
 
     pinsGroup.innerHTML = "";
 
-    const groupingSource =
+    const activeArrows =
         photoGroupingArrows.length > 0
             ? photoGroupingArrows
             : currentArrows;
+
+    const groupingSource =
+        registeredGroupingArrows.concat(activeArrows);
 
     groupingSource.forEach(function (arrow, index) {
 if (
@@ -872,98 +869,82 @@ function syncPhotoPinsToGrouping(
 
     renderTargetPins();
     renderGroupingPins();
+    updateCurrentEndDisplay();
 }
 
 window.syncPhotoPinsToGrouping =
     syncPhotoPinsToGrouping;
 
 /**
- * 現在入力中の6本と、合計・平均を画面へ反映する
+ * 現在入力中の着弾と、合計・平均を画面へ反映する
  */
-function updateCurrentEndDisplay() {
-    const arrowSlots =
-        document.querySelectorAll(".v4-arrow-slot");
-
-    arrowSlots.forEach(function (slot, index) {
-        const scoreElement =
-            slot.querySelector(".v4-arrow-score");
-
-        const arrow = currentArrows[index];
-
-        slot.classList.remove(
-            "is-filled",
-            "is-miss"
-        );
-
-        if (!scoreElement) {
-            return;
-        }
-
-        if (!arrow) {
-            scoreElement.textContent = "－";
-            return;
-        }
-
-        scoreElement.textContent = arrow.val;
-        slot.classList.add("is-filled");
-
-        if (arrow.val === "M") {
-            slot.classList.add("is-miss");
-        }
-    });
-
-    const count = currentArrows.length;
-
-    const total = currentArrows.reduce(
-        function (sum, arrow) {
-            return sum + Number(arrow.score || 0);
-        },
-        0
-    );
-
-    const average =
-        count > 0
-            ? (total / count).toFixed(1)
-            : "0.0";
-
-    const countElement =
-        document.getElementById(
-            "v4CurrentArrowCount"
-        );
-
-    const totalElement =
-        document.getElementById(
-            "v4CurrentArrowTotal"
-        );
-
-    const averageElement =
-        document.getElementById(
-            "v4CurrentArrowAverage"
-        );
-
-    if (countElement) {
-        countElement.textContent =
-            `${count} / 6`;
-    }
-
-    if (totalElement) {
-        totalElement.textContent =
-            String(total);
-    }
-
-    if (averageElement) {
-        averageElement.textContent =
-            average;
-    }
+function getActiveInputArrows() {
+    return photoGroupingArrows.length > 0
+        ? photoGroupingArrows
+        : currentArrows;
 }
+
+function updateCurrentEndDisplay() {
+    const arrows = getActiveInputArrows();
+    const preview = document.getElementById("v4ArrowsPreview");
+
+    if (preview) {
+        preview.innerHTML = "";
+
+        arrows.forEach(function (arrow, index) {
+            const slot = document.createElement("button");
+            slot.type = "button";
+            slot.className = "v4-arrow-slot is-filled";
+            slot.disabled = true;
+
+            if (arrow && arrow.val === "M") {
+                slot.classList.add("is-miss");
+            }
+
+            const number = document.createElement("span");
+            number.className = "v4-arrow-number";
+            number.textContent = String(index + 1);
+
+            const score = document.createElement("span");
+            score.className = "v4-arrow-score";
+            score.textContent = arrow && arrow.val != null
+                ? String(arrow.val)
+                : "－";
+
+            slot.appendChild(number);
+            slot.appendChild(score);
+            preview.appendChild(slot);
+        });
+
+        if (arrows.length === 0) {
+            const empty = document.createElement("div");
+            empty.className = "v4-arrows-empty";
+            empty.textContent = "まだ入力されていません";
+            preview.appendChild(empty);
+        }
+    }
+
+    const count = arrows.length;
+    const total = arrows.reduce(function (sum, arrow) {
+        return sum + Number(arrow && arrow.score || 0);
+    }, 0);
+    const average = count > 0 ? (total / count).toFixed(1) : "0.0";
+
+    const countElement = document.getElementById("v4CurrentArrowCount");
+    const totalElement = document.getElementById("v4CurrentArrowTotal");
+    const averageElement = document.getElementById("v4CurrentArrowAverage");
+
+    if (countElement) countElement.textContent = `${count}本`;
+    if (totalElement) totalElement.textContent = String(total);
+    if (averageElement) averageElement.textContent = average;
+
+    updateScoreInputState();
+}
+
 /**
  * キーパッドから得点を入力する
  */
 function handleScoreKeypadInput(value, score) {
-    if (currentArrows.length >= 6) {
-        return;
-    }
-
 currentArrows.push({
     val: value,
     score: score,
@@ -1184,7 +1165,7 @@ window.registerPhotoPracticeEnd =
     registerPhotoPracticeEnd;
 
 /**
- * 写真入力の6本で現在エンドを直接置き換える
+ * 写真入力の任意本数で現在入力中の着弾を直接置き換える
  * 確認ダイアログは表示しない
  */
 function replaceCurrentEndFromPhoto(photoPins) {
@@ -1193,7 +1174,7 @@ function replaceCurrentEndFromPhoto(photoPins) {
     }
 
     if (
-        photoPins.length !== 6 ||
+        photoPins.length < 1 ||
         photoPins.some(function (pin) {
             return !pin || pin.score == null;
         })
@@ -1244,12 +1225,14 @@ window.replaceCurrentEndFromPhoto =
  * 現在エンドをすべてクリアする
  */
 function clearCurrentEnd() {
-    if (currentArrows.length === 0) {
+    const arrows = getActiveInputArrows();
+
+    if (arrows.length === 0) {
         return;
     }
 
     const shouldClear = window.confirm(
-        "現在入力中の6本をすべてクリアしますか？"
+        `現在入力中の${arrows.length}本をすべてクリアしますか？`
     );
 
     if (!shouldClear) {
@@ -1257,47 +1240,94 @@ function clearCurrentEnd() {
     }
 
     currentArrows = [];
+    photoGroupingArrows = [];
+
+    if (
+        window.baikaTargetGesture &&
+        typeof window.baikaTargetGesture.clearPinSelection === "function"
+    ) {
+        window.baikaTargetGesture.clearPinSelection();
+    }
 
     resetTargetZoom();
+    renderTargetPins();
+    renderGroupingPins();
     updateCurrentEndDisplay();
     updateScoreInputState();
 }
 
 /**
- * 6本入力済みかどうかに応じて、
+ * 入力の有無に応じて、
  * キーパッドと登録ボタンの状態を更新する
  */
 function updateScoreInputState() {
-    const isFull =
-        currentArrows.length >= 6;
+    const arrows = getActiveInputArrows();
+    const hasArrows = arrows.length > 0;
 
-    const scoreButtons =
-        document.querySelectorAll(
-            ".v4-score-key"
-        );
-
-    scoreButtons.forEach(function (button) {
-        button.disabled = isFull;
+    document.querySelectorAll(".v4-score-key").forEach(function (button) {
+        button.disabled = false;
     });
 
-    const registerButton =
-        document.getElementById(
-            "v4RegisterCurrentEnd"
-        );
+    const registerButton = document.getElementById("v4RegisterCurrentEnd");
+    if (registerButton) registerButton.disabled = !hasArrows;
 
-    if (registerButton) {
-        registerButton.disabled =
-            currentArrows.length !== 6;
-    }
+    const adjustedRegisterButton = document.getElementById("v4RegisterAdjustedArrows");
+    if (adjustedRegisterButton) adjustedRegisterButton.disabled = !hasArrows;
 
-    const clearButton =
-        document.getElementById(
-            "v4ClearCurrentEnd"
-        );
-
-    if (clearButton) {
-        clearButton.disabled =
-            currentArrows.length === 0;
-    }
+    const clearButton = document.getElementById("v4ClearCurrentEnd");
+    if (clearButton) clearButton.disabled = !hasArrows;
 }
+
+function registerCurrentGrouping() {
+    const arrows = getActiveInputArrows();
+    if (arrows.length === 0) return false;
+
+    registeredGroupingArrows = registeredGroupingArrows.concat(
+        arrows.map(function (arrow) { return { ...arrow }; })
+    );
+
+    currentArrows = [];
+    photoGroupingArrows = [];
+
+    if (window.baikaTargetGesture && typeof window.baikaTargetGesture.clearPinSelection === "function") {
+        window.baikaTargetGesture.clearPinSelection();
+    }
+
+    renderTargetPins();
+    renderGroupingPins();
+    updateCurrentEndDisplay();
+    resetTargetZoom();
+
+    const message = document.getElementById("v4PinRegisterMessage");
+    if (message) {
+        message.textContent = `✓ ${arrows.length}本を登録しました`;
+        window.setTimeout(function () {
+            if (message.textContent.indexOf("登録しました") >= 0) message.textContent = "";
+        }, 1200);
+    }
+
+    window.dispatchEvent(new CustomEvent("baika:grouping-registered", {
+        detail: {
+            count: arrows.length,
+            registeredArrows: registeredGroupingArrows.map(function (arrow) { return { ...arrow }; })
+        }
+    }));
+    return true;
+}
+
+function bindUnlimitedGroupingRegistration() {
+    [
+        "v4RegisterAdjustedArrows",
+        "v4RegisterCurrentEnd"
+    ].forEach(function (buttonId) {
+        const button = document.getElementById(buttonId);
+        if (!button || button.dataset.bound) return;
+
+        button.dataset.bound = "true";
+        button.addEventListener("click", registerCurrentGrouping);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", bindUnlimitedGroupingRegistration);
+window.registerCurrentGrouping = registerCurrentGrouping;
 

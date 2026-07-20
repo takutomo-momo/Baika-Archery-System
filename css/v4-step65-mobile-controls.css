@@ -383,3 +383,56 @@ body.v4-photo-focus-mode #v4TargetPhotoClear {
         margin-top: 0 !important;
     }
 }
+
+
+/* Step67: 任意本数登録・方向ボタン下の登録操作 */
+.v4-pin-register-button {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #7c3aed, #5b21b6);
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(91, 33, 182, .24);
+}
+.v4-pin-register-button:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+.v4-pin-register-message {
+    min-height: 18px;
+    margin-top: 4px;
+    font-size: 11px;
+    line-height: 1.2;
+    text-align: center;
+    color: #15803d;
+    font-weight: 700;
+}
+.v4-arrows-preview {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+}
+.v4-arrow-slot {
+    flex: 0 0 auto !important;
+}
+@media (orientation: landscape) and (min-width: 568px) and (max-height: 900px) {
+    html.v4-is-landscape-layout .v4-pin-register-button {
+        min-height: 34px;
+        margin-top: 5px;
+        padding: 4px 3px;
+        border-radius: 8px;
+        font-size: 9px;
+        line-height: 1.15;
+    }
+    html.v4-is-landscape-layout .v4-pin-register-message {
+        min-height: 12px;
+        margin-top: 2px;
+        font-size: 8px;
+    }
+}

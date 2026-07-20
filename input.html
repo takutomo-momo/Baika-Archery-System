@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/v4-step60-8-photo-focus-fix.css?v=608">
     <link rel="stylesheet" href="css/v4-step63-photo-lock.css?v=630">
     <link rel="stylesheet" href="css/v4-step64-pin-adjust.css?v=640">
-    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=662">
+    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=670">
 </head>
 
 <body class="v4-body">
@@ -200,6 +200,9 @@
                 <label><input type="radio" name="v4PinAdjustStep" value="4"> 大きく</label>
                 <button type="button" id="v4PinAdjustDone" class="v4-pin-adjust-done">選択解除</button>
             </div>
+
+            <button type="button" id="v4RegisterAdjustedArrows" class="v4-pin-register-button" disabled>💾 現在の着弾を登録</button>
+            <div id="v4PinRegisterMessage" class="v4-pin-register-message" aria-live="polite"></div>
         </div>
     </div>
 
@@ -222,7 +225,7 @@
     </div>
 
     <p class="v4-card-subtitle">
-        的から入力した6本の得点を、入力順に表示します。
+        現在入力中の得点を、本数に制限なく入力順で表示します。
     </p>
 
     <div class="v4-current-end">
@@ -303,7 +306,7 @@
                     id="v4CurrentArrowCount"
                     class="v4-end-stat-value"
                 >
-                    0 / 6
+                    0本
                 </strong>
             </div>
 
@@ -717,10 +720,10 @@
     </div>
 </div>
 
-<script src="js/v4-input.js?v=610"></script>
+<script src="js/v4-input.js?v=670"></script>
 <script src="js/v4-photo-engine.js?v=630"></script>
 <script src="js/v4-layout.js?v=29b4"></script>
-<script src="js/v4-target-engine.js?v=651"></script>
+<script src="js/v4-target-engine.js?v=670"></script>
 <script src="js/v4-arrow-detector.js?v=354a"></script>
 <script src="js/v4-photo-ui.js?v=630"></script>
 <script src="js/v4-camera.js?v=55"></script>
