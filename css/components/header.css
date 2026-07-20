@@ -1,0 +1,161 @@
+/**
+ * Baika Archery System
+ * Project Zero
+ * Header Component
+ */
+
+.bas-header {
+    position: sticky;
+    top: 0;
+    z-index: var(--bas-z-header);
+    min-height: var(--bas-header-height);
+    border-bottom: 1px solid rgb(255 255 255 / 18%);
+    color: var(--bas-color-white);
+    background:
+        linear-gradient(
+            135deg,
+            var(--bas-color-primary-900),
+            var(--bas-color-primary-700)
+        );
+    box-shadow: var(--bas-shadow-sm);
+}
+
+.bas-header__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--bas-space-4);
+    width: min(
+        calc(100% - (var(--bas-space-4) * 2)),
+        var(--bas-content-width)
+    );
+    min-height: var(--bas-header-height);
+    margin-inline: auto;
+}
+
+.bas-header__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--bas-space-3);
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+}
+
+.bas-header__mark {
+    display: grid;
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 35%);
+    border-radius: 50%;
+    background: rgb(255 255 255 / 12%);
+    font-size: 1.35rem;
+}
+
+.bas-header__brand-text {
+    min-width: 0;
+}
+
+.bas-header__title {
+    overflow: hidden;
+    margin: 0;
+    font-size: var(--bas-font-size-lg);
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bas-header__subtitle {
+    overflow: hidden;
+    margin: var(--bas-space-1) 0 0;
+    color: rgb(255 255 255 / 78%);
+    font-size: var(--bas-font-size-xs);
+    line-height: 1.3;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.bas-header__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--bas-space-2);
+}
+
+.bas-header__nav-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bas-space-2);
+    min-height: 40px;
+    padding: var(--bas-space-2) var(--bas-space-3);
+    border: 1px solid transparent;
+    border-radius: var(--bas-radius-md);
+    color: rgb(255 255 255 / 86%);
+    font-size: var(--bas-font-size-sm);
+    font-weight: var(--bas-font-weight-bold);
+    text-decoration: none;
+    transition:撮影専用モード</span>
+        color var(--bas-transition-fast),
+        background-color var(--bas-transition-fast),
+        border-color var(--bas-transition-fast);
+}
+
+.bas-header__nav-link:hover {
+    color: var(--bas-color-white);
+    background: rgb(255 255 255 / 12%);
+}
+
+.bas-header__nav-link[aria-current="page"] {
+    color: var(--bas-color-white);
+    border-color: rgb(255 255 255 / 35%);
+    background: rgb(255 255 255 / 18%);
+}
+
+.bas-header__nav-icon {
+    font-size: 1.05rem;
+    line-height: 1;
+}
+
+@media (max-width: 760px) {
+    .bas-header__inner {
+        align-items: stretch;
+        flex-direction: column;
+        gap: var(--bas-space-2);
+        padding-block: var(--bas-space-2);
+    }
+
+    .bas-header__brand {
+        justify-content: center;
+    }
+
+    .bas-header__nav {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        width: 100%;
+    }
+
+    .bas-header__nav-link {
+        flex-direction: column;
+        gap: var(--bas-space-1);
+        min-width: 0;
+        padding: var(--bas-space-2);
+        font-size: var(--bas-font-size-xs);
+    }
+}
+
+@media (max-width: 420px) {
+    .bas-header__mark {
+        width: 38px;
+        height: 38px;
+    }
+
+    .bas-header__title {
+        font-size: var(--bas-font-size-md);
+    }
+
+    .bas-header__subtitle {
+        font-size: 0.68rem;
+    }
+}
