@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Project Zero UI確認 | Baika Archery System
+    </title>
+
+    <link
+        rel="stylesheet"
+        href="css/foundation/tokens.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/foundation/base.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/layouts/app-layout.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/components/button.css"
+    >
+
+    <link
+        rel="stylesheet"
+        href="css/components/card.css"
+    >
+</head>
+
+<body>
+    <div class="bas-app">
+        <main class="bas-app__main">
+            <header class="bas-page-header">
+                <p class="bas-page-header__eyebrow">
+                    Project Zero
+                </p>
+
+                <h1 class="bas-page-header__title">
+                    Baika Archery System
+                </h1>
+
+                <p class="bas-page-header__description">
+                    梅花女子大学アーチェリー部
+                    練習支援システムの共通UI確認ページです。
+                </p>
+            </header>
+
+            <div class="bas-stack">
+                <section class="bas-card">
+                    <div class="bas-card__header">
+                        <div>
+                            <h2 class="bas-card__title">
+                                共通ボタン
+                            </h2>
+
+                            <p class="bas-card__description">
+                                用途ごとのボタン表示を確認します。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bas-card__body">
+                        <div class="bas-actions">
+                            <button
+                                class="bas-button bas-button--primary"
+                                type="button"
+                            >
+                                練習入力
+                            </button>
+
+                            <button
+                                class="bas-button bas-button--secondary"
+                                type="button"
+                            >
+                                撮影専用モード
+                            </button>
+
+                            <button
+                                class="bas-button bas-button--outline"
+                                type="button"
+                            >
+                                分析
+                            </button>
+
+                            <button
+                                class="bas-button bas-button--danger"
+                                type="button"
+                            >
+                                削除
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bas-grid bas-grid--2">
+                    <article class="bas-card bas-card--interactive">
+                        <div class="bas-card__header">
+                            <div>
+                                <h2 class="bas-card__title">
+                                    練習入力
+                                </h2>
+
+                                <p class="bas-card__description">
+                                    得点や着弾位置を入力します。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bas-card__body">
+                            <p>
+                                的タップ、キーパッド、写真を使った入力に
+                                対応する予定です。
+                            </p>
+                        </div>
+
+                        <footer class="bas-card__footer">
+                            <a
+                                class="bas-button bas-button--primary"
+                                href="input.html"
+                            >
+                                入力画面を開く
+                            </a>
+                        </footer>
+                    </article>
+
+                    <article class="bas-card bas-card--interactive">
+                        <div class="bas-card__header">
+                            <div>
+                                <h2 class="bas-card__title">
+                                    カメラセンター
+                                </h2>
+
+                                <p class="bas-card__description">
+                                    撮影に必要な機能をまとめます。
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="bas-card__body">
+                            <p>
+                                距離選択、撮影ガイド、写真確認などを
+                                一つの画面で操作できる構成を目指します。
+                            </p>
+                        </div>
+
+                        <footer class="bas-card__footer">
+                            <a
+                                class="bas-button bas-button--secondary"
+                                href="camera-center.html"
+                            >
+                                カメラセンターを開く
+                            </a>
+                        </footer>
+                    </article>
+                </section>
+
+                <section class="bas-card">
+                    <div class="bas-card__header">
+                        <div>
+                            <h2 class="bas-card__title">
+                                ボタンサイズ
+                            </h2>
+
+                            <p class="bas-card__description">
+                                小・標準・大サイズを確認します。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bas-card__body">
+                        <div class="bas-actions">
+                            <button
+                                class="
+                                    bas-button
+                                    bas-button--outline
+                                    bas-button--small
+                                "
+                                type="button"
+                            >
+                                小ボタン
+                            </button>
+
+                            <button
+                                class="bas-button bas-button--outline"
+                                type="button"
+                            >
+                                標準ボタン
+                            </button>
+
+                            <button
+                                class="
+                                    bas-button
+                                    bas-button--primary
+                                    bas-button--large
+                                "
+                                type="button"
+                            >
+                                大ボタン
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="bas-card">
+                    <div class="bas-card__header">
+                        <div>
+                            <h2 class="bas-card__title">
+                                Baika Core
+                            </h2>
+
+                            <p class="bas-card__description">
+                                Project Zeroの共通基盤を読み込みます。
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="bas-card__body">
+                        <p id="coreStatus">
+                            Baika Coreを確認しています。
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/core/router.js"></script>
+    <script src="js/core/app.js"></script>
+
+    <script>
+        window.addEventListener("baika:ready", function (event) {
+            const statusElement =
+                document.getElementById("coreStatus");
+
+            if (!statusElement) {
+                return;
+            }
+
+            statusElement.textContent =
+                "Baika Core 起動完了 / " +
+                "画面: " +
+                event.detail.route +
+                " / バージョン: " +
+                event.detail.version;
+        });
+    </script>
+</body>
+</html>

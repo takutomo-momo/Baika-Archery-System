@@ -1,0 +1,95 @@
+/**
+ * Baika Archery System
+ * Project Zero
+ * Button Component
+ */
+
+.bas-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--bas-space-2);
+    min-height: 44px;
+    padding: var(--bas-space-3) var(--bas-space-5);
+    border: 1px solid transparent;
+    border-radius: var(--bas-radius-md);
+    font-weight: var(--bas-font-weight-bold);
+    line-height: 1.2;
+    text-align: center;
+    text-decoration: none;
+    user-select: none;
+    transition:
+        background-color var(--bas-transition-fast),
+        border-color var(--bas-transition-fast),
+        color var(--bas-transition-fast),
+        box-shadow var(--bas-transition-fast),
+        transform var(--bas-transition-fast);
+}
+
+.bas-button:hover {
+    transform: translateY(-1px);
+}
+
+.bas-button:active {
+    transform: translateY(0);
+}
+
+.bas-button:disabled,
+.bas-button[aria-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.55;
+    transform: none;
+}
+
+.bas-button--primary {
+    color: var(--bas-color-white);
+    background: var(--bas-color-primary-700);
+    box-shadow: var(--bas-shadow-sm);
+}
+
+.bas-button--primary:hover {
+    background: var(--bas-color-primary-800);
+    box-shadow: var(--bas-shadow-md);
+}
+
+.bas-button--secondary {
+    color: var(--bas-color-primary-800);
+    background: var(--bas-color-primary-100);
+    border-color: var(--bas-color-primary-500);
+}
+
+.bas-button--secondary:hover {
+    background: var(--bas-color-primary-050);
+}
+
+.bas-button--outline {
+    color: var(--bas-color-text);
+    background: var(--bas-color-surface);
+    border-color: var(--bas-color-border);
+}
+
+.bas-button--outline:hover {
+    border-color: var(--bas-color-primary-500);
+    color: var(--bas-color-primary-800);
+}
+
+.bas-button--danger {
+    color: var(--bas-color-white);
+    background: var(--bas-color-danger);
+}
+
+.bas-button--full {
+    width: 100%;
+}
+
+.bas-button--small {
+    min-height: 36px;
+    padding: var(--bas-space-2) var(--bas-space-4);
+    font-size: var(--bas-font-size-sm);
+}
+
+.bas-button--large {
+    min-height: 52px;
+    padding: var(--bas-space-4) var(--bas-space-6);
+    font-size: var(--bas-font-size-lg);
+}

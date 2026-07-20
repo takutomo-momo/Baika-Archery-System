@@ -1,0 +1,97 @@
+/**
+ * Baika Archery System
+ * Project Zero
+ * Application Layout
+ */
+
+.bas-app {
+    min-height: 100vh;
+}
+
+.bas-app__main {
+    width: min(
+        calc(100% - (var(--bas-space-4) * 2)),
+        var(--bas-content-width)
+    );
+    margin-inline: auto;
+    padding-block: var(--bas-space-6) var(--bas-space-12);
+}
+
+.bas-page-header {
+    margin-bottom: var(--bas-space-6);
+}
+
+.bas-page-header__eyebrow {
+    margin: 0 0 var(--bas-space-1);
+    color: var(--bas-color-primary-700);
+    font-size: var(--bas-font-size-sm);
+    font-weight: var(--bas-font-weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.bas-page-header__title {
+    margin: 0;
+    font-size: clamp(
+        var(--bas-font-size-xl),
+        4vw,
+        var(--bas-font-size-2xl)
+    );
+    line-height: 1.3;
+}
+
+.bas-page-header__description {
+    max-width: 720px;
+    margin: var(--bas-space-2) 0 0;
+    color: var(--bas-color-text-muted);
+}
+
+.bas-grid {
+    display: grid;
+    gap: var(--bas-space-5);
+}
+
+.bas-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.bas-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.bas-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--bas-space-4);
+}
+
+.bas-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--bas-space-3);
+}
+
+@media (max-width: 800px) {
+    .bas-grid--2,
+    .bas-grid--3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .bas-app__main {
+        width: min(
+            calc(100% - (var(--bas-space-3) * 2)),
+            var(--bas-content-width)
+        );
+        padding-top: var(--bas-space-4);
+    }
+
+    .bas-actions {
+        flex-direction: column;
+    }
+
+    .bas-actions .bas-button {
+        width: 100%;
+    }
+}

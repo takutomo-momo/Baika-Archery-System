@@ -1,0 +1,71 @@
+/**
+ * Baika Archery System
+ * Project Zero
+ * Card Component
+ */
+
+.bas-card {
+    padding: var(--bas-space-6);
+    border: 1px solid var(--bas-color-border);
+    border-radius: var(--bas-radius-lg);
+    background: var(--bas-color-surface);
+    box-shadow: var(--bas-shadow-sm);
+}
+
+.bas-card--interactive {
+    transition:
+        transform var(--bas-transition-fast),
+        box-shadow var(--bas-transition-fast),
+        border-color var(--bas-transition-fast);
+}
+
+.bas-card--interactive:hover {
+    transform: translateY(-2px);
+    border-color: var(--bas-color-primary-500);
+    box-shadow: var(--bas-shadow-md);
+}
+
+.bas-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--bas-space-4);
+    margin-bottom: var(--bas-space-4);
+}
+
+.bas-card__title {
+    margin: 0;
+    font-size: var(--bas-font-size-xl);
+    line-height: 1.3;
+}
+
+.bas-card__description {
+    margin: var(--bas-space-2) 0 0;
+    color: var(--bas-color-text-muted);
+}
+
+.bas-card__body {
+    min-width: 0;
+}
+
+.bas-card__footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--bas-space-3);
+    margin-top: var(--bas-space-5);
+}
+
+@media (max-width: 600px) {
+    .bas-card {
+        padding: var(--bas-space-4);
+    }
+
+    .bas-card__footer {
+        flex-direction: column;
+    }
+
+    .bas-card__footer .bas-button {
+        width: 100%;
+    }
+}
