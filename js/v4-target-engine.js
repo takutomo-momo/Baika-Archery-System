@@ -185,16 +185,9 @@
             button.disabled = !selectionStillActive;
         });
 
-        panel.querySelectorAll("[data-pin-select]").forEach(function (button) {
-            const index = Number(button.dataset.pinSelect);
-            button.disabled = index >= availablePins;
-            button.classList.toggle("is-selected", selectionStillActive && index === selectedPinIndex);
-            button.setAttribute("aria-pressed", String(selectionStillActive && index === selectedPinIndex));
-        });
-
         status.textContent = selectionStillActive
-            ? `ピン ${selectedPinIndex + 1} を選択中` 
-            : (availablePins > 0 ? "①〜⑥から調整するピンを選んでください" : "ピンを入力すると番号で選択できます");
+            ? `ピン ${selectedPinIndex + 1} を選択中`
+            : (availablePins > 0 ? "入力的のピンをタップして選択" : "写真からピンを入力してください");
     }
 
     function selectPin(index) {
@@ -255,13 +248,6 @@
         const panel = document.getElementById("v4PinAdjustPanel");
         if (!panel || panel.dataset.bound) return;
         panel.dataset.bound = "true";
-
-        panel.querySelectorAll("[data-pin-select]").forEach(function (button) {
-            button.addEventListener("click", function () {
-                const index = Number(button.dataset.pinSelect);
-                if (!button.disabled && Number.isInteger(index)) selectPin(index);
-            });
-        });
 
         panel.querySelectorAll("[data-pin-nudge]").forEach(function (button) {
             button.addEventListener("pointerdown", function (event) {
@@ -469,65 +455,21 @@
     function handlePointerDown(event) {
         const svg = getSvg();
         if (!svg || (event.pointerType === "mouse" && event.button !== 0)) return;
-        event.preventDefault();
-        event.stopPropagation();
-        pointers.set(event.pointerId, pointerRecord(event));
-        try { svg.setPointerCapture(event.pointerId); } catch (error) {}
-
-        if (pointers.size >= 2) {
-            beginPinch(svg);
-            return;
-        }
 
         const pin = findPinElement(event.target);
-        if (pin && beginPinSelection(event, pin)) return;
-        beginBackgroundPan(svg, event);
+        if (!pin) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+        beginPinSelection(event, pin);
     }
 
     function handlePointerMove(event) {
-        const svg = getSvg();
-        if (!svg || !pointers.has(event.pointerId)) return;
-        event.preventDefault();
-        event.stopPropagation();
-        pointers.set(event.pointerId, pointerRecord(event));
-
-        if (pointers.size >= 2) {
-            if (!gesture || gesture.mode !== "pinch") beginPinch(svg);
-            updatePinch(svg);
-            return;
-        }
-        if (!gesture || gesture.pointerId !== event.pointerId) return;
-        if (gesture.mode === "background") updateBackgroundPan(svg, event);
+        /* Step65-1: 入力的のパン・ピンチズーム・背景タップは使用しない。 */
     }
 
     function handlePointerEnd(event) {
-        const svg = getSvg();
-        if (!svg || !pointers.has(event.pointerId)) return;
-        event.preventDefault();
-        event.stopPropagation();
-        const endedGesture = gesture;
-        pointers.delete(event.pointerId);
-        try { svg.releasePointerCapture(event.pointerId); } catch (error) {}
-
-        if (endedGesture && endedGesture.mode === "pin-select" && endedGesture.pointerId === event.pointerId) {
-            gesture = null;
-        } else if (endedGesture && endedGesture.mode === "pin" && endedGesture.pointerId === event.pointerId) {
-            finishPinDrag();
-            gesture = null;
-        } else if (endedGesture && endedGesture.mode === "background" && endedGesture.pointerId === event.pointerId) {
-            if (!endedGesture.moved && event.type === "pointerup") {
-                handleTap(svg, event);
-            }
-            gesture = null;
-        }
-
-        if (pointers.size >= 2) {
-            beginPinch(svg);
-        } else if (pointers.size === 1) {
-            const remaining = Array.from(pointers.values())[0];
-            beginBackgroundPan(svg, remaining);
-            if (gesture) gesture.moved = true;
-        } else if (endedGesture && endedGesture.mode === "pinch") {
+        if (gesture && gesture.mode === "pin-select") {
             gesture = null;
         }
     }
@@ -536,7 +478,7 @@
         const svg = getSvg();
         if (!svg || svg.dataset.gestureEngineV2Bound) return;
         svg.dataset.gestureEngineV2Bound = "true";
-        svg.style.touchAction = "none";
+        svg.style.touchAction = "manipulation";
         svg.style.webkitUserSelect = "none";
         svg.style.userSelect = "none";
         svg.addEventListener("pointerdown", handlePointerDown);

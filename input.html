@@ -19,7 +19,7 @@
     <link rel="stylesheet" href="css/v4-step60-8-photo-focus-fix.css?v=608">
     <link rel="stylesheet" href="css/v4-step63-photo-lock.css?v=630">
     <link rel="stylesheet" href="css/v4-step64-pin-adjust.css?v=640">
-    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=650">
+    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=651">
 </head>
 
 <body class="v4-body">
@@ -265,7 +265,6 @@
                 viewBox="0 0 300 300"
                 role="img"
                 aria-label="着弾位置入力用の的"
-                onclick="handleTargetClick(event)"
             ></svg>
         </div>
 
@@ -277,16 +276,7 @@
 
         <div id="v4PinAdjustPanel" class="v4-pin-adjust-panel" aria-label="入力的ピンの微調整">
             <div id="v4PinAdjustStatus" class="v4-pin-adjust-status" aria-live="polite">
-                入力的のピンをタップしてください
-            </div>
-
-            <div id="v4PinSelectButtons" class="v4-pin-select-buttons" aria-label="調整するピン番号を選択">
-                <button type="button" class="v4-pin-select-button" data-pin-select="0" disabled>①</button>
-                <button type="button" class="v4-pin-select-button" data-pin-select="1" disabled>②</button>
-                <button type="button" class="v4-pin-select-button" data-pin-select="2" disabled>③</button>
-                <button type="button" class="v4-pin-select-button" data-pin-select="3" disabled>④</button>
-                <button type="button" class="v4-pin-select-button" data-pin-select="4" disabled>⑤</button>
-                <button type="button" class="v4-pin-select-button" data-pin-select="5" disabled>⑥</button>
+                調整するピンを入力的で選択してください
             </div>
 
             <div class="v4-pin-adjust-grid">
@@ -303,15 +293,6 @@
                 <button type="button" id="v4PinAdjustDone" class="v4-pin-adjust-done">選択解除</button>
             </div>
         </div>
-
-        <button
-            type="button"
-            id="btnTargetZoomReset"
-            class="v4-target-reset"
-            onclick="resetTargetZoom()"
-        >
-            ↺ ズームリセット
-        </button>
     </div>
 
     <!-- グルーピング確認用の的 -->
@@ -842,7 +823,7 @@
 <script src="js/v4-input.js?v=610"></script>
 <script src="js/v4-photo-engine.js?v=630"></script>
 <script src="js/v4-layout.js?v=29b4"></script>
-<script src="js/v4-target-engine.js?v=650"></script>
+<script src="js/v4-target-engine.js?v=651"></script>
 <script src="js/v4-arrow-detector.js?v=354a"></script>
 <script src="js/v4-photo-ui.js?v=630"></script>
 <script src="js/v4-camera.js?v=55"></script>
