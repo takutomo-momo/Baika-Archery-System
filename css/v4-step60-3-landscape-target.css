@@ -1,0 +1,48 @@
+/*
+ * Baika Archery System Ver4
+ * Step60-3
+ * スマホ横向き時：写真領域を少し狭くし、入力用の的を大きく表示する。
+ * 写真操作・的の座標計算・縦向き表示には影響を与えない。
+ */
+
+@media (orientation: landscape) and (min-width: 568px) and (max-height: 900px) {
+    /* 左の写真を少しだけ狭くし、右の入力欄へ幅を配分 */
+    html.v4-is-landscape-layout .v4-target-layout {
+        grid-template-columns:
+            minmax(0, 1.28fr)
+            minmax(235px, 0.86fr) !important;
+        gap: 10px !important;
+    }
+
+    /* 入力用の的だけを拡大 */
+    html.v4-is-landscape-layout
+    .v4-target-layout
+    > .v4-target-panel:nth-child(2)
+    .v4-target-container {
+        width: min(100%, 44vh) !important;
+        max-width: 300px !important;
+        margin-inline: auto !important;
+    }
+
+    /* SVGをコンテナいっぱいに保つ */
+    html.v4-is-landscape-layout
+    .v4-target-layout
+    > .v4-target-panel:nth-child(2)
+    #targetSvg {
+        display: block !important;
+        width: 100% !important;
+        height: auto !important;
+        aspect-ratio: 1 / 1;
+    }
+}
+
+/* 高さの低いスマホ横向きでも、従来の220px制限を上書き */
+@media (orientation: landscape) and (min-width: 568px) and (max-height: 600px) {
+    html.v4-is-landscape-layout
+    .v4-target-layout
+    > .v4-target-panel:nth-child(2)
+    .v4-target-container {
+        width: min(100%, 46vh) !important;
+        max-width: 290px !important;
+    }
+}
