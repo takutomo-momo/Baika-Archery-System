@@ -51,10 +51,12 @@
         return false;
     }
 
-    window.V4Session = {
-        getLoggedInMember,
-        requireLogin
-    };
+  window.V4Session = {
+    getLoggedInMember,
+    requireLogin
+};
 
-    requireLogin();
+// Project Zero統合中は自動転送を停止
+// requireLogin();
+
 })();
