@@ -1,0 +1,48 @@
+/**
+ * ==========================================
+ * Baika Archery System
+ * Page Header Component
+ * ==========================================
+ */
+
+.bas-page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.bas-page-header__eyebrow {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #666;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.bas-page-header__title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.2;
+}
+
+.bas-page-header__description {
+    margin: 0;
+    font-size: 1rem;
+    color: #666;
+    line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+
+    .bas-page-header__title {
+        font-size: 1.6rem;
+    }
+
+    .bas-page-header__description {
+        font-size: 0.95rem;
+    }
+
+}
