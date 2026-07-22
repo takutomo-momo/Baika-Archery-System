@@ -5,7 +5,11 @@
  */
 
 const BAS_STATE = {
-    currentUser: null,
+    currentUser: {
+    id: "test-user",
+    name: "テスト部員",
+    role: "member"
+},
 
     currentPage: "home",
 
@@ -15,6 +19,16 @@ const BAS_STATE = {
         arrows: [],
         photoMode: false
     },
+
+    lastPractice: {
+    date: "2026-07-20",
+    distance: "70m",
+    totalScore: 652,
+    averageScore: 9.06,
+    arrowCount: 72,
+    memo:
+        "今日はリリースで右肩が痛かった。押し手を意識する。"
+},
 
     analysis: {
         isRunning: false,
@@ -49,9 +63,11 @@ function setState(key, value) {
         return;
     }
 
-    BAS_STATE[key] = value;
+BAS_STATE[key] = value;
 
-    if (typeof BAS_CONFIG !== "undefined" && BAS_CONFIG.debug) {
+saveStateToStorage();
+
+if (typeof BAS_CONFIG !== "undefined" && BAS_CONFIG.debug) {
         console.log(`[Baika State] ${key} を更新しました`, value);
     }
 }
@@ -61,13 +77,68 @@ function setState(key, value) {
  */
 function resetPracticeState() {
     BAS_STATE.practice = {
-        date: null,
-        distance: null,
-        arrows: [],
-        photoMode: false
+    date: null,
+    distance: null,
+    arrows: [],
+    photoMode: false
     };
+
+    saveStateToStorage();
 
     if (typeof BAS_CONFIG !== "undefined" && BAS_CONFIG.debug) {
         console.log("[Baika State] 練習状態を初期化しました");
     }
 }
+
+/**
+ * Project Zeroの状態をブラウザへ保存する
+ */
+function saveStateToStorage() {
+    try {
+        localStorage.setItem(
+            "baikaProjectZeroState",
+            JSON.stringify(BAS_STATE)
+        );
+    } catch (error) {
+        console.error(
+            "[Baika State] 状態を保存できませんでした。",
+            error
+        );
+    }
+}
+
+/**
+ * ブラウザに保存された状態を復元する
+ */
+function loadStateFromStorage() {
+    try {
+        const savedState =
+            localStorage.getItem(
+                "baikaProjectZeroState"
+            );
+
+        if (!savedState) {
+            return;
+        }
+
+        const parsedState =
+            JSON.parse(savedState);
+
+        if (
+            parsedState &&
+            typeof parsedState === "object"
+        ) {
+            Object.assign(
+                BAS_STATE,
+                parsedState
+            );
+        }
+    } catch (error) {
+        console.error(
+            "[Baika State] 状態を復元できませんでした。",
+            error
+        );
+    }
+}
+
+loadStateFromStorage();

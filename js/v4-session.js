@@ -47,7 +47,7 @@
             return true;
         }
 
-        window.location.replace("index.html");
+        window.location.replace("project-zero-home.html");
         return false;
     }
 

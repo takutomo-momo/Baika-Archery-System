@@ -5,8 +5,8 @@
  */
 
 const BAS_ROUTES = Object.freeze({
-    home: "index.html",
-    practice: "input.html",
+    home: "project-zero-home.html",
+    practice: "practice.html",
     analysis: "analysis.html",
     cameraCenter: "camera-center.html"
 });

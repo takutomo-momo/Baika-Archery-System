@@ -311,7 +311,7 @@ function requireV4Login() {
     const member = getV4LoggedInMember();
 
     if (!member) {
-        window.location.href = "index.html";
+        window.location.href = "project-zero-home.html";
         return false;
     }
 

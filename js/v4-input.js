@@ -989,6 +989,121 @@ currentArrows.push({
 /**
  * 写真入力の1本以上をGoogleスプレッドシートへ登録する
  */
+
+/**
+ * 保存済みの練習データをProject Zeroへ同期する
+ *
+ * @param {Array} practiceData
+ * @param {Object} savedRecord
+ */
+function syncPracticeToProjectZero(
+    practiceData,
+    savedRecord
+) {
+    if (
+        typeof setState !== "function" ||
+        !savedRecord ||
+        !Array.isArray(practiceData)
+    ) {
+        return;
+    }
+
+    const samePracticeRecords =
+        practiceData.filter(function (record) {
+            return (
+                record &&
+                record.date === savedRecord.date &&
+                record.memberName === savedRecord.memberName &&
+                record.distance === savedRecord.distance
+            );
+        });
+
+    const totalScore =
+        samePracticeRecords.reduce(
+            function (sum, record) {
+                return sum + Number(record.total || 0);
+            },
+            0
+        );
+
+    const arrowCount =
+        samePracticeRecords.reduce(
+            function (count, record) {
+                if (Array.isArray(record.pins)) {
+                    return count + record.pins.length;
+                }
+
+                const scoreKeys = [
+                    "a1",
+                    "a2",
+                    "a3",
+                    "a4",
+                    "a5",
+                    "a6"
+                ];
+
+                return (
+                    count +
+                    scoreKeys.filter(function (key) {
+                        return (
+                            record[key] !== undefined &&
+                            record[key] !== null &&
+                            record[key] !== ""
+                        );
+                    }).length
+                );
+            },
+            0
+        );
+
+    const averageScore =
+        arrowCount > 0
+            ? Number(
+                (totalScore / arrowCount).toFixed(2)
+            )
+            : 0;
+
+    const previousLastPractice =
+        typeof getState === "function"
+            ? getState("lastPractice")
+            : null;
+
+    setState("lastPractice", {
+        date: savedRecord.date,
+        distance: savedRecord.distance,
+        totalScore: totalScore,
+        averageScore: averageScore,
+        arrowCount: arrowCount,
+        memo:
+            previousLastPractice &&
+            typeof previousLastPractice.memo === "string"
+                ? previousLastPractice.memo
+                : ""
+    });
+
+    setState("practice", {
+        date: savedRecord.date,
+        distance: savedRecord.distance,
+        arrows: Array.isArray(savedRecord.pins)
+            ? savedRecord.pins.map(function (arrow) {
+                return { ...arrow };
+            })
+            : [],
+        photoMode: true
+    });
+
+    console.log(
+        "[Project Zero] 練習データを同期しました。",
+        {
+            date: savedRecord.date,
+            distance: savedRecord.distance,
+            totalScore: totalScore,
+            averageScore: averageScore,
+            arrowCount: arrowCount
+        }
+    );
+}
+
 async function registerPhotoPracticeEnd(photoPins) {
     if (!Array.isArray(photoPins)) {
         return false;
@@ -1167,6 +1282,11 @@ async function registerPhotoPracticeEnd(photoPins) {
         }
 
         await saveResponse.text();
+
+        syncPracticeToProjectZero(
+            practiceData,
+            record
+        );
 
         currentArrows = [];
         resetTargetZoom();

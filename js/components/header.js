@@ -12,13 +12,13 @@
             route: "home",
             label: "ホーム",
             icon: "🏠",
-            href: "index.html"
+            href: "project-zero-home.html"
         },
         {
             route: "practice",
             label: "練習入力",
             icon: "📝",
-            href: "input.html"
+            href: "practice.html"
         },
         {
             route: "analysis",
@@ -71,7 +71,7 @@
         const brand = document.createElement("a");
 
         brand.className = "bas-header__brand";
-        brand.href = "index.html";
+        brand.href = "project-zero-home.html";
 
         const mark = document.createElement("span");
 

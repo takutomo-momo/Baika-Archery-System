@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="ja">
+ <script src="js/v4-session.js?v=1"></script>
+<head>
+    <meta charset="UTF-8">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>記録入力 | Baika Archery System Ver4</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/v4.css?v=3021">
+    <link rel="stylesheet" href="css/v4-landscape.css?v=3022">
+    <link rel="stylesheet" href="css/v4-camera.css?v=355b?v=355">
+    <link rel="stylesheet" href="css/v4-step59-photo-controls.css?v=591">
+    <link rel="stylesheet" href="css/v4-step60-3-landscape-target.css?v=606">
+     <link rel="stylesheet" href="css/v4-step60-7-photo-focus.css?v=607">
+    <link rel="stylesheet" href="css/v4-step60-8-photo-focus-fix.css?v=608">
+    <link rel="stylesheet" href="css/v4-step63-photo-lock.css?v=630">
+    <link rel="stylesheet" href="css/v4-step64-pin-adjust.css?v=640">
+    <link rel="stylesheet" href="css/v4-step65-mobile-controls.css?v=670">
+</head>
+
+<body class="v4-body">
+
+    <header class="v4-header">
+        <div class="v4-brand">
+            <div class="v4-brand-icon">🏹</div>
+            <span>Baika Archery System</span>
+        </div>
+
+        <nav class="v4-nav">
+            <a href="project-zero-home.html">🏠 ホーム</a>
+            <a href="input.html" class="active">📝 記録入力</a>
+            <a href="analysis.html">📊 分析</a>
+        </nav>
+    </header>
+
+    <main class="v4-main">
+
+        <section class="v4-hero">
+            <div class="v4-eyebrow">RECORDING WORKSPACE</div>
+
+            <h1>📝 記録入力</h1>
+
+            <p>
+                練習中の操作に集中できる入力専用画面です。
+                日付・距離・スコア・着弾位置を、分かりやすく記録できます。
+            </p>
+        </section>
+
+        <div class="v4-grid">
+
+<section class="v4-card v4-card-full">
+    <div class="v4-card-title">
+        👤 選手・練習設定
+    </div>
+
+    <p class="v4-card-subtitle">
+        ログイン中の部員・練習日・距離を確認してください。
+    </p>
+
+    <div id="v4PracticeSettings" class="v4-setting-form">
+
+        <div class="v4-form-group v4-member-group">
+            <label for="v4LoggedInMember">
+                ログイン中の部員
+            </label>
+
+            <div
+                id="v4LoggedInMember"
+                class="v4-member-display"
+                role="status"
+                aria-live="polite"
+            >
+                <span class="v4-member-status-icon">👤</span>
+
+                <span id="v4LoggedInMemberName">
+                    ログイン情報を確認中
+                </span>
+            </div>
+
+            <p class="v4-form-note">
+                記録はログイン中の本人名で登録されます。
+            </p>
+        </div>
+
+        <div class="v4-form-group">
+            <label for="v4PracticeDate">
+                練習日
+            </label>
+
+            <input
+                type="date"
+                id="v4PracticeDate"
+                name="practiceDate"
+            >
+        </div>
+
+        <div class="v4-form-group">
+            <label for="v4DistanceSelect">
+                距離
+            </label>
+
+            <select
+                id="v4DistanceSelect"
+                name="distance"
+            >
+                <option value="">
+                    距離を選択してください
+                </option>
+                <option value="18m">18m</option>
+                <option value="30m">30m</option>
+                <option value="50m">50m</option>
+                <option value="60m">60m</option>
+                <option value="70m">70m</option>
+            </select>
+        </div>
+
+    </div>
+</section>
+
+<section class="v4-card v4-card-full v4-photo-workspace-card">
+    <div class="v4-card-title">
+        🎯 写真から着弾位置を転記
+    </div>
+
+    <p class="v4-card-subtitle">
+        撮影した的の写真を確認しながら、入力用の的へ着弾位置を転記できます。
+    </p>
+
+<div class="v4-target-layout">
+
+    <div class="v4-landscape-sticky-stage">
+        <!-- 撮影した的の写真 -->
+        <div class="v4-target-panel v4-photo-panel">
+            <div class="v4-target-panel-title">📷 撮影した的</div>
+
+            <button type="button" id="v4PhotoFullscreenClose" class="v4-photo-fullscreen-close" hidden>↩ 左右表示に戻る</button>
+
+            <p class="v4-photo-description">
+                射ち終えた的の写真を選択し、写真を確認しながら着弾位置を入力できます。
+            </p>
+
+            <input type="file" id="v4TargetPhotoInput" accept="image/*" class="v4-photo-file-input" hidden>
+
+            <div class="v4-photo-interaction-area">
+                <div id="v4TargetPhotoViewer" class="v4-photo-viewer">
+                    <div id="v4TargetPhotoEmpty" class="v4-photo-empty">
+                        <span class="v4-photo-empty-icon">📷</span>
+                        <span>写真が選択されていません</span>
+                    </div>
+                    <img id="v4TargetPhotoPreview" class="v4-photo-preview" alt="撮影したアーチェリーの的" draggable="false" hidden>
+                </div>
+            </div>
+
+            <div id="v4PhotoQuickActions" class="v4-photo-quick-actions" aria-label="写真入力の修正操作">
+                <button type="button" id="v4TargetPhotoClear" class="v4-photo-clear-button" disabled>写真を閉じる</button>
+            </div>
+
+            <div class="v4-camera-launch-area v4-camera-launch-area-bottom">
+                <div class="v4-camera-launch-buttons">
+                    <button type="button" id="v4OpenCameraButton" class="v4-camera-launch-button">📷 撮影専用モードを開く</button>
+                    <button type="button" id="v4OpenPhotoListButton" class="v4-photo-list-button">🗂 写真一覧を開く・選択</button>
+                </div>
+                <div class="v4-camera-local-status" aria-live="polite">
+                    この端末に保存済み：<strong id="v4LocalPhotoCount">0</strong>枚
+                </div>
+            </div>
+        </div>
+
+        <!-- 入力用の的 -->
+        <div class="v4-target-panel v4-input-target-panel">
+            <div class="v4-target-panel-title">🎯 入力用</div>
+
+            <div class="v4-target-container">
+                <svg id="targetSvg" viewBox="0 0 300 300" role="img" aria-label="着弾位置入力用の的"></svg>
+            </div>
+
+            <div id="v4TargetScoreSummary" class="v4-target-score-summary" aria-live="polite"></div>
+        </div>
+
+        <!-- 入力的の右側に独立配置するピン調整ボタン -->
+        <div id="v4PinAdjustPanel" class="v4-pin-adjust-panel v4-pin-adjust-panel-right" aria-label="入力的ピンの微調整">
+            <div id="v4PinAdjustStatus" class="v4-pin-adjust-status" aria-live="polite">
+                調整するピンを入力的で選択してください
+            </div>
+
+            <div class="v4-pin-adjust-grid">
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-up" data-pin-nudge data-dx="0" data-dy="-1" aria-label="上へ移動">▲</button>
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-left" data-pin-nudge data-dx="-1" data-dy="0" aria-label="左へ移動">◀</button>
+                <div class="v4-pin-adjust-center">微調整</div>
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-right" data-pin-nudge data-dx="1" data-dy="0" aria-label="右へ移動">▶</button>
+                <button type="button" class="v4-pin-nudge v4-pin-nudge-down" data-pin-nudge data-dx="0" data-dy="1" aria-label="下へ移動">▼</button>
+            </div>
+
+            <div class="v4-pin-adjust-options">
+                <label><input type="radio" name="v4PinAdjustStep" value="0.5" checked> 細かく</label>
+                <label><input type="radio" name="v4PinAdjustStep" value="4"> 大きく</label>
+                <button type="button" id="v4PinAdjustDone" class="v4-pin-adjust-done">選択解除</button>
+            </div>
+
+            <button type="button" id="v4RegisterAdjustedArrows" class="v4-pin-register-button" disabled>💾 現在の着弾を登録</button>
+            <div id="v4PinRegisterMessage" class="v4-pin-register-message" aria-live="polite"></div>
+        </div>
+    </div>
+
+    <!-- グルーピング確認用の的 -->
+    <div class="v4-target-panel v4-grouping-panel">
+        <div class="v4-target-panel-title">グルーピング確認</div>
+        <div class="v4-target-container v4-grouping-container">
+            <svg id="groupingTargetSvg" viewBox="0 0 300 300" role="img" aria-label="グルーピング確認用の的"></svg>
+        </div>
+        <p class="v4-grouping-note">入力済みの着弾位置を全体表示します。</p>
+    </div>
+
+</div>
+
+</section>
+
+<section class="v4-card v4-card-half">
+    <div class="v4-card-title">
+        🔢 現在エンド
+    </div>
+
+    <p class="v4-card-subtitle">
+        現在入力中の得点を、本数に制限なく入力順で表示します。
+    </p>
+
+    <div class="v4-current-end">
+
+        <div
+            id="v4ArrowsPreview"
+            class="v4-arrows-preview"
+            aria-label="現在エンドの入力状況"
+        >
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="0"
+                disabled
+            >
+                <span class="v4-arrow-number">①</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="1"
+                disabled
+            >
+                <span class="v4-arrow-number">②</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="2"
+                disabled
+            >
+                <span class="v4-arrow-number">③</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="3"
+                disabled
+            >
+                <span class="v4-arrow-number">④</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="4"
+                disabled
+            >
+                <span class="v4-arrow-number">⑤</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+
+            <button
+                type="button"
+                class="v4-arrow-slot"
+                data-arrow-index="5"
+                disabled
+            >
+                <span class="v4-arrow-number">⑥</span>
+                <span class="v4-arrow-score">－</span>
+            </button>
+        </div>
+
+        <div class="v4-end-summary">
+            <div class="v4-end-stat">
+                <span class="v4-end-stat-label">
+                    本数
+                </span>
+
+                <strong
+                    id="v4CurrentArrowCount"
+                    class="v4-end-stat-value"
+                >
+                    0本
+                </strong>
+            </div>
+
+            <div class="v4-end-stat">
+                <span class="v4-end-stat-label">
+                    合計
+                </span>
+
+                <strong
+                    id="v4CurrentArrowTotal"
+                    class="v4-end-stat-value v4-end-total"
+                >
+                    0
+                </strong>
+            </div>
+
+            <div class="v4-end-stat">
+                <span class="v4-end-stat-label">
+                    平均
+                </span>
+
+                <strong
+                    id="v4CurrentArrowAverage"
+                    class="v4-end-stat-value"
+                >
+                    0.0
+                </strong>
+            </div>
+        </div>
+        <div class="v4-score-keypad">
+    <button
+        type="button"
+        class="v4-score-key v4-score-yellow"
+        onclick="handleScoreKeypadInput('X', 10)"
+    >
+        X
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-yellow"
+        onclick="handleScoreKeypadInput('10', 10)"
+    >
+        10
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-yellow"
+        onclick="handleScoreKeypadInput('9', 9)"
+    >
+        9
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-red"
+        onclick="handleScoreKeypadInput('8', 8)"
+    >
+        8
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-red"
+        onclick="handleScoreKeypadInput('7', 7)"
+    >
+        7
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-blue"
+        onclick="handleScoreKeypadInput('6', 6)"
+    >
+        6
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-blue"
+        onclick="handleScoreKeypadInput('5', 5)"
+    >
+        5
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-black"
+        onclick="handleScoreKeypadInput('4', 4)"
+    >
+        4
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-black"
+        onclick="handleScoreKeypadInput('3', 3)"
+    >
+        3
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-white"
+        onclick="handleScoreKeypadInput('2', 2)"
+    >
+        2
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-white"
+        onclick="handleScoreKeypadInput('1', 1)"
+    >
+        1
+    </button>
+
+    <button
+        type="button"
+        class="v4-score-key v4-score-miss"
+        onclick="handleScoreKeypadInput('M', 0)"
+    >
+        M
+    </button>
+</div>
+
+<div class="v4-end-actions">
+    <button
+        type="button"
+        id="v4ClearCurrentEnd"
+        class="v4-end-action v4-end-action-clear"
+        onclick="clearCurrentEnd()"
+    >
+        🗑 クリア
+    </button>
+
+    <button
+        type="button"
+        id="v4RegisterCurrentEnd"
+        class="v4-end-action v4-end-action-register"
+        disabled
+    >
+        💾 登録
+    </button>
+</div>
+
+    </div>
+</section>
+
+            <section class="v4-card v4-card-half">
+                <div class="v4-card-title">
+                    📊 本日のリアルタイム統計
+                </div>
+
+                <p class="v4-card-subtitle">
+                    総射数・6E合計・1射平均を表示します。
+                </p>
+
+                <div class="v4-placeholder">
+                    <span class="v4-placeholder-icon">📈</span>
+                    統計表示を移植予定
+                </div>
+            </section>
+
+            <section class="v4-card">
+                <a href="project-zero-home.html" class="v4-action">
+                    ← ホームへ戻る
+                </a>
+            </section>
+
+        </div>
+    </main>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        setDefaultPracticeDate();
+        displayLoggedInMember();
+    });
+
+    function setDefaultPracticeDate() {
+        const practiceDateInput =
+            document.getElementById("v4PracticeDate");
+
+        if (!practiceDateInput || practiceDateInput.value) {
+            return;
+        }
+
+        const today = new Date();
+
+        const localDate = new Date(
+            today.getTime() -
+            today.getTimezoneOffset() * 60000
+        );
+
+        practiceDateInput.value =
+            localDate.toISOString().split("T")[0];
+    }
+
+    function displayLoggedInMember() {
+        const memberDisplay =
+            document.getElementById("v4LoggedInMember");
+
+        const memberNameElement =
+            document.getElementById("v4LoggedInMemberName");
+
+        if (!memberDisplay || !memberNameElement) {
+            return;
+        }
+
+        const memberName =
+            getStoredLoggedInMember();
+
+        if (memberName) {
+            memberNameElement.textContent = memberName;
+            memberDisplay.classList.remove(
+                "is-not-logged-in"
+            );
+
+            return;
+        }
+
+        memberNameElement.textContent =
+            "未ログイン";
+
+        memberDisplay.classList.add(
+            "is-not-logged-in"
+        );
+    }
+
+    function getStoredLoggedInMember() {
+        if (
+            typeof window.loggedInMember === "string" &&
+            window.loggedInMember.trim()
+        ) {
+            return window.loggedInMember.trim();
+        }
+
+        const storageKeys = [
+            "loggedInMember",
+            "currentMember",
+            "loginMember"
+        ];
+
+        for (const key of storageKeys) {
+            const sessionValue =
+                sessionStorage.getItem(key);
+
+            const parsedSessionValue =
+                parseMemberValue(sessionValue);
+
+            if (parsedSessionValue) {
+                return parsedSessionValue;
+            }
+
+            const localValue =
+                localStorage.getItem(key);
+
+            const parsedLocalValue =
+                parseMemberValue(localValue);
+
+            if (parsedLocalValue) {
+                return parsedLocalValue;
+            }
+        }
+
+        return "";
+    }
+
+    function parseMemberValue(value) {
+        if (!value) {
+            return "";
+        }
+
+        try {
+            const parsedValue = JSON.parse(value);
+
+            if (typeof parsedValue === "string") {
+                return parsedValue.trim();
+            }
+
+            if (
+                parsedValue &&
+                typeof parsedValue === "object"
+            ) {
+                return (
+                    parsedValue.memberName ||
+                    parsedValue.name ||
+                    parsedValue.member ||
+                    ""
+                ).trim();
+            }
+        } catch (error) {
+            return value.trim();
+        }
+
+        return "";
+    }
+</script>
+
+
+<div
+    id="v4PhotoListModal"
+    class="v4-photo-list-modal"
+    hidden
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="v4PhotoListTitle"
+>
+    <div class="v4-photo-list-shell">
+        <header class="v4-photo-list-header">
+            <div>
+                <div class="v4-photo-list-eyebrow">LOCAL PHOTO LIBRARY</div>
+                <h2 id="v4PhotoListTitle">🗂 撮影済み一覧</h2>
+                <p>端末内に保存した写真です。写真はクラウドへ送信されません。</p>
+            </div>
+            <button type="button" id="v4ClosePhotoListButton" class="v4-photo-list-close" aria-label="一覧を閉じる">×</button>
+        </header>
+
+        <div class="v4-photo-list-summary">
+            <span>全 <strong id="v4PhotoListTotal">0</strong> 枚</span>
+            <span>未入力 <strong id="v4PhotoListPending">0</strong> 枚</span>
+        </div>
+
+        <div id="v4PhotoListEmpty" class="v4-photo-list-empty" hidden>
+            <span>📷</span>
+            <strong>撮影済み写真はありません</strong>
+            <small>撮影専用モードで写真を撮ると、ここに表示されます。</small>
+        </div>
+
+        <div id="v4PhotoListGrid" class="v4-photo-list-grid" aria-live="polite"></div>
+    </div>
+</div>
+
+<div
+    id="v4PhotoPreviewModal"
+    class="v4-photo-preview-modal"
+    hidden
+    aria-modal="true"
+    role="dialog"
+    aria-label="撮影写真の確認"
+>
+    <div class="v4-photo-preview-shell">
+        <button type="button" id="v4ClosePhotoPreviewButton" class="v4-photo-preview-close" aria-label="写真を閉じる">×</button>
+
+        <div id="v4PhotoAnalysisStage" class="v4-photo-analysis-stage">
+            <div id="v4PhotoZoomContent" class="v4-photo-zoom-content">
+                <img id="v4SavedPhotoPreview" alt="端末内に保存された的写真" draggable="false">
+            </div>
+            <div class="v4-photo-zoom-controls" aria-label="写真の拡大操作">
+                <button type="button" id="v4PhotoZoomOutButton" aria-label="縮小">−</button>
+                <button type="button" id="v4PhotoZoomResetButton" aria-label="基準倍率210パーセントへ戻す">100%</button>
+                <button type="button" id="v4PhotoZoomInButton" aria-label="拡大">＋</button>
+            </div>
+            <div class="v4-photo-zoom-hint">2本指で拡大・1本指で移動</div>
+        </div>
+
+        <div class="v4-photo-preview-meta">
+            <strong id="v4SavedPhotoTitle">End</strong>
+            <span id="v4SavedPhotoDetails"></span>
+        </div>
+        </div>
+    </div>
+</div>
+
+<div
+    id="v4CameraModal"
+    class="v4-camera-modal"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="v4CameraTitle"
+>
+    <div class="v4-camera-shell">
+        <div class="v4-camera-header">
+            <div>
+                <div id="v4CameraTitle" class="v4-camera-title">📷 撮影専用モード</div>
+                <div class="v4-camera-help">的の外周を円形ガイドに合わせて撮影してください。</div>
+            </div>
+            <button type="button" id="v4CloseCameraButton" class="v4-camera-close" aria-label="撮影画面を閉じる">×</button>
+        </div>
+
+        <div id="v4CameraStage" class="v4-camera-stage">
+            <video id="v4CameraVideo" class="v4-camera-video" autoplay muted playsinline></video>
+            <div id="v4CameraFlash" class="v4-camera-flash" aria-hidden="true"></div>
+            <div class="v4-camera-guide" aria-hidden="true">
+                <div class="v4-camera-guide-circle"></div>
+                <div class="v4-camera-guide-horizontal"></div>
+                <div class="v4-camera-guide-vertical"></div>
+                <div class="v4-camera-guide-center"></div>
+            </div>
+
+            <div class="v4-camera-overlay-top">
+                <div class="v4-camera-info">
+                    <span>今回：<strong id="v4CameraSessionCount">0</strong>枚</span>
+                    <span>端末内：<strong id="v4CameraTotalCount">0</strong>枚</span>
+                </div>
+            </div>
+
+            <div id="v4CameraMessage" class="v4-camera-message">カメラを準備しています…</div>
+
+            <div class="v4-camera-overlay-bottom">
+                <button type="button" id="v4DeleteLastCaptureButton" class="v4-camera-secondary" disabled>↩ 削除</button>
+                <button type="button" id="v4CaptureButton" class="v4-camera-capture" disabled aria-label="撮影する"><span></span></button>
+                <button type="button" id="v4FinishCameraButton" class="v4-camera-secondary">撮影終了</button>
+            </div>
+        </div>
+
+        <p class="v4-camera-storage-note">写真はクラウドへ送信せず、このブラウザの端末内保存領域にのみ保存します。</p>
+        <canvas id="v4CameraCanvas" hidden></canvas>
+    </div>
+</div>
+
+<script src="js/core/state.js"></script>
+<script src="js/v4-input.js?v=671"></script>
+<script src="js/v4-photo-engine.js?v=630"></script>
+<script src="js/v4-layout.js?v=29b4"></script>
+<script src="js/v4-target-engine.js?v=670"></script>
+<script src="js/v4-arrow-detector.js?v=354a"></script>
+<script src="js/v4-photo-ui.js?v=630"></script>
+<script src="js/v4-camera.js?v=55"></script>
+</body>
+</html>

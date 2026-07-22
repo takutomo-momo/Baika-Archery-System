@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+
+<meta charset="UTF-8">
+
+<meta
+name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+Baika Archery System
+</title>
+
+<link rel="stylesheet" href="css/foundation/tokens.css">
+<link rel="stylesheet" href="css/foundation/base.css">
+<link rel="stylesheet" href="css/components/header.css">
+<link rel="stylesheet" href="css/components/page-header.css">
+<link rel="stylesheet" href="css/components/card.css">
+<link rel="stylesheet" href="./css/components/ai-coach.css">
+<link rel="stylesheet" href="css/pages/home.css">
+</head>
+
+<body>
+
+<div class="bas-app">
+
+<div id="app-header"></div>
+
+<main class="bas-app__main">
+
+<div id="page-header"></div>
+
+<div class="bas-home">
+
+<section class="bas-card">
+
+<div class="bas-home__welcome">
+
+<div class="bas-home__user">
+
+<p class="bas-home__label">
+
+ログイン中
+
+</p>
+
+<h2
+    id="homeUserName"
+    class="bas-home__name"
+>
+    ゲストユーザー
+</h2>
+
+<p class="bas-home__message">
+
+今日も良い練習にしましょう。
+
+</p>
+
+</div>
+
+<div class="bas-home__last-practice">
+
+<div class="bas-home__last-practice-header">
+
+    <div>
+        <p class="bas-home__last-practice-label">
+            前回の練習
+        </p>
+
+        <p
+            id="homeLastPracticeDate"
+            class="bas-home__last-practice-date"
+        >
+            2026年7月20日
+        </p>
+    </div>
+
+    <span
+        id="homeLastPracticeDistance"
+        class="bas-home__distance-badge"
+    >
+        70m
+    </span>
+
+</div>
+
+    <div class="bas-home__stats">
+
+        <div class="bas-home__stat">
+
+            <span class="bas-home__stat-label">
+                総得点
+            </span>
+
+            <strong
+                id="homeLastPracticeScore"
+                class="bas-home__stat-value"
+            >
+                652
+            </strong>
+
+            <span class="bas-home__stat-unit">
+                点
+            </span>
+
+        </div>
+
+        <div class="bas-home__stat">
+
+            <span class="bas-home__stat-label">
+                平均
+            </span>
+
+            <strong
+                id="homeLastPracticeAverage"
+                class="bas-home__stat-value"
+            >
+                9.06
+            </strong>
+
+            <span class="bas-home__stat-unit">
+                点
+            </span>
+
+        </div>
+
+        <div class="bas-home__stat">
+
+            <span class="bas-home__stat-label">
+                射数
+            </span>
+
+            <strong
+                id="homeLastPracticeArrowCount"
+                class="bas-home__stat-value"
+            >
+                72
+            </strong>
+
+            <span class="bas-home__stat-unit">
+                射
+            </span>
+
+        </div>
+
+    </div>
+
+</div>
+
+</div>
+
+<section class="bas-home__dashboard">
+
+    <div class="bas-home__dashboard-card">
+
+        <h3 class="bas-home__dashboard-title">
+            📝 前回のメモ
+        </h3>
+
+        <p
+            id="homeLastMemo"
+            class="bas-home__dashboard-text"
+        >
+            クリックで力みが出た。
+            後半は肩の位置を意識するとグルーピングが改善した。
+        </p>
+
+    </div>
+
+    <section class="bas-home-section">
+    <div id="home-ai-coach"></div>
+    </section>
+
+    <div class="bas-home__dashboard-card">
+
+        <h3 class="bas-home__dashboard-title">
+            🎯 今日の目標
+        </h3>
+
+        <ul
+            id="homeTodayGoals"
+            class="bas-home__goal-list"
+        >
+
+            <li>□ リリースを丁寧に</li>
+
+            <li>□ 左肩を下げない</li>
+
+            <li>□ 70m 660点以上</li>
+
+        </ul>
+
+    </div>
+
+</section>
+
+</section>
+
+<section class="bas-home__section">
+
+<h2 class="bas-home__section-title">
+
+メニュー
+
+</h2>
+
+<div
+id="homeFeatureCards"
+class="bas-home__grid">
+
+</div>
+
+</section>
+
+</div>
+
+</main>
+
+</div>
+
+<script src="js/core/state.js"></script>
+<script src="js/components/header.js"></script>
+<script src="js/components/page-header.js"></script>
+<script src="js/components/card.js"></script>
+<script src="js/components/ai-coach.js"></script>
+<script src="js/pages/home.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        if (
+            window.BAS_HOME &&
+            typeof window.BAS_HOME.initialize === "function"
+        ) {
+            window.BAS_HOME.initialize();
+        }
+    });
+</script>
+
+</body>
+</html>
