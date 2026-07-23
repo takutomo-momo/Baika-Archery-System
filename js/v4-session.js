@@ -57,6 +57,6 @@
 };
 
 // Project Zero統合中は自動転送を停止
-// requireLogin();
+ requireLogin();
 
 })();

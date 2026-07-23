@@ -67,9 +67,37 @@ BAS_STATE[key] = value;
 
 saveStateToStorage();
 
+if (key === "currentUser") {
+    syncCurrentUserToVer4Login();
+}
+
 if (typeof BAS_CONFIG !== "undefined" && BAS_CONFIG.debug) {
         console.log(`[Baika State] ${key} を更新しました`, value);
     }
+}
+
+function syncCurrentUserToVer4Login() {
+    const currentUser = BAS_STATE.currentUser;
+
+    if (
+        !currentUser ||
+        typeof currentUser.name !== "string" ||
+        currentUser.name.trim() === ""
+    ) {
+        localStorage.removeItem("baikaArcheryVer4Login");
+        return;
+    }
+
+    const ver4LoginData = {
+        member: currentUser.name.trim(),
+        role: currentUser.role || "member",
+        loggedInAt: new Date().toISOString()
+    };
+
+    localStorage.setItem(
+        "baikaArcheryVer4Login",
+        JSON.stringify(ver4LoginData)
+    );
 }
 
 /**
@@ -142,3 +170,4 @@ function loadStateFromStorage() {
 }
 
 loadStateFromStorage();
+syncCurrentUserToVer4Login();
