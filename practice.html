@@ -539,6 +539,18 @@
     }
 
     function getStoredLoggedInMember() {
+
+        if (
+    window.V4Session &&
+    typeof window.V4Session.getLoggedInMember === "function"
+    ) {
+    const member = window.V4Session.getLoggedInMember();
+
+    if (member) {
+        return member;
+    }
+    }
+
         if (
             typeof window.loggedInMember === "string" &&
             window.loggedInMember.trim()
